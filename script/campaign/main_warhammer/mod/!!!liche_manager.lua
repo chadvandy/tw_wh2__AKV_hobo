@@ -1122,7 +1122,7 @@ function liche_manager:ror_UI(cqi)
         -- create the button!
         parent:CreateComponent("LicheRorButton", "ui/templates/square_medium_button")
         local button = find_uicomponent(parent, "LicheRorButton")
-        button:SetImage("ui/skins/default/icon_renown.png")
+        button:SetImagePath("ui/skins/default/icon_renown.png")
 
         -- hide and prevent the use of the vanilla RoR button
         local ror = find_uicomponent(parent, "button_renown")
@@ -1328,7 +1328,7 @@ function liche_manager:necropower_button()
     local existing_button = find_uicomponent(docker, "button_necropower")
     if not existing_button then
         local np_button = core:get_or_create_component("button_necropower", "ui/templates/round_medium_button", docker)
-        np_button:SetImage("ui/kemmler/AK_hobo_necropowa_summarybutt.png")
+        np_button:SetImagePath("ui/kemmler/AK_hobo_necropowa_summarybutt.png")
 
         local tech = find_uicomponent(docker, "button_technology")
         local bloodlines = find_uicomponent(docker, "button_bloodlines")
@@ -1497,7 +1497,7 @@ function liche_manager:set_necropower_panel()
         )
 
         local closeButton = find_uicomponent(panel, "necropower_panel_close_button")
-        closeButton:SetImage("ui/skins/default/icon_check.png")
+        closeButton:SetImagePath("ui/skins/default/icon_check.png")
 
         fX, fY = panel:Position()
         fW, fH = panel:Bounds()

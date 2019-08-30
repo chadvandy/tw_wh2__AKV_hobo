@@ -24,7 +24,7 @@ local function new_unit_card(key, text)
     --change the name text, and add the new unit card image
     local name = find_uicomponent(unit_card, "char_name", "name_tx")
     name:SetStateText(text)
-    unit_card:SetImage("ui/units/icons/" .. key .. ".png")
+    unit_card:SetImagePath("ui/units/icons/" .. key .. ".png")
     core:add_listener(
         "LicheLegionCardOnClick",
         "ComponentLClickUp",
@@ -220,12 +220,12 @@ local function create_new_widget_box()
     parchment:CreateComponent("widget_main_box", "ui/kemmler/custom_image")
     local widget_main_box = find_uicomponent(parchment, "widget_main_box")
     widget_main_box:SetState("custom_state_1")
-    widget_main_box:SetImage("ui/skins/default/panel_leather_tile_blue.png")
+    widget_main_box:SetImagePath("ui/skins/default/panel_leather_tile_blue.png")
 
     parchment:CreateComponent("widget_main_box_border", "ui/kemmler/custom_image")
     local widget_main_box_border = find_uicomponent(parchment, "widget_main_box_border")
     widget_main_box_border:SetState("custom_state_1")
-    widget_main_box_border:SetImage("ui/skins/default/panel_leather_frame_blue.png")
+    widget_main_box_border:SetImagePath("ui/skins/default/panel_leather_frame_blue.png")
 
     parchment:CreateComponent("widget_main_box_text", "ui/vandy_lib/black_text")
     local widget_main_box_text = find_uicomponent(parchment, "widget_main_box_text")
@@ -235,12 +235,12 @@ local function create_new_widget_box()
     parchment:CreateComponent("widget_text_box", "ui/kemmler/custom_image")
     local widget_text_box = find_uicomponent(parchment, "widget_text_box")
     widget_text_box:SetState("custom_state_1")
-    widget_text_box:SetImage("ui/skins/default/panel_leather_tile_blue.png")
+    widget_text_box:SetImagePath("ui/skins/default/panel_leather_tile_blue.png")
 
     parchment:CreateComponent("widget_text_box_border", "ui/kemmler/custom_image")
     local widget_text_box_border = find_uicomponent(parchment, "widget_text_box_border")
     widget_text_box_border:SetState("custom_state_1")
-    widget_text_box_border:SetImage("ui/skins/default/panel_leather_frame_blue.png")
+    widget_text_box_border:SetImagePath("ui/skins/default/panel_leather_frame_blue.png")
 
     parchment:CreateComponent("widget_text_box_text", "ui/vandy_lib/black_text")
     local widget_text_box_text = find_uicomponent(parchment, "widget_text_box_text")
@@ -352,7 +352,7 @@ local function initialize_widget_main_box_components()
     local np_cost_icon = find_uicomponent(widget_main_box, "np_cost_icon")
     np_cost_icon:SetState("custom_state_1")
     np_cost_icon:SetInteractive(true)
-    np_cost_icon:SetImage("ui/kemmler/AK_hobo_necropowa_lou_cost.png")
+    np_cost_icon:SetImagePath("ui/kemmler/AK_hobo_necropowa_lou_cost.png")
     np_cost_icon:SetTooltipText("Necromantic Power", true)
 
     np_cost_icon:SetCanResizeHeight(true)
@@ -598,7 +598,7 @@ local function create_panel()
 
     -- set the close button's image and center it on the bottom of the panel
     local close_button = find_uicomponent(panel, ui_panel_name.."_close_button")
-    close_button:SetImage("ui/skins/default/icon_check.png")
+    close_button:SetImagePath("ui/skins/default/icon_check.png")
 
     local fX, fY = panel:Position()
     local fW, fH = panel:Width(), panel:Height()

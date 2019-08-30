@@ -152,7 +152,7 @@ local function add_pr_uic()
         uic:SetVisible(true)
     
         local uic_icon = find_uicomponent(uic, "icon")
-        uic_icon:SetImage("ui/kemmler/AK_hobo_necropowa_summarybutt.png")
+        uic_icon:SetImagePath("ui/kemmler/AK_hobo_necropowa_summarybutt.png")
         
         uic:SetTooltipText('{{tt:ui/campaign ui/tooltip_pooled_resource_breakdown}}', true)
     end
@@ -1088,7 +1088,7 @@ function liche_init()
                 if not not panel then
                     local icon = find_uicomponent(panel, "secondary_info_panel_holder", "info_panel_background", "AgentInfoPopup", "action_list", "wh2_main_agent_action_wizard_passive_spread_corruption", "wh2_main_agent_action_wizard_passive_spread_corruption", "dy_action", "dy_icon")
                     if not not icon then
-                        icon:SetImage("ui/campaign ui/effect_bundles/religion_undeath.png")
+                        icon:SetImagePath("ui/campaign ui/effect_bundles/religion_undeath.png")
                     end
                     local text = find_uicomponent(panel, "secondary_info_panel_holder", "info_panel_background", "AgentInfoPopup", "action_list", "wh2_main_agent_action_wizard_passive_spread_corruption", "wh2_main_agent_action_wizard_passive_spread_corruption", "dy_action")
                     if not not text then
@@ -1209,7 +1209,7 @@ function liche_init()
                                 pr_uic:Adopt(np_uic:Address())
 
                                 np_uic:SetState('positive')
-                                np_uic:SetImage('ui/kemmler/AK_hobo_necropowa_bullet.png')
+                                np_uic:SetImagePath('ui/kemmler/AK_hobo_necropowa_bullet.png')
                                 np_uic:SetStateText("Necromantic Power: +"..np_result)
 
                                 local value = find_uicomponent(np_uic, "value")

@@ -34,7 +34,7 @@ local function set(turns, isLocked, button_number)
     optionText:SetStateText("Defile Barrows")
 
     local picture = find_uicomponent(option, "picture_parent", "dy_pic")
-    picture:SetImage("ui/campaign ui/settlement_captured_pics/AK_hobo_ruin_stuff.png")
+    picture:SetImagePath("ui/campaign ui/settlement_captured_pics/AK_hobo_ruin_stuff.png")
 
     local replen = find_uicomponent(option, "frame", "icon_parent", "dy_replenish")
     local replenIcon = find_uicomponent(replen, "icon")

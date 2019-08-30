@@ -469,15 +469,15 @@ function unit_card_obj:create_land_unit_card_for_frontend(parent)
     campaign_frame:SetVisible(false)
 
     -- set the unit card image
-    uic:SetImage("ui/units/icons/" .. self._unit_card_image_path)
+    uic:SetImagePath("ui/units/icons/" .. self._unit_card_image_path)
     
     -- remove the highlight on hover image
-    uic:SetImage("ui/vandy_lib/unit_card_blank_smol.png", 4)
+    uic:SetImagePath("ui/vandy_lib/unit_card_blank_smol.png", 4)
 
     -- set the unit category icon
     local unit_cat_uic = find_uicomponent(uic, "unit_cat_frame", "unit_category_icon")
     local unit_cat = self._manager._ui_unit_groupings[self._unit_category]
-    unit_cat_uic:SetImage("ui/common ui/unit_category_icons/" .. unit_cat["icon"] .. ".png")
+    unit_cat_uic:SetImagePath("ui/common ui/unit_category_icons/" .. unit_cat["icon"] .. ".png")
 
     -- TODO confirm this is the same regardless of resolution
     -- resize for the frontend size (50, 110)
@@ -596,7 +596,7 @@ function unit_card_obj:create_stat_unit_card_for_frontend()
 
     local unit_cat_icon = find_uicomponent(unit_cat_text, "unit_cat_frame", "unit_category_icon")
     local icon = self._manager._ui_unit_groupings[self._unit_category]["icon"]
-    unit_cat_icon:SetImage("ui/common ui/unit_category_icons/" .. icon .. ".png")
+    unit_cat_icon:SetImagePath("ui/common ui/unit_category_icons/" .. icon .. ".png")
 
 
     local unit_num_models_text = find_uicomponent(stat_card_uic, "top_bar", "dy_men")
@@ -758,7 +758,7 @@ function unit_card_obj:create_stat_unit_card_for_frontend()
                 icon_holder:Adopt(mod_icon:Address())
 
                 mod_icon:SetState("custom_state_1")
-                mod_icon:SetImage("ui/skins/default/modifier_icon_shield.png")
+                mod_icon:SetImagePath("ui/skins/default/modifier_icon_shield.png")
                 mod_icon:SetInteractive(true)
                 mod_icon:SetTooltipText("Shielded||This unit has a shield and will block ".. tostring(self._shield_value) .. "% of all small-arms missile fire hitting it from the front.", true)
 
@@ -775,7 +775,7 @@ function unit_card_obj:create_stat_unit_card_for_frontend()
                 icon_holder:Adopt(mod_icon:Address())
 
                 mod_icon:SetState("custom_state_1")
-                mod_icon:SetImage("ui/skins/default/modifier_icon_flaming.png")
+                mod_icon:SetImagePath("ui/skins/default/modifier_icon_flaming.png")
                 mod_icon:SetInteractive(true)
                 mod_icon:SetTooltipText("Flaming Attacks||This unit inflicts flaming attacks which can do additional damage against units that are vulnerable to fire.", true)
 
@@ -790,7 +790,7 @@ function unit_card_obj:create_stat_unit_card_for_frontend()
                 icon_holder:Adopt(mod_icon:Address())
 
                 mod_icon:SetState("custom_state_1")
-                mod_icon:SetImage("ui/skins/default/modifier_icon_magical.png")
+                mod_icon:SetImagePath("ui/skins/default/modifier_icon_magical.png")
                 mod_icon:SetInteractive(true)
                 mod_icon:SetTooltipText("Magical Attacks||This unit inflicts magical attacks which can harm units that are protected from regular physical attacks.", true)
 
@@ -807,7 +807,7 @@ function unit_card_obj:create_stat_unit_card_for_frontend()
                 icon_holder:Adopt(mod_icon:Address())
 
                 mod_icon:SetState("custom_state_1")
-                mod_icon:SetImage("ui/skins/default/modifier_icon_bonus_vs_large.png")
+                mod_icon:SetImagePath("ui/skins/default/modifier_icon_bonus_vs_large.png")
                 mod_icon:SetInteractive(true)
                 mod_icon:SetTooltipText("Bonus vs. Large||This unit inflicts additional damage and has an increased chance of hitting enemies that are cavalry-sized or larger.", true)
 
@@ -822,7 +822,7 @@ function unit_card_obj:create_stat_unit_card_for_frontend()
                 icon_holder:Adopt(mod_icon:Address())
 
                 mod_icon:SetState("custom_state_1")
-                mod_icon:SetImage("ui/skins/default/modifier_icon_bonus_vs_infantry.png")
+                mod_icon:SetImagePath("ui/skins/default/modifier_icon_bonus_vs_infantry.png")
                 mod_icon:SetInteractive(true)
                 mod_icon:SetTooltipText("Bonus vs. Infantry||This unit inflicts additional damage and has an increased chance of a hit when fighting enemies that are man-sized or smaller.", true)
 
@@ -837,7 +837,7 @@ function unit_card_obj:create_stat_unit_card_for_frontend()
                 icon_holder:Adopt(mod_icon:Address())
 
                 mod_icon:SetState("custom_state_1")
-                mod_icon:SetImage("ui/skins/default/modifier_icon_armour_piercing.png")
+                mod_icon:SetImagePath("ui/skins/default/modifier_icon_armour_piercing.png")
                 mod_icon:SetInteractive(true)
                 mod_icon:SetTooltipText("Armour Piercing||The damage of armour-piercing weapons mostly ignores the target's armour, making them the ideal choice against heavily-armoured enemies. They often inflict less damage in total though, making them less efficient against weakly armoured targets.", true)
 
@@ -854,7 +854,7 @@ function unit_card_obj:create_stat_unit_card_for_frontend()
                 icon_holder:Adopt(mod_icon:Address())
 
                 mod_icon:SetState("custom_state_1")
-                mod_icon:SetImage("ui/skins/default/modifier_icon_bonus_vs_large.png")
+                mod_icon:SetImagePath("ui/skins/default/modifier_icon_bonus_vs_large.png")
                 mod_icon:SetInteractive(true)
                 mod_icon:SetTooltipText("Bonus vs. Large||This unit inflicts additional damage and has an increased chance of hitting enemies that are cavalry-sized or larger.", true)
 
@@ -869,7 +869,7 @@ function unit_card_obj:create_stat_unit_card_for_frontend()
                 icon_holder:Adopt(mod_icon:Address())
 
                 mod_icon:SetState("custom_state_1")
-                mod_icon:SetImage("ui/skins/default/modifier_icon_bonus_vs_infantry.png")
+                mod_icon:SetImagePath("ui/skins/default/modifier_icon_bonus_vs_infantry.png")
                 mod_icon:SetInteractive(true)
                 mod_icon:SetTooltipText("Bonus vs. Infantry||This unit inflicts additional damage and has an increased chance of a hit when fighting enemies that are man-sized or smaller.", true)
 
@@ -885,7 +885,7 @@ function unit_card_obj:create_stat_unit_card_for_frontend()
                 icon_holder:Adopt(mod_icon:Address())
 
                 mod_icon:SetState("custom_state_1")
-                mod_icon:SetImage("ui/skins/default/modifier_icon_armour_piercing_ranged.png")
+                mod_icon:SetImagePath("ui/skins/default/modifier_icon_armour_piercing_ranged.png")
                 mod_icon:SetInteractive(true)
                 mod_icon:SetTooltipText("Armour Piercing||The damage of armour-piercing weapons mostly ignores the target's armour, making them the ideal choice against heavily-armoured enemies. They often inflict less damage in total though, making them less efficient against weakly armoured targets.", true)
 
@@ -964,7 +964,7 @@ function unit_card_obj:create_stat_unit_card_for_frontend()
         end
 
         stat_name:SetStateText(key)
-        stat_icon:SetImage(icon)
+        stat_icon:SetImagePath(icon)
         stat_value:SetStateText(tostring(self._stats[i]))
         stat:SetTooltipText(tt, true)
     end
@@ -978,7 +978,7 @@ function unit_card_obj:create_stat_unit_card_for_frontend()
         abilities_parent:Adopt(uic:Address())
         uic:SetState("custom_state_1")
         uic:SetInteractive(true)
-        uic:SetImage("ui/battle ui/ability_icons/" .. icon .. ".png")
+        uic:SetImagePath("ui/battle ui/ability_icons/" .. icon .. ".png")
 
         uic:SetCanResizeWidth(true)
         uic:SetCanResizeHeight(true)
@@ -1025,7 +1025,7 @@ function unit_card_obj:create_stat_unit_card_for_frontend()
         abilities_parent:Adopt(attribute_uic:Address())
         attribute_uic:SetState("custom_state_1")
         attribute_uic:SetInteractive(true)
-        attribute_uic:SetImage("ui/battle ui/ability_icons/" .. attribute_key .. ".png")
+        attribute_uic:SetImagePath("ui/battle ui/ability_icons/" .. attribute_key .. ".png")
 
         attribute_uic:SetCanResizeWidth(true)
         attribute_uic:SetCanResizeHeight(true)
@@ -1045,7 +1045,7 @@ function unit_card_obj:create_stat_unit_card_for_frontend()
         abilities_parent:Adopt(ability_uic:Address())
         ability_uic:SetState("custom_state_1")
         ability_uic:SetInteractive(true)
-        ability_uic:SetImage(ability._small_icon)
+        ability_uic:SetImagePath(ability._small_icon)
         --ability_uic:PropagatePriority(find_uicomponent(stat_card_uic, "parchment"):Priority())
 
         ability_uic:SetCanResizeWidth(true)
@@ -1495,16 +1495,16 @@ function unit_land_card:create_component(parent)
     local campaign_frame = find_uicomponent(uic, "campaign")
     campaign_frame:SetVisible(false)
 
-    uic:SetImage(self._unit_icon)
+    uic:SetImagePath(self._unit_icon)
 
     local unit_cat = find_uicomponent(uic, "unit_cat_frame", "unit_category_icon")
-    unit_cat:SetImage("ui/common ui/unit_category_icons/cannon.png")
+    unit_cat:SetImagePath("ui/common ui/unit_category_icons/cannon.png")
 
     self._uic = uic
 
     uic:Resize(self._width, self._height)
 
     if not self._highlight_on_hover then
-        core:add_listener("disable_hover", "ComponentMouseOn", function(context) return UIComponent(context.component) == self._uic end, function(context) self._uic:SetImage("", 4) end, true)
+        core:add_listener("disable_hover", "ComponentMouseOn", function(context) return UIComponent(context.component) == self._uic end, function(context) self._uic:SetImagePath("", 4) end, true)
     end
 end]]
