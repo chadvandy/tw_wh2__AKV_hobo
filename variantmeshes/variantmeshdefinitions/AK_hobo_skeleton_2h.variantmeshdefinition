@@ -1,0 +1,76 @@
+<VARIANT_MESH>
+
+	<SLOT name="bodies" >
+	
+<VARIANT_MESH>
+	<SLOT name="body" >
+		<VARIANT_MESH model="VariantMeshes/wh_variantmodels/hu1/vmp/vmp_skeleton_warriors/torso/vmp_skeleton_warriors_stalkers_torso_02.rigid_model_v2" >
+			<META_DATA>audio_entity_type:wh_skeleton</META_DATA>			<META_DATA>audio_armour_type:bone</META_DATA></VARIANT_MESH>
+		<VARIANT_MESH model="VariantMeshes/wh_variantmodels/hu1/vmp/vmp_skeleton_warriors/torso/vmp_skeleton_warriors_stalkers_torso_04.rigid_model_v2" >
+			<META_DATA>audio_entity_type:wh_skeleton</META_DATA>			<META_DATA>audio_armour_type:bone</META_DATA></VARIANT_MESH>
+		<VARIANT_MESH model="VariantMeshes/wh_variantmodels/hu1/vmp/vmp_skeleton_warriors/torso/vmp_skeleton_warriors_stalkers_torso_05.rigid_model_v2" >
+			<META_DATA>audio_entity_type:wh_skeleton</META_DATA>			<META_DATA>audio_armour_type:bone</META_DATA></VARIANT_MESH>
+	</SLOT>
+	<SLOT name="head" >
+		<VARIANT_MESH model="VariantMeshes/wh_variantmodels/hu1/vmp/vmp_skeleton_warriors/head/vmp_skeleton_warriors_stalkers_head_02.rigid_model_v2" >
+		<SLOT name="horns" probability ="0.7" >
+			<VARIANT_MESH_REFERENCE definition="VariantMeshes/VariantMeshDefinitions/AK_hobo_skelly_horns_smaller.VariantMeshDefinition" />
+		</SLOT>
+		</VARIANT_MESH>
+		<VARIANT_MESH model="VariantMeshes/wh_variantmodels/hu1/vmp/vmp_skeleton_warriors/head/vmp_skeleton_warriors_stalkers_head_04.rigid_model_v2" />
+	</SLOT>
+	<SLOT name="legs" >
+		<VARIANT_MESH model="VariantMeshes/wh_variantmodels/hu1/vmp/vmp_skeleton_warriors/legs/vmp_skeleton_warriors_stalkers_legs_02.rigid_model_v2" />
+		<VARIANT_MESH model="VariantMeshes/wh_variantmodels/hu1/vmp/vmp_skeleton_warriors/legs/vmp_skeleton_warriors_stalkers_legs_03.rigid_model_v2" />
+		<VARIANT_MESH model="VariantMeshes/wh_variantmodels/hu1/vmp/vmp_skeleton_warriors/legs/vmp_skeleton_warriors_stalkers_legs_04.rigid_model_v2" />
+		<VARIANT_MESH model="VariantMeshes/wh_variantmodels/hu1/vmp/vmp_skeleton_warriors/legs/vmp_skeleton_warriors_stalkers_legs_05.rigid_model_v2" />
+	</SLOT>
+</VARIANT_MESH>
+<VARIANT_MESH>
+	<SLOT name="head" >
+		<VARIANT_MESH model="VariantMeshes/wh_variantmodels/hu1/vmp/vmp_skeleton_warriors/head/skeleton_head_01.wsmodel"  />
+		<VARIANT_MESH model="VariantMeshes/wh_variantmodels/hu1/vmp/vmp_skeleton_warriors/head/skeleton_head_02.wsmodel"  >
+		<SLOT name="horns" probability ="0.6" >
+			<VARIANT_MESH_REFERENCE definition="VariantMeshes/VariantMeshDefinitions/AK_hobo_skelly_horns_smaller.VariantMeshDefinition" />
+		</SLOT>
+		</VARIANT_MESH>
+		<VARIANT_MESH model="VariantMeshes/wh_variantmodels/hu1/vmp/vmp_skeleton_warriors/head/skeleton_head_03.wsmodel"  />
+		<VARIANT_MESH model="VariantMeshes/wh_variantmodels/hu1/vmp/vmp_skeleton_warriors/head/skeleton_head_04.wsmodel"  />
+		<VARIANT_MESH model="VariantMeshes/wh_variantmodels/hu1/vmp/vmp_skeleton_warriors/head/skeleton_head_05.wsmodel"  />
+	</SLOT>
+	<SLOT name="torso" >
+		<VARIANT_MESH model="VariantMeshes/wh_variantmodels/hu1/vmp/vmp_skeleton_warriors/torso/skeleton_torso_02.wsmodel"  >
+			<META_DATA>audio_entity_type:wh_skeleton</META_DATA>			<META_DATA>audio_armour_type:bone</META_DATA></VARIANT_MESH>
+		<VARIANT_MESH model="VariantMeshes/wh_variantmodels/hu1/vmp/vmp_skeleton_warriors/torso/skeleton_torso_03.wsmodel"  >
+			<META_DATA>audio_entity_type:wh_skeleton</META_DATA>			<META_DATA>audio_armour_type:bone</META_DATA></VARIANT_MESH>
+		<VARIANT_MESH model="VariantMeshes/wh_variantmodels/hu1/vmp/vmp_skeleton_warriors/torso/skeleton_torso_04.wsmodel"  >
+			<META_DATA>audio_entity_type:wh_skeleton</META_DATA>			<META_DATA>audio_armour_type:bone</META_DATA></VARIANT_MESH>
+		<VARIANT_MESH model="VariantMeshes/wh_variantmodels/hu1/vmp/vmp_skeleton_warriors/torso/skeleton_torso_05.wsmodel"  >
+			<META_DATA>audio_entity_type:wh_skeleton</META_DATA>			<META_DATA>audio_armour_type:bone</META_DATA></VARIANT_MESH>
+	</SLOT>
+	<SLOT name="legs" >
+		<VARIANT_MESH model="VariantMeshes/wh_variantmodels/hu1/vmp/vmp_skeleton_warriors/legs/skeleton_legs_01.wsmodel"  />
+		<VARIANT_MESH model="VariantMeshes/wh_variantmodels/hu1/vmp/vmp_skeleton_warriors/legs/skeleton_legs_02.wsmodel"  />
+		<VARIANT_MESH model="VariantMeshes/wh_variantmodels/hu1/vmp/vmp_skeleton_warriors/legs/skeleton_legs_03.wsmodel"  />
+		<VARIANT_MESH model="VariantMeshes/wh_variantmodels/hu1/vmp/vmp_skeleton_warriors/legs/skeleton_legs_04.wsmodel"  />
+		<VARIANT_MESH model="VariantMeshes/wh_variantmodels/hu1/vmp/vmp_skeleton_warriors/legs/skeleton_legs_05.wsmodel"  />
+	</SLOT>
+</VARIANT_MESH>
+
+	</SLOT>
+
+	
+	<SLOT name="weapon_1" attach_point="be_prop_0" >
+		<VARIANT_MESH model="VariantMeshes\wh_variantmodels\hu1\vmp\vmp_props\vmp_grave_guard_sword_2h_01.rigid_model_v2"  >
+			<META_DATA>audio_melee_weapon_type:sword</META_DATA></VARIANT_MESH>
+		<VARIANT_MESH model="VariantMeshes\wh_variantmodels\hu1\vmp\vmp_props\vmp_grave_guard_sword_2h_02.rigid_model_v2"  >
+			<META_DATA>audio_melee_weapon_type:sword</META_DATA></VARIANT_MESH>
+		<VARIANT_MESH model="VariantMeshes\wh_variantmodels\hu1\vmp\vmp_props\vmp_grave_guard_sword_2h_03.rigid_model_v2"  >
+			<META_DATA>audio_melee_weapon_type:sword</META_DATA></VARIANT_MESH>
+		<VARIANT_MESH model="VariantMeshes/wh_variantmodels/hu1c/chs/chs_props/chs_marauder_axe_throwing_1h_01.rigid_model_v2" >
+			<META_DATA>audio_melee_weapon_type:axe</META_DATA></VARIANT_MESH>
+		<VARIANT_MESH model="VariantMeshes/wh_variantmodels/hu1c/chs/chs_props/chs_marauder_axe_throwing_1h_02.rigid_model_v2" >
+			<META_DATA>audio_melee_weapon_type:axe</META_DATA></VARIANT_MESH>
+	</SLOT>	
+	
+</VARIANT_MESH>

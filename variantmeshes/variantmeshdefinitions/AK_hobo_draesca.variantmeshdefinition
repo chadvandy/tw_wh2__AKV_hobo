@@ -1,0 +1,39 @@
+<VARIANT_MESH>
+	<SLOT name="head" >
+		<VARIANT_MESH model="VariantMeshes\wh_variantmodels\hu1\brt\brt_paladin\head\AK_hobo_deer.wsmodel" />
+	</SLOT>
+
+	<SLOT name="head" >
+		<VARIANT_MESH model="VariantMeshes/wh_variantmodels/hu1/cst/cst_depth_guards/AK_hobo_draesca_helmet.wsmodel" />
+	</SLOT>
+	<SLOT name="body" >
+		<VARIANT_MESH model="VariantMeshes/wh_variantmodels/hu1/tmb/tmb_necrotect/torso/tmb_necrotect_torso_01.wsmodel" >
+			<META_DATA>audio_armour_type:leather</META_DATA>			<META_DATA>audio_entity_type:wh_skeleton_LH</META_DATA></VARIANT_MESH>
+	</SLOT>
+
+	<SLOT name="legs" >
+		<VARIANT_MESH model="VariantMeshes/wh_variantmodels/hu1/tmb/tmb_necrotect/legs/AK_hobo_mummy_legs_01.rigid_model_v2" />
+		<VARIANT_MESH model="VariantMeshes/wh_variantmodels/hu1/tmb/tmb_necrotect/legs/AK_hobo_mummy_legs_02.rigid_model_v2" />
+	</SLOT>
+	<SLOT name="leg armour" >
+		<VARIANT_MESH model="VariantMeshes/wh_variantmodels/hu1/vmp/vmp_wight_king/legs/vmp_wight_king_leg_armour_01.wsmodel" />
+		<VARIANT_MESH model="VariantMeshes/wh_variantmodels/hu1/vmp/vmp_wight_king/legs/vmp_wight_king_leg_armour_02.wsmodel" />
+	</SLOT>
+	<SLOT name="cape" >
+		<VARIANT_MESH model="VariantMeshes/wh_variantmodels/hu1/vmp/vmp_wight_king/cape/vmp_wight_king_cape_01.wsmodel" />
+	</SLOT>
+	<SLOT name="legs2" >
+		<VARIANT_MESH model="VariantMeshes/wh_variantmodels/hu1/vmp/vmp_skeleton_warriors/legs/skeleton_legs_03.wsmodel"  />
+	</SLOT>
+	<SLOT name="legs3" >
+		<VARIANT_MESH model="VariantMeshes/wh_variantmodels/hu1/vmp/vmp_skeleton_warriors/legs/skeleton_legs_04.wsmodel"  />
+	</SLOT>
+
+	<SLOT name="weapon_1" attach_point="be_prop_0" />
+	<SLOT name="weapon_2" attach_point="be_prop_1" >
+		<VARIANT_MESH_REFERENCE definition="VariantMeshes/VariantMeshDefinitions/chs_marauder_axe_1h_set1.VariantMeshDefinition" />
+	</SLOT>
+	<SLOT name="weapon_5" attach_point="be_prop_5" >
+		<VARIANT_MESH_REFERENCE definition="VariantMeshes/VariantMeshDefinitions/chs_marauder_axe_1h_set1.VariantMeshDefinition" />
+	</SLOT>
+</VARIANT_MESH>

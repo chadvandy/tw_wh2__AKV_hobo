@@ -1,0 +1,561 @@
+<?xml version="1.0"?>
+<battle>
+	<alliance id="0">
+		<army>
+
+			<camera_start_position x="-57.80" y="174.74" z="-619.60"/>
+			<camera_target_position x="-50.16" y="97.81" z="-413.77"/>
+
+			<deployment_area>
+				<centre x="-50.88" y="-509.48"/>
+				<width metres="258.94"/>
+				<height metres="258.05"/>
+				<orientation radians="0.00"/>
+			</deployment_area>
+
+
+			<faction>wh2_dlc11_vmp_the_barrow_legion</faction>
+			<!--campaign_ai_battle_hints aggression="0.50"/ -->
+			
+			<!-- player's main -->
+			<unit script_name="kemmler_kemmler">
+				<unit_type type="wh_main_vmp_cha_heinrich_kemmler"/>
+				<position x="-52.63" y="-493.72"/>
+				<orientation radians="6.25"/>
+				<width metres="1.40"/>
+				<unit_capabilities>
+				</unit_capabilities>
+				<unit_experience level="0"/>
+				<general>
+					<name>666777899</name>
+					<star_rating level = "0"/>
+					<portrait>ui/portraits/portholes/wh_main_vmp_vampire_counts/vmp_ch_heinrich_0.png</portrait>
+				</general>
+			</unit>
+			<unit script_name="kemmler_krell">
+				<unit_type type="wh_pro03_vmp_cha_krell_campaign_4"/>
+				<position x="-49.44" y="-493.42"/>
+				<orientation radians="6.25"/>
+				<width metres="1.00"/>
+				<unit_capabilities>
+				</unit_capabilities>
+				<unit_experience level="0"/>
+			</unit>
+			<unit script_name="kemmler">
+				<unit_type type="AK_hobo_skeleton_2h"/>
+				<position x="-92.21" y="-470.62"/>
+				<orientation radians="6.25"/>
+				<width metres="22.08"/>
+				<unit_capabilities>
+				</unit_capabilities>
+				<unit_experience level="0"/>
+			</unit>
+			<unit  script_name="kemmler">
+				<unit_type type="AK_hobo_skeleton_2h"/>
+				<position x="15.00" y="-467.54"/>
+				<orientation radians="6.25"/>
+				<width metres="22.08"/>
+				<unit_capabilities>
+				</unit_capabilities>
+				<unit_experience level="0"/>
+			</unit>
+			<unit script_name="kemmler">
+				<unit_type type="AK_hobo_skeleton_lobber"/>
+				<position x="-167.73" y="-482.99"/>
+				<orientation radians="6.25"/>
+				<width metres="24.46"/>
+				<unit_capabilities>
+				</unit_capabilities>
+				<unit_experience level="0"/>
+			</unit>
+			<unit script_name="kemmler">
+				<unit_type type="AK_hobo_skeleton_lobber"/>
+				<position x="-66.95" y="-469.90"/>
+				<orientation radians="6.25"/>
+				<width metres="24.46"/>
+				<unit_capabilities>
+				</unit_capabilities>
+				<unit_experience level="0"/>
+			</unit>
+			<unit script_name="kemmler">
+				<unit_type type="AK_hobo_skeleton_swords"/>
+				<position x="41.21" y="-466.71"/>
+				<orientation radians="6.25"/>
+				<width metres="26.36"/>
+				<unit_capabilities>
+				</unit_capabilities>
+				<unit_experience level="0"/>
+			</unit>
+			<unit script_name="kemmler">
+				<unit_type type="AK_hobo_skeleton_swords"/>
+				<position x="-146.92" y="-467.12"/>
+				<orientation radians="6.25"/>
+				<width metres="26.36"/>
+				<unit_capabilities>
+				</unit_capabilities>
+				<unit_experience level="0"/>
+			</unit>
+			<unit script_name="kemmler">
+				<unit_type type="AK_hobo_skeleton_swords"/>
+				<position x="-39.56" y="-469.03"/>
+				<orientation radians="6.25"/>
+				<width metres="26.36"/>
+				<unit_capabilities>
+				</unit_capabilities>
+				<unit_experience level="0"/>
+			</unit>
+			<unit script_name="kemmler">
+				<unit_type type="AK_hobo_skeleton_spears"/>
+				<position x="64.68" y="-450.89"/>
+				<orientation radians="6.25"/>
+				<width metres="26.36"/>
+				<unit_capabilities>
+				</unit_capabilities>
+				<unit_experience level="0"/>
+			</unit>
+			<unit script_name="kemmler">
+				<unit_type type="AK_hobo_skeleton_spears"/>
+				<position x="-118.43" y="-471.30"/>
+				<orientation radians="6.25"/>
+				<width metres="26.36"/>
+				<unit_capabilities>
+				</unit_capabilities>
+				<unit_experience level="0"/>
+			</unit>
+			<unit script_name="kemmler">
+				<unit_type type="AK_hobo_skeleton_spears"/>
+				<position x="-11.21" y="-468.21"/>
+				<orientation radians="6.25"/>
+				<width metres="26.36"/>
+				<unit_capabilities>
+				</unit_capabilities>
+				<unit_experience level="0"/>
+			</unit>
+			<unit script_name="kemmler">
+				<unit_type type="AK_hobo_horsemen"/>
+				<position x="51.60" y="-480.28"/>
+				<orientation radians="6.25"/>
+				<width metres="25.40"/>
+				<unit_capabilities>
+				</unit_capabilities>
+				<unit_experience level="0"/>
+			</unit>
+			<unit script_name="kemmler">
+				<unit_type type="AK_hobo_horsemen"/>
+				<position x="-166.97" y="-494.62"/>
+				<orientation radians="6.25"/>
+				<width metres="25.40"/>
+				<unit_capabilities>
+				</unit_capabilities>
+				<unit_experience level="0"/>
+			</unit>
+			
+			<!-- player's reinforcements -->
+			<reinforcement_army approach_angle="270">
+				<faction>wh2_dlc11_vmp_the_barrow_legion</faction>
+
+				<deployment_area>
+					<centre x="-50.88" y="-509.48"/>
+					<width metres="258.94"/>
+					<height metres="258.05"/>
+					<orientation radians="0.00"/>
+				</deployment_area>
+
+				<camera_start_position x="-57.80" y="174.74" z="-619.60"/>
+				<camera_target_position x="-50.16" y="97.81" z="-413.77"/>
+				<campaign_ai_battle_hints aggression="0.50"/>
+
+				<unit script_name="jacsen">
+					<unit_type type="AK_hobo_ror_jacsen"/>
+					<position x="-49.44" y="-493.42"/>
+					<orientation radians="6.25"/>
+					<width metres="1.00"/>
+					<unit_capabilities>
+					</unit_capabilities>
+					<unit_experience level="0"/>
+				</unit>
+
+				<unit script_name="jacsen">
+					<unit_type type="AK_hobo_barrow_guardians"/>
+					<position x="-49.44" y="-493.42"/>
+					<orientation radians="6.25"/>
+					<width metres="1.00"/>
+					<unit_capabilities>
+					</unit_capabilities>
+					<unit_experience level="0"/>
+				<general>
+					<name>666777900</name>
+					<star_rating level = "0"/>
+					<portrait>ui/portraits/portholes/no_culture/AK_hobo_ror_jacsen.png</portrait>
+				</general>
+				</unit>
+				<unit script_name="jacsen">
+					<unit_type type="AK_hobo_barrow_guardians"/>
+					<position x="-49.44" y="-493.42"/>
+					<orientation radians="6.25"/>
+					<width metres="1.00"/>
+					<unit_capabilities>
+					</unit_capabilities>
+					<unit_experience level="0"/>
+				</unit>
+				<unit script_name="jacsen">
+					<unit_type type="AK_hobo_barrow_guardians_halb"/>
+					<position x="-49.44" y="-493.42"/>
+					<orientation radians="6.25"/>
+					<width metres="1.00"/>
+					<unit_capabilities>
+					</unit_capabilities>
+					<unit_experience level="0"/>
+				</unit>
+				<unit script_name="jacsen">
+					<unit_type type="AK_hobo_simulacra"/>
+					<position x="-49.44" y="-493.42"/>
+					<orientation radians="6.25"/>
+					<width metres="1.00"/>
+					<unit_capabilities>
+					</unit_capabilities>
+					<unit_experience level="0"/>
+				</unit>
+				<unit script_name="jacsen">
+					<unit_type type="AK_hobo_simulacra"/>
+					<position x="-49.44" y="-493.42"/>
+					<orientation radians="6.25"/>
+					<width metres="1.00"/>
+					<unit_capabilities>
+					</unit_capabilities>
+					<unit_experience level="0"/>
+				</unit>
+				<unit script_name="jacsen">
+					<unit_type type="AK_hobo_simulacra"/>
+					<position x="-49.44" y="-493.42"/>
+					<orientation radians="6.25"/>
+					<width metres="1.00"/>
+					<unit_capabilities>
+					</unit_capabilities>
+					<unit_experience level="0"/>
+				</unit>
+				<unit script_name="jacsen">
+					<unit_type type="AK_hobo_embalmed"/>
+					<position x="-49.44" y="-493.42"/>
+					<orientation radians="6.25"/>
+					<width metres="1.00"/>
+					<unit_capabilities>
+					</unit_capabilities>
+					<unit_experience level="0"/>
+				</unit>
+				<unit script_name="jacsen">
+					<unit_type type="AK_hobo_embalmed"/>
+					<position x="-49.44" y="-493.42"/>
+					<orientation radians="6.25"/>
+					<width metres="1.00"/>
+					<unit_capabilities>
+					</unit_capabilities>
+					<unit_experience level="0"/>
+				</unit>
+				<unit script_name="jacsen">
+					<unit_type type="AK_hobo_embalmed"/>
+					<position x="-49.44" y="-493.42"/>
+					<orientation radians="6.25"/>
+					<width metres="1.00"/>
+					<unit_capabilities>
+					</unit_capabilities>
+					<unit_experience level="0"/>
+				</unit>
+				<unit script_name="jacsen">
+					<unit_type type="AK_hobo_stalker"/>
+					<position x="-49.44" y="-493.42"/>
+					<orientation radians="6.25"/>
+					<width metres="1.00"/>
+					<unit_capabilities>
+					</unit_capabilities>
+					<unit_experience level="0"/>
+				</unit>
+
+				<unit script_name="jacsen">
+					<unit_type type="AK_hobo_stalker"/>
+					<position x="-49.44" y="-493.42"/>
+					<orientation radians="6.25"/>
+					<width metres="1.00"/>
+					<unit_capabilities>
+					</unit_capabilities>
+					<unit_experience level="0"/>
+				</unit>
+			</reinforcement_army>
+		</army>
+		<victory_condition>
+			<kill_or_rout_enemy></kill_or_rout_enemy>
+		</victory_condition>
+		<rout_position x="0.00" y="0.00"/>
+	</alliance>
+	<alliance id="1">
+	
+		<!-- enemy main -->
+		<army>
+			<faction>wh_main_dwf_dwarfs_qb1</faction>
+			<deployment_area>
+				<centre x="-49.35" y="364.02"/>
+				<width metres="263.04"/>
+				<height metres="269.70"/>
+				<orientation radians="-3.14"/>
+			</deployment_area>
+
+			<camera_start_position x="-57.80" y="174.74" z="-619.60"/>
+			<camera_target_position x="-50.16" y="97.81" z="-413.77"/>
+			<campaign_ai_battle_hints aggression="0.50"/>
+
+			<unit script_name="dwarf_1">
+				<unit_type type="wh_main_dwf_cha_lord_0"/>
+				<position x="-37.07" y="416.38"/>
+				<orientation radians="3.10"/>
+				<width metres="1.50"/>
+				<unit_capabilities>
+				</unit_capabilities>
+				<unit_experience level="0"/>
+				<general>
+					<name>666777901</name>
+					<star_rating level = "0"/>
+					<portrait>ui/portraits/portholes/wh_main_dwf_dwarfs/dwf_lord_campaign_03_0.png</portrait>
+				</general>
+			</unit>
+
+			<unit script_name="dwarf_1">
+				<unit_type type="wh_main_dwf_inf_dwarf_warrior_0"/>
+				<position x="-54.92" y="415.42"/>
+				<orientation radians="3.10"/>
+				<width metres="14.25"/>
+				<unit_capabilities>
+				</unit_capabilities>
+				<unit_experience level="0"/>
+			</unit>
+
+			<unit script_name="dwarf_1">
+				<unit_type type="wh_main_dwf_inf_dwarf_warrior_0"/>
+				<position x="-79.15" y="414.32"/>
+				<orientation radians="3.10"/>
+				<width metres="14.25"/>
+				<unit_capabilities>
+				</unit_capabilities>
+				<unit_experience level="0"/>
+			</unit>
+
+			<unit script_name="dwarf_1">
+				<unit_type type="wh_main_dwf_inf_longbeards"/>
+				<position x="12.18" y="418.52"/>
+				<orientation radians="3.10"/>
+				<width metres="15.80"/>
+				<unit_capabilities>
+				</unit_capabilities>
+				<unit_experience level="0"/>
+			</unit>
+
+			<unit script_name="dwarf_1">
+				<unit_type type="wh_main_dwf_inf_miners_0"/>
+				<position x="-99.60" y="413.40"/>
+				<orientation radians="3.10"/>
+				<width metres="16.70"/>
+				<unit_capabilities>
+				</unit_capabilities>
+				<unit_experience level="0"/>
+			</unit>
+
+			<unit script_name="dwarf_1">
+				<unit_type type="wh_main_dwf_inf_miners_0"/>
+				<position x="12.50" y="435.20"/>
+				<orientation radians="3.10"/>
+				<width metres="16.70"/>
+				<unit_capabilities>
+				</unit_capabilities>
+				<unit_experience level="0"/>
+			</unit>
+
+			<unit script_name="dwarf_1">
+				<unit_type type="wh_main_dwf_inf_miners_0"/>
+				<position x="-101.88" y="430.01"/>
+				<orientation radians="3.10"/>
+				<width metres="16.70"/>
+				<unit_capabilities>
+				</unit_capabilities>
+				<unit_experience level="0"/>
+			</unit>
+
+			<unit script_name="dwarf_1">
+				<unit_type type="wh_main_dwf_inf_quarrellers_0"/>
+				<position x="-32.25" y="433.17"/>
+				<orientation radians="3.10"/>
+				<width metres="22.90"/>
+				<unit_capabilities>
+				</unit_capabilities>
+				<unit_experience level="0"/>
+			</unit>
+
+			<unit script_name="dwarf_1">
+				<unit_type type="wh_main_dwf_inf_quarrellers_0"/>
+				<position x="-57.13" y="432.04"/>
+				<orientation radians="3.10"/>
+				<width metres="22.90"/>
+				<unit_capabilities>
+				</unit_capabilities>
+				<unit_experience level="0"/>
+			</unit>
+
+			<unit script_name="dwarf_1">
+				<unit_type type="wh_main_dwf_inf_thunderers_0"/>
+				<position x="-16.01" y="417.19"/>
+				<orientation radians="3.10"/>
+				<width metres="30.65"/>
+				<unit_capabilities>
+					</unit_capabilities>
+				<unit_experience level="0"/>
+			</unit>
+			
+			
+			<!-- enemy reinforcements -->
+			<reinforcement_army approach_angle="270">
+				<faction>wh_main_dwf_dwarfs_qb1</faction>
+				<deployment_area>
+					<centre x="-50.88" y="-509.48"/>
+					<width metres="258.94"/>
+					<height metres="258.05"/>
+					<orientation radians="0.00"/>
+				</deployment_area>
+				<camera_start_position x="-57.80" y="174.74" z="-619.60"/>
+				<camera_target_position x="-50.16" y="97.81" z="-413.77"/>
+				<campaign_ai_battle_hints aggression="0.50"/>
+				
+				<unit script_name="dwarf_2">
+				<unit_type type="wh_main_dwf_cha_master_engineer_0"/>
+				<position x="-37.07" y="416.38"/>
+				<orientation radians="3.10"/>
+				<width metres="1.50"/>
+				<unit_capabilities>
+				</unit_capabilities>
+				<general>
+					<name>666777902</name>
+					<star_rating level="0"/>
+					<portrait>ui/portraits/portholes/wh_main_dwf_dwarfs/dwf_master_engineer_campaign_02_0.png</portrait>
+				</general>
+				<unit_experience level="0"/>
+			</unit>
+				
+				<unit script_name="dwarf_2">
+					<unit_type type="wh_dlc06_dwf_inf_rangers_0"/>
+					<width metres="258.94"/>
+					<height metres="258.05"/>
+					<orientation radians="0.00"/>
+					<unit_capabilities>
+					</unit_capabilities>
+					<unit_experience level="0"/>
+				</unit>
+
+				<unit script_name="dwarf_2">
+					<unit_type type="wh_main_dwf_inf_dwarf_warrior_0"/>
+					<width metres="258.94"/>
+					<height metres="258.05"/>
+					<orientation radians="0.00"/>
+					<unit_capabilities>
+					</unit_capabilities>
+					<unit_experience level="0"/>
+				</unit>
+
+				<unit script_name="dwarf_2">
+					<unit_type type="wh_main_dwf_inf_dwarf_warrior_0"/>
+					<width metres="258.94"/>
+					<height metres="258.05"/>
+					<orientation radians="0.00"/>
+					<unit_capabilities>
+					</unit_capabilities>
+					<unit_experience level="0"/>
+				</unit>
+
+				<unit script_name="dwarf_2">
+					<unit_type type="wh_main_dwf_inf_dwarf_warrior_1"/>
+					<width metres="258.94"/>
+					<height metres="258.05"/>
+					<orientation radians="0.00"/>
+					<unit_capabilities>
+					</unit_capabilities>
+					<unit_experience level="0"/>
+				</unit>
+
+				<unit script_name="dwarf_2">
+					<unit_type type="wh_main_dwf_inf_dwarf_warrior_1"/>
+					<width metres="258.94"/>
+					<height metres="258.05"/>
+					<orientation radians="0.00"/>
+					<unit_capabilities>
+					</unit_capabilities>
+					<unit_experience level="0"/>
+				</unit>
+
+				<unit script_name="dwarf_2">
+					<unit_type type="wh_main_dwf_inf_longbeards_1"/>
+					<width metres="258.94"/>
+					<height metres="258.05"/>
+					<orientation radians="0.00"/>
+					<unit_capabilities>
+					</unit_capabilities>
+					<unit_experience level="0"/>
+				</unit>
+
+				<unit script_name="dwarf_2">
+					<unit_type type="wh_main_dwf_inf_miners_0"/>
+					<width metres="258.94"/>
+					<height metres="258.05"/>
+					<orientation radians="0.00"/>
+					<unit_capabilities>
+					</unit_capabilities>
+					<unit_experience level="0"/>
+				</unit>
+
+				<unit script_name="dwarf_2">
+					<unit_type type="wh_main_dwf_inf_slayers"/>
+					<width metres="258.94"/>
+					<height metres="258.05"/>
+					<orientation radians="0.00"/>
+					<unit_capabilities>
+					</unit_capabilities>
+					<unit_experience level="0"/>
+				</unit>
+
+				<unit script_name="dwarf_2">
+					<unit_type type="wh_main_dwf_inf_slayers"/>
+					<width metres="258.94"/>
+					<height metres="258.05"/>
+					<orientation radians="0.00"/>
+					<unit_capabilities>
+					</unit_capabilities>
+					<unit_experience level="0"/>
+				</unit>
+			</reinforcement_army>
+		</army>
+		
+		
+		<victory_condition>
+			<kill_or_rout_enemy></kill_or_rout_enemy>
+		</victory_condition>
+		<rout_position x="0.00" y="0.00"/>
+	</alliance>
+
+	<battle_description>
+		<time_of_day>day</time_of_day>
+		<season>Spring</season>
+		<precipitation_type>dry</precipitation_type>
+		<battle_script prepare_for_fade_in="false">script/battle/lichemaster/intro_battle/battle_script.lua</battle_script>
+		<type>underground_intercept</type>
+		<duration>3600.00</duration>
+		<timeout_winning_alliance_index>1</timeout_winning_alliance_index>
+	</battle_description>
+	<weather>
+		<prevailing_wind x="1.00" y="0.00"/>
+		<environment_key>weather/battle/wh_falls_02.environment</environment_key>
+	</weather>
+	<sea_surface_name>wind_level_0</sea_surface_name>
+	<battle_map_definition>
+		<name>terrain/battles/subterranean_battle_b/</name>
+		<tile_map_position x="0.5" y="0.5"/>
+		<tile_upgrade>faction:dwf</tile_upgrade>
+		<tile_upgrade>settlement_towers_default</tile_upgrade>
+		<tile_upgrade>quest_battle_default</tile_upgrade>
+		<tile_upgrade>attacker_direction_south</tile_upgrade>
+	</battle_map_definition>
+</battle>

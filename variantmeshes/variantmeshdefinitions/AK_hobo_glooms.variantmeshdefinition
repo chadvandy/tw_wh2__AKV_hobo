@@ -1,0 +1,67 @@
+<VARIANT_MESH>
+
+<SLOT name="bodies">
+<VARIANT_MESH>
+	<SLOT name="head" >
+		<VARIANT_MESH model="VariantMeshes/wh_variantmodels/hu1/brt/brt_peasants_bowmen/head/AK_hobo_glooms_head_01.wsmodel" />
+		<VARIANT_MESH model="VariantMeshes/wh_variantmodels/hu1/brt/brt_peasants_bowmen/head/AK_hobo_glooms_head_02.wsmodel" />
+		<VARIANT_MESH model="VariantMeshes/wh_variantmodels/hu1/brt/brt_peasants_bowmen/head/AK_hobo_glooms_head_03.wsmodel" />
+	</SLOT>
+	<SLOT name="body" >
+		<VARIANT_MESH model="VariantMeshes/wh_variantmodels/hu1/brt/brt_peasants_bowmen/body/AK_hobo_glooms_body_01.wsmodel" />
+		<VARIANT_MESH model="VariantMeshes/wh_variantmodels/hu1/brt/brt_peasants_bowmen/body/AK_hobo_glooms_body_02.wsmodel" />
+	</SLOT>
+	<SLOT name="legs" >
+		<VARIANT_MESH model="VariantMeshes/wh_variantmodels/hu1/brt/brt_peasants_bowmen/legs/AK_hobo_glooms_legs_01.wsmodel" />
+		<VARIANT_MESH model="VariantMeshes/wh_variantmodels/hu1/brt/brt_peasants_bowmen/legs/AK_hobo_glooms_legs_02.wsmodel" />
+	</SLOT>
+</VARIANT_MESH>
+<VARIANT_MESH>
+	<SLOT name="head" >
+		<VARIANT_MESH model="VariantMeshes\wh_variantmodels\hu1\vmp\vmp_skeleton_warriors\head\AK_hobo_glooms_skullbl_01.wsmodel"  />
+		<VARIANT_MESH model="VariantMeshes\wh_variantmodels\hu1\vmp\vmp_skeleton_warriors\head\AK_hobo_glooms_skullbl_03.wsmodel"  />
+		<VARIANT_MESH model="VariantMeshes\wh_variantmodels\hu1\vmp\vmp_skeleton_warriors\head\AK_hobo_glooms_skullbl_05.wsmodel"  />
+	</SLOT>
+	<SLOT name="torso" >
+		<VARIANT_MESH model="VariantMeshes\wh_variantmodels\hu1\vmp\vmp_skeleton_warriors\torso\AK_hobo_glooms_torsobl_01.wsmodel"  >
+			<META_DATA>audio_entity_type:wh_skeleton</META_DATA>			<META_DATA>audio_armour_type:bone</META_DATA></VARIANT_MESH>
+		<VARIANT_MESH model="VariantMeshes\wh_variantmodels\hu1\vmp\vmp_skeleton_warriors\torso\AK_hobo_glooms_torsobl_03.wsmodel"  >
+			<META_DATA>audio_entity_type:wh_skeleton</META_DATA>			<META_DATA>audio_armour_type:bone</META_DATA></VARIANT_MESH>
+	</SLOT>
+	<SLOT name="legs" >
+		<VARIANT_MESH model="VariantMeshes\wh_variantmodels\hu1\vmp\vmp_skeleton_warriors\legs\skeleton_legs_nagash_01.wsmodel"  />
+		<VARIANT_MESH model="VariantMeshes\wh_variantmodels\hu1\vmp\vmp_skeleton_warriors\legs\skeleton_legs_nagash_02.wsmodel"  />
+		<VARIANT_MESH model="VariantMeshes\wh_variantmodels\hu1\vmp\vmp_skeleton_warriors\legs\skeleton_legs_nagash_03.wsmodel"  />
+		<VARIANT_MESH model="VariantMeshes\wh_variantmodels\hu1\vmp\vmp_skeleton_warriors\legs\skeleton_legs_nagash_04.wsmodel"  />
+		<VARIANT_MESH model="VariantMeshes\wh_variantmodels\hu1\vmp\vmp_skeleton_warriors\legs\skeleton_legs_nagash_05.wsmodel"  />
+	</SLOT>
+</VARIANT_MESH>
+<VARIANT_MESH>
+	<SLOT name="head" >
+		<VARIANT_MESH model="VariantMeshes\wh_variantmodels\hu1\vmp\vmp_skeleton_warriors\head\AK_hobo_glooms_skullgr_01.wsmodel" />
+		<VARIANT_MESH model="VariantMeshes\wh_variantmodels\hu1\vmp\vmp_skeleton_warriors\head\AK_hobo_glooms_skullgr_03.wsmodel" />
+		<VARIANT_MESH model="VariantMeshes\wh_variantmodels\hu1\vmp\vmp_skeleton_warriors\head\AK_hobo_glooms_skullgr_05.wsmodel" />
+	</SLOT>
+	<SLOT name="torso" >
+		<VARIANT_MESH model="VariantMeshes\wh_variantmodels\hu1\vmp\vmp_skeleton_warriors\torso\skeleton_torso_mortis_01.wsmodel" >
+			<META_DATA>audio_entity_type:wh_skeleton</META_DATA>			<META_DATA>audio_armour_type:bone</META_DATA></VARIANT_MESH>
+		<VARIANT_MESH model="VariantMeshes\wh_variantmodels\hu1\vmp\vmp_skeleton_warriors\torso\skeleton_torso_mortis_02.wsmodel" >
+			<META_DATA>audio_entity_type:wh_skeleton</META_DATA>			<META_DATA>audio_armour_type:bone</META_DATA></VARIANT_MESH>
+		<VARIANT_MESH model="VariantMeshes\wh_variantmodels\hu1\vmp\vmp_skeleton_warriors\torso\skeleton_torso_mortis_03.wsmodel" >
+			<META_DATA>audio_entity_type:wh_skeleton</META_DATA>			<META_DATA>audio_armour_type:bone</META_DATA></VARIANT_MESH>
+		<VARIANT_MESH model="VariantMeshes\wh_variantmodels\hu1\vmp\vmp_skeleton_warriors\torso\skeleton_torso_mortis_04.wsmodel" >
+			<META_DATA>audio_entity_type:wh_skeleton</META_DATA>			<META_DATA>audio_armour_type:bone</META_DATA></VARIANT_MESH>
+		<VARIANT_MESH model="VariantMeshes\wh_variantmodels\hu1\vmp\vmp_skeleton_warriors\torso\skeleton_torso_mortis_05.wsmodel" >
+			<META_DATA>audio_entity_type:wh_skeleton</META_DATA>			<META_DATA>audio_armour_type:bone</META_DATA></VARIANT_MESH>
+	</SLOT>
+	<SLOT name="legs" >
+		<VARIANT_MESH model="VariantMeshes\wh_variantmodels\hu1\vmp\vmp_skeleton_warriors\legs\skeleton_legs_mortis_01.wsmodel" />
+		<VARIANT_MESH model="VariantMeshes\wh_variantmodels\hu1\vmp\vmp_skeleton_warriors\legs\skeleton_legs_mortis_02.wsmodel" />
+		<VARIANT_MESH model="VariantMeshes\wh_variantmodels\hu1\vmp\vmp_skeleton_warriors\legs\skeleton_legs_mortis_03.wsmodel" />
+		<VARIANT_MESH model="VariantMeshes\wh_variantmodels\hu1\vmp\vmp_skeleton_warriors\legs\skeleton_legs_mortis_04.wsmodel" />
+		<VARIANT_MESH model="VariantMeshes\wh_variantmodels\hu1\vmp\vmp_skeleton_warriors\legs\skeleton_legs_mortis_05.wsmodel" />
+	</SLOT>
+</VARIANT_MESH>
+</SLOT>
+</VARIANT_MESH>
+

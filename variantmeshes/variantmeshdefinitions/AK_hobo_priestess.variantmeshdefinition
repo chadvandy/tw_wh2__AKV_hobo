@@ -1,0 +1,20 @@
+<VARIANT_MESH>
+
+
+	<META_DATA>equipment</META_DATA>
+	<SLOT name="body" >
+		<VARIANT_MESH model="VariantMeshes/wh_variantmodels/hu1b/tmb/tmb_khalida/AK_hobo_priestess_kh.wsmodel" >
+			<META_DATA>audio_entity_type:wh2_dlc_tmb_khalida_LORD</META_DATA>			<META_DATA>audio_armour_type:leather</META_DATA></VARIANT_MESH>
+	</SLOT>
+
+
+	<SLOT name="head" >
+		<VARIANT_MESH model="VariantMeshes/wh_variantmodels/hu1b/tmb/tmb_khalida/AK_hobo_priestess_sorc_head.wsmodel" />
+	</SLOT>
+	<SLOT name="body" >
+		<VARIANT_MESH model="VariantMeshes\wh_variantmodels\hu1b\wef\wef_spellsingers\torso\AK_hobo_priestess_hippie_body.wsmodel"  />
+	</SLOT>
+	<SLOT name="legs" >
+		<VARIANT_MESH model="VariantMeshes\wh_variantmodels\hu1b\wef\wef_spellsingers\legs\AK_hobo_priestess_hippie_legs.wsmodel"  />
+	</SLOT>
+</VARIANT_MESH>

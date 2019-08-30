@@ -1,0 +1,31 @@
+<VARIANT_MESH>
+	<SLOT name="neck" >
+		<VARIANT_MESH model="VariantMeshes/wh_variantmodels/hu1/vmp/vmp_wight_king/head/AK_hobo_simulacra_wking_neck.rigid_model_v2" />
+	</SLOT>
+	<SLOT name="helmet" >
+		<VARIANT_MESH model="VariantMeshes/wh_variantmodels/hu1/vmp/vmp_wight_king/head/AK_hobo_simulacra_wking_helmet_01.wsmodel" />
+		<VARIANT_MESH model="VariantMeshes/wh_variantmodels/hu1/vmp/vmp_wight_king/head/AK_hobo_simulacra_wking_helmet_02.wsmodel" />
+		<VARIANT_MESH model="VariantMeshes/wh_variantmodels/hu1/vmp/vmp_wight_king/head/AK_hobo_simulacra_wking_helmet_03.wsmodel" />
+		<VARIANT_MESH model="VariantMeshes/wh_variantmodels/hu1/vmp/vmp_wight_king/head/AK_hobo_simulacra_wking_helmet_04.wsmodel" />
+	</SLOT>
+	<SLOT name="body" >
+		<VARIANT_MESH model="VariantMeshes/wh_variantmodels/hu1/vmp/vmp_wight_king/body/AK_hobo_simulacra_wking_body.wsmodel" >
+			<META_DATA>audio_armour_type:stone</META_DATA>			<META_DATA>audio_entity_type:wh2_tmb_ushabti</META_DATA></VARIANT_MESH>
+	</SLOT>
+	<SLOT name="legs" >
+		<VARIANT_MESH model="VariantMeshes\wh_variantmodels\hu1\vmp\vmp_vampire_lord\legs\AK_hobo_simulacra_vamp_legs_01.wsmodel"  />
+	</SLOT>
+	<SLOT name="ivy" probability ="0.5" >
+		<VARIANT_MESH model="VariantMeshes/wh_variantmodels/hu1/vmp/vmp_wight_king/legs/AK_hobo_simulacra_wking_legs.wsmodel" />
+	</SLOT>
+
+	<SLOT name="weapon_2" attach_point="be_prop_1" >
+		<VARIANT_MESH model="VariantMeshes/wh_variantmodels/hu1d/def/def_props/def_doomfire_warlock_swords_1h_01.wsmodel" >
+			<META_DATA>audio_melee_weapon_type:sword</META_DATA></VARIANT_MESH>
+		<VARIANT_MESH model="VariantMeshes/wh_variantmodels/hu1d/def/def_props/def_doomfire_warlock_swords_1h_02.wsmodel" >
+			<META_DATA>audio_melee_weapon_type:sword</META_DATA></VARIANT_MESH>
+		<VARIANT_MESH model="VariantMeshes/wh_variantmodels/hu1d/def/def_props/def_doomfire_warlock_swords_1h_03.wsmodel" >
+			<META_DATA>audio_melee_weapon_type:sword</META_DATA></VARIANT_MESH>
+	</SLOT>
+	<SLOT name="shield" attach_point="be_prop_2" />
+</VARIANT_MESH>

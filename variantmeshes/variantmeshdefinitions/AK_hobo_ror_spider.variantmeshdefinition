@@ -1,0 +1,9 @@
+<VARIANT_MESH>
+	<SLOT name="body" >
+		<VARIANT_MESH model="VariantMeshes/wh_variantmodels/sp1/grn/grn_arachnorok/AK_hobo_ror_spider.wsmodel" >
+			<META_DATA>audio_entity_type:wh_spider_large</META_DATA>			<META_DATA>audio_armour_type:body</META_DATA></VARIANT_MESH>
+	</SLOT>
+	<SLOT name="body" >
+		<VARIANT_MESH model="VariantMeshes/wh_variantmodels/sp1/grn/grn_arachnorok/AK_hobo_ror_spider_butt.wsmodel" />
+	</SLOT>
+</VARIANT_MESH>

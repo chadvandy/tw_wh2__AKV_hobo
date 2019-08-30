@@ -1,0 +1,25 @@
+<VARIANT_MESH>
+	<SLOT name="body" >
+		<VARIANT_MESH model="VariantMeshes/wh_variantmodels/sn1/tmb/tmb_necroserpents/body/AK_hobo_snek_body_01.wsmodel" >
+			<META_DATA>audio_entity_type:wh2_tmb_necro_serpent</META_DATA>			<META_DATA>audio_armour_type:heavy_metal</META_DATA></VARIANT_MESH>
+		<VARIANT_MESH model="VariantMeshes/wh_variantmodels/sn1/tmb/tmb_necroserpents/body/AK_hobo_snek_body_02.wsmodel" >
+			<META_DATA>audio_entity_type:wh2_tmb_necro_serpent</META_DATA>			<META_DATA>audio_armour_type:heavy_metal</META_DATA></VARIANT_MESH>
+		<VARIANT_MESH model="VariantMeshes/wh_variantmodels/sn1/tmb/tmb_necroserpents/body/AK_hobo_snek_body_03.wsmodel" >
+			<META_DATA>audio_entity_type:wh2_tmb_necro_serpent</META_DATA>			<META_DATA>audio_armour_type:heavy_metal</META_DATA></VARIANT_MESH>
+		<VARIANT_MESH model="VariantMeshes/wh_variantmodels/sn1/tmb/tmb_necroserpents/body/AK_hobo_snek_body_04.wsmodel" >
+			<META_DATA>audio_entity_type:wh2_tmb_necro_serpent</META_DATA>			<META_DATA>audio_armour_type:heavy_metal</META_DATA></VARIANT_MESH>
+	</SLOT>
+	<SLOT name="head" >
+		<VARIANT_MESH model="VariantMeshes/wh_variantmodels/sn1/tmb/tmb_necroserpents/head/AK_hobo_snek_head_01.wsmodel" />
+		<VARIANT_MESH model="VariantMeshes/wh_variantmodels/sn1/tmb/tmb_necroserpents/head/AK_hobo_snek_head_02.wsmodel" />
+		<VARIANT_MESH model="VariantMeshes/wh_variantmodels/sn1/tmb/tmb_necroserpents/head/AK_hobo_snek_head_03.wsmodel" />
+		<VARIANT_MESH model="VariantMeshes/wh_variantmodels/sn1/tmb/tmb_necroserpents/head/AK_hobo_snek_head_04.wsmodel" />
+		<VARIANT_MESH model="VariantMeshes/wh_variantmodels/sn1/tmb/tmb_necroserpents/head/AK_hobo_snek_head_05.wsmodel" />
+	</SLOT>
+	<SLOT name="tail" >
+		<VARIANT_MESH model="VariantMeshes/wh_variantmodels/sn1/tmb/tmb_necroserpents/tail/AK_hobo_snek_tail_01.wsmodel" />
+		<VARIANT_MESH model="VariantMeshes/wh_variantmodels/sn1/tmb/tmb_necroserpents/tail/AK_hobo_snek_tail_02.wsmodel" />
+		<VARIANT_MESH model="VariantMeshes/wh_variantmodels/sn1/tmb/tmb_necroserpents/tail/AK_hobo_snek_tail_03.wsmodel" />
+		<VARIANT_MESH model="VariantMeshes/wh_variantmodels/sn1/tmb/tmb_necroserpents/tail/AK_hobo_snek_tail_04.wsmodel" />
+	</SLOT>
+</VARIANT_MESH>

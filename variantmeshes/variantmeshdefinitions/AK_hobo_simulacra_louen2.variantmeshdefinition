@@ -1,0 +1,18 @@
+<VARIANT_MESH>
+	<SLOT name="body louen1" >
+		<VARIANT_MESH model="VariantMeshes\wh_variantmodels\hu1\brt\brt_louen_leoncoeur\AK_hobo_simulacra_louen2.wsmodel" >
+			<META_DATA>audio_entity_type:wh2_tmb_ushabti</META_DATA>			<META_DATA>audio_armour_type:stone</META_DATA></VARIANT_MESH>
+
+	</SLOT>
+
+
+
+
+	<SLOT name="weapon_1" attach_point="be_prop_0" >
+		<VARIANT_MESH model="VariantMeshes/wh_variantmodels/hu1/brt/brt_props/AK_hobo_simulacra_greatsword_02bis.wsmodel" >
+			<META_DATA>equipment</META_DATA>			<META_DATA>audio_melee_weapon_type:sword</META_DATA></VARIANT_MESH>
+		<VARIANT_MESH model="VariantMeshes/wh_variantmodels/hu1/brt/brt_props/AK_hobo_simulacra_greatsword_03bis.wsmodel" >
+			<META_DATA>equipment</META_DATA>			<META_DATA>audio_melee_weapon_type:sword</META_DATA></VARIANT_MESH>
+	</SLOT>
+
+</VARIANT_MESH>

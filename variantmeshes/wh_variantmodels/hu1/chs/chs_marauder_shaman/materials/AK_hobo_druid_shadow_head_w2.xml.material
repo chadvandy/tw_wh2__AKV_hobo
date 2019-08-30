@@ -1,0 +1,35 @@
+<material>
+ <name>AK_hobo_druid_shadow_head_w2.xml</name>
+ <shader>shaders/weighted2_ethereal_optimized.xml.shader</shader>
+ <sort_override>255</sort_override>
+ <textures>
+  <texture>
+   <slot>s_diffuse</slot>
+      <source>VariantMeshes/wh_variantmodels/hu1/chs/chs_marauder_shaman/tex/chs_marauder_shaman_head_01_diffuse.dds</source>
+  </texture>
+  <texture>
+   <slot>s_dither</slot>
+   <source>commontextures/dither.dds</source>
+  </texture>
+  <texture>
+   <slot>s_Texture12</slot>
+   <source>commontextures/winds_of_magic_noise.dds</source>
+  </texture>
+  <texture>
+   <slot>s_Texture13</slot>
+   <source>commontextures/winds_of_magic_specular.dds</source>
+  </texture>
+ </textures>
+ <params>
+  <param>
+   <name>emissive_colour</name>
+   <type>float3</type>
+   <value>1.5,2.2,2.5</value>
+  </param>
+  <param>
+   <name>strength</name>
+   <type>float</type>
+   <value>0.5</value>
+  </param>
+ </params>
+</material>

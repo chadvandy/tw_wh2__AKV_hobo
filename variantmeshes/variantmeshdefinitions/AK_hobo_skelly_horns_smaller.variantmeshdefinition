@@ -1,0 +1,8 @@
+<VARIANT_MESH>
+		<SLOT name="horns"  >
+			<VARIANT_MESH model="VariantMeshes\wh_variantmodels\hu3\dwf\dwf_warriors\head\AK_hobo_skelly_horns_04.wsmodel" />
+			<VARIANT_MESH model="VariantMeshes\wh_variantmodels\hu3\dwf\dwf_warriors\head\AK_hobo_skelly_horns_05.wsmodel" />
+			<VARIANT_MESH model="VariantMeshes\wh_variantmodels\hu3\dwf\dwf_warriors\head\AK_hobo_skelly_horns_06.wsmodel" />
+		</SLOT>
+
+</VARIANT_MESH>
