@@ -173,6 +173,8 @@ local function add_pr_uic()
     local function adjust_tooltip()
         local tooltip = find_uicomponent(core:get_ui_root(), "tooltip_pooled_resource_breakdown")
         tooltip:SetVisible(true)
+
+        print_all_uicomponent_children(tooltip)
     
         local list_parent = find_uicomponent(tooltip, "list_parent")
     
@@ -219,7 +221,7 @@ local function add_pr_uic()
             diff = diff + factor:value() -- adds/subtracts to set the "Change This turn" number
         end
 
-        local total = find_child_uicomponent(list_parent, "total")
+        local total = find_child_uicomponent(list_parent, "change_this_turn")
         local total_val = find_child_uicomponent(total, "dy_value")
         if diff < 0 then
             total_val:SetState('0')
