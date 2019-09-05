@@ -335,19 +335,104 @@ local function add_pr_uic()
     )
 end
 
+local function set_hunters_panel()
+    local hunter_button = find_uicomponent(core:get_ui_root(), "layout", "faction_buttons_docker", "button_group_management", "button_hunters")
+    if hunter_button then
+        hunter_button:SetVisible(true)
+    end
+
+    local function hide_vanilla_bois()
+        local panel = find_uicomponent(core:get_ui_root(), "hunters_panel")
+        local char_list = find_uicomponent(panel, "main", "characters_holder", "character_tab_parent_list")
+        
+        find_uicomponent(char_list, "wh2_dlc13_emp_hunter_doctor_hertwig_van_hal"):SetVisible(false)
+        find_uicomponent(char_list, "wh2_dlc13_emp_hunter_jorek_grimm"):SetVisible(false)
+        find_uicomponent(char_list, "wh2_dlc13_emp_hunter_kalara_of_wydrioth"):SetVisible(false)
+        find_uicomponent(char_list, "wh2_dlc13_emp_hunter_rodrik_l_anguille"):SetVisible(false)
+    end
+
+    local function kill_movie()
+        local panel = find_uicomponent(core:get_ui_root(), "hunters_panel")
+        local character_holder = find_uicomponent(panel, "main", "characters_holder", "character_template", "character_holder")
+        local movie = find_uicomponent(character_holder, "movie")
+
+        --movie:Resize(1, 1) movie:MoveTo(0,0)
+        movie:SetVisible(false)
+    end
+
+    -- check states and shit?
+    --v function(subtype: string)
+    local function panel_check(subtype)
+        local panel = find_uicomponent(core:get_ui_root(), "hunters_panel")
+        local character_holder = find_uicomponent(panel, "main", "characters_holder", "character_template", "character_holder")
+        local movie = find_uicomponent(character_holder, "movie")
+        local locked_character = find_uicomponent(character_holder, "locked_character")
+
+        local dy_character_name = find_uicomponent(panel, "main", "characters_holder", "dy_character_name")
+        dy_character_name:SetStateText("Fucking")
+
+        -- read if the character is un/locked
+
+        --movie:Resize(1, 1) movie:MoveTo(0,0)
+        movie:SetVisible(false)
+        locked_character:SetImagePath("ui/kemmler/"..subtype.."_bg.png")
+        locked_character:SetVisible(true)
+    end
+
+    core:add_listener(
+        "KemmlersHunters",
+        "PanelOpenedCampaign",
+        function(context)
+            return context.string == "hunters_panel"
+        end,
+        function(context)
+            local panel = find_uicomponent(core:get_ui_root(), "hunters_panel")
+            local char_list = find_uicomponent(panel, "main", "characters_holder", "character_tab_parent_list")
+
+            -- rename the component
+            local title = find_uicomponent(panel, "header_frame", "dy_faction") 
+            title:SetStateText("Dark Forces or something")
+
+            -- set up the scene to be on Nameless, instead of on Van Hel
+            local click = find_uicomponent(char_list, "AK_hobo_nameless") 
+            if click then 
+                click:SimulateLClick() 
+            end
+
+            find_uicomponent(char_list, "AK_hobo_nameless"):SetImagePath("ui/kemmler/AK_hobo_nameless_mini.png")
+            find_uicomponent(char_list, "AK_hobo_draesca"):SetImagePath("ui/kemmler/AK_hobo_draesca_mini.png")
+            find_uicomponent(char_list, "AK_hobo_priestess"):SetImagePath("ui/kemmler/AK_hobo_priestess_mini.png")
+
+            -- hide the vanilla Hunters
+            hide_vanilla_bois()
+
+            -- set text and backgrounds and what not
+            panel_check("AK_hobo_nameless")
+        end,
+        true
+    )
+
+    core:add_listener(
+        "KemmlersHuntersButtons",
+        "ComponentLClickUp",
+        function(context)
+            local t = context.string
+            local uic = UIComponent(context.component)
+            return (t == "AK_hobo_nameless" or t == "AK_hobo_priestess" or t == "AK_hobo_draesca") and UIComponent(uic:Parent()):Id() == "character_tab_parent_list"
+        end,
+        function(context)
+            panel_check(context.string)
+            cm:callback(function()
+                kill_movie()
+            end, 0.1)
+        end,
+        true
+    )
+end
 
 ----------------
 -- Listeners! --
 ----------------
-
--- needed to be done on UI created for obvious reasons
-core:add_ui_created_callback(
-    function()
-        if cm:whose_turn_is_it() == legion then
-            kill_blood_kisses_and_tech()
-        end
-    end
-)
 
 -- this is triggered ONCE, after the faction start script (wh2_dlc11_vmp_the_barrow_legion_start.lua) is over and the intro battle is completed
 function lichemaster_postbattle_setup()
@@ -395,7 +480,7 @@ function liche_init()
             function(context)
                 CampaignUI.ClearSelection()
                 kill_blood_kisses_and_tech()
-                --lm:necropower_button()
+                set_hunters_panel()
             end,
             true
         )
@@ -1259,144 +1344,6 @@ function liche_init()
         )
 
 
-        -- track battles completed and find Kemmler's success
-        --[[core:add_listener(
-            "LicheBattleTracker",
-            "BattleCompleted",
-            function(context)
-                return cm:pending_battle_cache_faction_is_involved("wh2_dlc11_vmp_the_barrow_legion")
-            end,
-            function(context)
-                -- don't ask me why this is necessary, but it is
-                if cm:pending_battle_cache_num_defenders() >= 1 and cm:pending_battle_cache_num_attackers() >=1 then
-
-                    -- player variable is used to define which side the player was on, defense or offense
-                    local player --: string
-                    local enemy_faction --: string
-
-                    for i = 1, cm:pending_battle_cache_num_attackers() do
-                        local this_char_cqi, this_mf_cqi, this_faction = cm:pending_battle_cache_get_attacker(i)
-                        if this_faction == legion then
-                            player = "attacker"
-                        end
-                    end
-                    
-                    for i = 1, cm:pending_battle_cache_num_defenders() do
-                        local this_char_cqi, this_mf_cqi, this_faction = cm:pending_battle_cache_get_defender(i)
-                        if this_faction == legion then
-                            player = "defender"
-                        end
-                    end
-
-                    if not player then
-                        lm:log("POST-BATTLE: Kemmler's faction not found in battle, despite being cached! Investigate?")
-                        return
-                    end
-
-                    if player == "defender" then
-                        local this_char_cqi, this_mf_cqi, this_faction = cm:pending_battle_cache_get_attacker(1)
-                        enemy_faction = this_faction
-                    elseif player == "attacker" then
-                        local this_char_cqi, this_mf_cqi, this_faction = cm:pending_battle_cache_get_defender(1)
-                        enemy_faction = this_faction
-                    end
-
-                    local attacker_won = cm:pending_battle_cache_attacker_victory()
-                    local attacker_value = cm:pending_battle_cache_attacker_value()
-
-                    local defender_won = cm:pending_battle_cache_defender_victory()
-                    local defender_value = cm:pending_battle_cache_defender_value()
-
-                    if not attacker_won and not defender_won then
-                        -- draw or retreat or flee, do nothing
-                        lm:log("POST-BATTLE: Both sides lost battle; not tracking NP change!")
-                        return
-                    end
-
-                    lm:log("POST-BATTLE: Kemmler fought as ["..player.."].")
-                    lm:log("POST-BATTLE: Enemy faction key ["..enemy_faction.."].")
-
-
-                    -- divide value of defender and attacker armies, to get a multiplier for NP value, if the player wins
-                    -- base the amount of NP lost on how many troops were lost
-                    if player == "attacker" then 
-                        if attacker_won then 
-                            local multiplier = defender_value / attacker_value 
-                            multiplier = math.clamp(multiplier, 0.5, 1.5)
-
-                            local np_result = (defender_value / 1000) * multiplier
-                            local kill_ratio = cm:model():pending_battle():percentage_of_defender_killed()
-                            np_result = np_result * kill_ratio
-                            if np_result >= 10 then np_result = 10 end
-                            cm:faction_add_pooled_resource(legion, "necropower", "necropower_battles", np_result)
-
-                            lm:log("POST-BATTLE: Kemmler wins! Necromantic Power added for Kemmler.")
-                            lm:log("POST-BATTLE: Necromantic Power added [" .. np_result .. "].")
-                            lm:log("POST-BATTLE: Defender army gold-value is [" .. defender_value .. "].")
-                            lm:log("POST-BATTLE: Attacker army gold-value is [" .. attacker_value .. "].")
-                            --lm:log("POST-BATTLE: Multiplier " .. multiplier)
-                            --lm:log("Kill Ratio: ".. kill_ratio)
-                        else
-                            local np_result --: number
-                            local loss_ratio = cm:model():pending_battle():percentage_of_attacker_killed()
-                            if loss_ratio >= 0.9 then
-                                np_result = 15
-                            else
-                                np_result = 12.5 * loss_ratio
-                            end
-
-                            np_result = np_result * -1
-
-                            cm:faction_add_pooled_resource(legion, "necropower", "necropower_battles", np_result)
-
-                            lm:log("POST-BATTLE: Kemmler loses! Necromantic Power removed from Kemmler.")
-                            lm:log("POST-BATTLE: Necromantic Power removed  [" .. np_result .. "].")
-                            lm:log("POST-BATTLE: Percentage of army lost [" .. loss_ratio .. "].")
-                        end
-
-                    elseif player == "defender" then
-                        if defender_won then
-                            local multiplier = attacker_value / defender_value
-                            
-                            multiplier = math.clamp(multiplier, 0.5, 1.5)
-
-                            local np_result = (attacker_value / 1000) * multiplier
-                            local kill_ratio = cm:model():pending_battle():percentage_of_attacker_killed()
-
-                            np_result = np_result * kill_ratio
-                            if np_result >= 10 then np_result = 10 end
-                            cm:faction_add_pooled_resource(legion, "necropower", "necropower_battles", np_result)
-
-                            lm:log("POST-BATTLE: Kemmler wins! Necromantic Power added for Kemmler.")
-                            lm:log("POST-BATTLE: Necromantic Power added [" .. np_result .. "].")
-                            lm:log("POST-BATTLE: Attacker army gold-value is [" .. attacker_value .. "].")
-                            lm:log("POST-BATTLE: Kemmler army gold-value is [" .. defender_value .. "].")
-                            --lm:log("POST-BATTLE: Multiplier " .. multiplier)
-                            --lm:log("Kill Ratio: ".. kill_ratio)
-                        else
-                            local np_result --: number
-                            local loss_ratio = cm:model():pending_battle():percentage_of_defender_killed()
-                            if loss_ratio >= 0.9 then
-                                np_result = 15
-                            else
-                                np_result = 12.5 * loss_ratio
-                            end
-
-                            np_result = np_result * -1
-
-                            cm:faction_add_pooled_resource(legion, "necropower", "necropower_battles", np_result)
-
-                            lm:log("POST-BATTLE: Kemmler loses! Necromantic Power removed from Kemmler.")
-                            lm:log("POST-BATTLE: Necromantic Power removed  [" .. np_result .. "].")
-                            lm:log("POST-BATTLE: Percentage of army lost [" .. loss_ratio .. "].")
-                        end
-                    end
-                end
-            end,
-            true
-        )]]
-
-
         local killBloodlines = {
             "wh2_dlc11_vmp_ritual_bloodline_awaken_blood_dragon_01",
             "wh2_dlc11_vmp_ritual_bloodline_awaken_blood_dragon_02",
@@ -1424,10 +1371,22 @@ function liche_init()
     if not ok then LicheLog.error(tostring(err)) end
 end
 
+-- needed to be done on UI created for obvious reasons
+core:add_ui_created_callback(
+    function()
+        if cm:whose_turn_is_it() == legion then
+            kill_blood_kisses_and_tech()
+        end
+    end
+)
+
 cm:add_first_tick_callback(
     function()
         local legion = cm:get_faction(legion)
         -- all the stuff that has to be done on Liche turnstart will also be done here, for loading games
+        if cm:get_local_faction() == legion then
+            
+        end
         if cm:whose_turn_is_it() == legion:name() and legion:is_human() then
 
             -- UI stuff
@@ -1435,6 +1394,8 @@ cm:add_first_tick_callback(
             CampaignUI.ClearSelection()
 
             add_pr_uic()
+
+            set_hunters_panel()
 
             -- quick check for NP life added
             local turn = cm:model():turn_number()
@@ -1450,5 +1411,6 @@ cm:add_first_tick_callback(
             end
 
         end
+        
     end
 )
