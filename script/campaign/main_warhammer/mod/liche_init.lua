@@ -351,15 +351,6 @@ local function set_hunters_panel()
         find_uicomponent(char_list, "wh2_dlc13_emp_hunter_rodrik_l_anguille"):SetVisible(false)
     end
 
-    local function kill_movie()
-        local panel = find_uicomponent(core:get_ui_root(), "hunters_panel")
-        local character_holder = find_uicomponent(panel, "main", "characters_holder", "character_template", "character_holder")
-        local movie = find_uicomponent(character_holder, "movie")
-
-        --movie:Resize(1, 1) movie:MoveTo(0,0)
-        movie:SetVisible(false)
-    end
-
     -- check states and shit?
     --v function(subtype: string)
     local function panel_check(subtype)
@@ -368,15 +359,24 @@ local function set_hunters_panel()
         local movie = find_uicomponent(character_holder, "movie")
         local locked_character = find_uicomponent(character_holder, "locked_character")
 
-        local dy_character_name = find_uicomponent(panel, "main", "characters_holder", "dy_character_name")
-        dy_character_name:SetStateText("Fucking")
+        local effects_holder = find_uicomponent(panel, "main", "characters_holder", "character_template", "effects_holder")
+        local attributes_text = find_uicomponent(effects_holder, "attributes_holder", "attributes_text")
+        attributes_text:SetStateText("Evil Specialities")
+
+        --local battle_effect_holder = find_uicomponent(effects_holder, "battle_effect_holder")
+        --battle_effect_holder:SetVisible(true)
 
         -- read if the character is un/locked
 
         --movie:Resize(1, 1) movie:MoveTo(0,0)
-        movie:SetVisible(false)
+        --movie:SetVisible(false)
+        movie:SetImagePath("ui/kemmler/"..subtype.."_bg.png")
+        local w, h = locked_character:Dimensions() movie:Resize(w, h)
         locked_character:SetImagePath("ui/kemmler/"..subtype.."_bg.png")
         locked_character:SetVisible(true)
+
+        local dy_character_name = find_uicomponent(panel, "main", "characters_holder", "dy_character_name")
+        dy_character_name:SetStateText("Fucking")
     end
 
     core:add_listener(
@@ -423,7 +423,7 @@ local function set_hunters_panel()
         function(context)
             panel_check(context.string)
             cm:callback(function()
-                kill_movie()
+                panel_check(context.string)
             end, 0.1)
         end,
         true
