@@ -335,6 +335,25 @@ local function add_pr_uic()
     )
 end
 
+local function hide_kemmler_hunter_panel()
+    core:add_listener(
+        "KillKemmlersHunters",
+        "PanelOpenedCampaign",
+        function(context)
+            return context.string == "hunters_panel"
+        end,
+        function(context)
+            local panel = find_uicomponent(core:get_ui_root(), "hunters_panel")
+            local char_list = find_uicomponent(panel, "main", "characters_holder", "character_tab_parent_list")
+
+            find_uicomponent(char_list, "AK_hobo_nameless"):SetVisible(false)
+            find_uicomponent(char_list, "AK_hobo_draesca"):SetVisible(false)
+            find_uicomponent(char_list, "AK_hobo_priestess"):SetVisible(false)
+        end,
+        true
+    )
+end
+
 local function set_hunters_panel()
     local hunter_button = find_uicomponent(core:get_ui_root(), "layout", "faction_buttons_docker", "button_group_management", "button_hunters")
     if hunter_button then
@@ -460,7 +479,7 @@ function lichemaster_postbattle_setup()
 end
 
 -- run every game creation or game load
-function liche_init()
+function liche_init_listeners()
     local ok, err = pcall(function()
         -- read through the entirety of the current region list on script load
         -- needed for every script load, as the ruins list isn't saved
@@ -492,39 +511,12 @@ function liche_init()
             "LicheNPUI",
             "FactionTurnStart",
             function(context)
-                return context:faction():name() == legion and context:faction():is_human()
+                return context:faction():name() == legion and cm:get_local_faction() == legion
             end,
             function(context)
                 CampaignUI.ClearSelection()
                 kill_blood_kisses_and_tech()
                 set_hunters_panel()
-            end,
-            true
-        )
-
-        -- every non-Kemmler turn, pop the UI that's hidden and hide the necropower button. Necessary for MP and stuff. Not the most elegant solution!
-        core:add_listener(
-            "LicheNPUIKill",
-            "FactionTurnEnd",
-            function(context)
-                return context:faction():name() == legion and context:faction():is_human()
-            end,
-            function(context)
-                --lm:clear_necropower_button()
-                return_tech()
-            end,
-            true
-        )
-
-        -- return blood kisses and bloodlines button for any VC faction when Kemmy is being played
-        core:add_listener(
-            "ReturnBloodKisses",
-            "FactionTurnStart",
-            function(context)
-                return context:faction():subculture() == "wh_main_sc_vmp_vampire_counts" and context:faction():name() ~= legion and context:faction():is_human() and cm:get_faction(legion):is_human()
-            end,
-            function(context)
-                return_blood_kisses()
             end,
             true
         )
@@ -669,7 +661,6 @@ function liche_init()
             end,
             function(context)
                 CampaignUI.ClearSelection()
-                --ROR.set() -- THIS IS DONE IN THE OTHER SCRIPT, LEAVE COMMENTED!
             end,
             true
         )
@@ -753,7 +744,7 @@ function liche_init()
             "LicheSettlementCapturedPanel",
             "PanelOpenedCampaign",
             function(context)
-                return context.string == "settlement_captured" and cm:whose_turn_is_it() == legion
+                return context.string == "settlement_captured" and cm:whose_turn_is_it() == legion and cm:get_local_faction() == legion
             end,
             function(context)
                 local root = core:get_ui_root()
@@ -829,7 +820,7 @@ function liche_init()
             "PanelOpenedCampaign",
             function(context)
                 local cuim = cm:get_campaign_ui_manager()
-                return context.string == "units_panel" and cuim:is_char_selected_from_faction(legion) and cm:whose_turn_is_it() == legion and cm:get_faction(legion):is_human()
+                return context.string == "units_panel" and cuim:is_char_selected_from_faction(legion) and cm:whose_turn_is_it() == legion and cm:get_local_faction() == legion
             end,
             function(context)
                 local cuim = cm:get_campaign_ui_manager()
@@ -866,7 +857,7 @@ function liche_init()
             "LicheCharacterTracker",
             "CharacterSelected",
             function(context)
-                return context:character():faction():name() == legion and cm:whose_turn_is_it() == legion
+                return context:character():faction():name() == legion and cm:whose_turn_is_it() == legion and cm:get_local_faction() == legion
             end,
             function(context)
                 lm:set_character_selected_cqi(context:character():cqi())
@@ -892,7 +883,7 @@ function liche_init()
             "LicheHordePanel",
             "ComponentLClickUp",
             function(context)
-                return context.string == "tab_horde_buildings" and cm:whose_turn_is_it() == legion
+                return context.string == "tab_horde_buildings" and cm:whose_turn_is_it() == legion and cm:get_local_faction() == legion
             end,
             function(context)
                 lm:lord_lock_UI()
@@ -1181,7 +1172,7 @@ function liche_init()
         )
 
         -- this actually doesn't do anything right now I think
-        core:add_listener(
+        --[[core:add_listener(
             "LicheShadowDruidUIThing",
             "CharacterSelected",
             function(context)
@@ -1201,14 +1192,14 @@ function liche_init()
                 end
             end,
             true
-        )
+        )]]
 
         core:add_listener(
             "LicheBattleTracker",
             "PanelOpenedCampaign",
             function(context)
                 -- only run this if Kemmy's faction is in the battle
-                return context.string == "popup_battle_results" and cm:pending_battle_cache_faction_is_involved(legion) and cm:get_faction(legion):is_human()
+                return context.string == "popup_battle_results" and cm:pending_battle_cache_faction_is_involved(legion) and cm:get_faction(legion):is_human() and cm:get_local_faction() == legion
             end,
             function(context)
                 -- needed to prevent some weird bugginess
@@ -1399,13 +1390,12 @@ core:add_ui_created_callback(
 
 cm:add_first_tick_callback(
     function()
-        local legion = cm:get_faction(legion)
+        -- check if Kemmler is the local player
         -- all the stuff that has to be done on Liche turnstart will also be done here, for loading games
-        if cm:get_local_faction() == legion then
-            
-        end
-        if cm:whose_turn_is_it() == legion:name() and legion:is_human() then
 
+        liche_init_listeners()
+
+        if cm:get_local_faction() == legion then
             -- UI stuff
             kill_blood_kisses_and_tech()
             CampaignUI.ClearSelection()
@@ -1426,8 +1416,8 @@ cm:add_first_tick_callback(
             if npvalue <= 20 then
                 lm:apply_attrition()
             end
-
+        else
+            hide_kemmler_hunter_panel()
         end
-        
     end
 )
