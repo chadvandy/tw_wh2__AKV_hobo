@@ -339,6 +339,8 @@ local function set_hunters_panel()
     local hunter_button = find_uicomponent(core:get_ui_root(), "layout", "faction_buttons_docker", "button_group_management", "button_hunters")
     if hunter_button then
         hunter_button:SetVisible(true)
+        hunter_button:SetImagePath("ui/kemmler/hunter_button.png")
+        hunter_button:SetTooltipText("{{tr:kemmler_hunter_button}}", true)
     end
 
     local function hide_vanilla_bois()
@@ -361,7 +363,7 @@ local function set_hunters_panel()
 
         local effects_holder = find_uicomponent(panel, "main", "characters_holder", "character_template", "effects_holder")
         local attributes_text = find_uicomponent(effects_holder, "attributes_holder", "attributes_text")
-        attributes_text:SetStateText("Evil Specialities")
+        attributes_text:SetStateText("{{tr:kemmler_evil_specialities}}")
 
         --local battle_effect_holder = find_uicomponent(effects_holder, "battle_effect_holder")
         --battle_effect_holder:SetVisible(true)
@@ -375,8 +377,8 @@ local function set_hunters_panel()
         locked_character:SetImagePath("ui/kemmler/"..subtype.."_bg.png")
         locked_character:SetVisible(true)
 
-        local dy_character_name = find_uicomponent(panel, "main", "characters_holder", "dy_character_name")
-        dy_character_name:SetStateText("Fucking")
+        local new_uic = find_uicomponent(panel, "main", "characters_holder", "dy_character_name_copy")
+        new_uic:SetStateText("{{tr:"..subtype.."_name}}")
     end
 
     core:add_listener(
@@ -391,7 +393,7 @@ local function set_hunters_panel()
 
             -- rename the component
             local title = find_uicomponent(panel, "header_frame", "dy_faction") 
-            title:SetStateText("Dark Forces or something")
+            title:SetStateText("{{tr:kemmler_hunter_panel_title}}")
 
             -- set up the scene to be on Nameless, instead of on Van Hel
             local click = find_uicomponent(char_list, "AK_hobo_nameless") 
@@ -399,9 +401,24 @@ local function set_hunters_panel()
                 click:SimulateLClick() 
             end
 
-            find_uicomponent(char_list, "AK_hobo_nameless"):SetImagePath("ui/kemmler/AK_hobo_nameless_mini.png")
-            find_uicomponent(char_list, "AK_hobo_draesca"):SetImagePath("ui/kemmler/AK_hobo_draesca_mini.png")
-            find_uicomponent(char_list, "AK_hobo_priestess"):SetImagePath("ui/kemmler/AK_hobo_priestess_mini.png")
+            local nameless = find_uicomponent(char_list, "AK_hobo_nameless")
+            local draesca = find_uicomponent(char_list, "AK_hobo_draesca")
+            local priestess = find_uicomponent(char_list, "AK_hobo_priestess")
+
+            nameless:SetImagePath("ui/kemmler/AK_hobo_nameless_mini.png")
+            nameless:SetTooltipText("{{tr:AK_hobo_nameless_mini}}", true)
+
+            draesca:SetImagePath("ui/kemmler/AK_hobo_draesca_mini.png")
+            draesca:SetTooltipText("{{tr:AK_hobo_draesca_mini}}", true)
+
+            priestess:SetImagePath("ui/kemmler/AK_hobo_priestess_mini.png")
+            priestess:SetTooltipText("{{tr:AK_hobo_priestess_mini}}", true)
+
+            -- hide the character name component and replace it, hopefully?
+            local dy_character_name = find_uicomponent(panel, "main", "characters_holder", "dy_character_name")
+            dy_character_name:CopyComponent("dy_character_name_copy")
+            dy_character_name:PropagatePriority(1)
+            --dy_character_name:SetVisible(false)
 
             -- hide the vanilla Hunters
             hide_vanilla_bois()
@@ -423,7 +440,7 @@ local function set_hunters_panel()
         function(context)
             panel_check(context.string)
             cm:callback(function()
-                panel_check(context.string)
+                --panel_check(context.string)
             end, 0.1)
         end,
         true
