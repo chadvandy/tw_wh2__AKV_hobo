@@ -865,6 +865,7 @@ function liche_init_listeners()
             true
         )
 
+        --[[
         core:add_listener(
             "LicheNecroButtonPressed",
             "ComponentLClickUp",
@@ -876,7 +877,7 @@ function liche_init_listeners()
                 lm:set_necropower_panel()
             end,
             true
-        )
+        )]]
             
         -- idk
         core:add_listener(
@@ -1305,7 +1306,7 @@ function liche_init_listeners()
 
                                 np_uic:SetState('positive')
                                 np_uic:SetImagePath('ui/kemmler/AK_hobo_necropowa_bullet.png')
-                                np_uic:SetStateText("Necromantic Power: +"..np_result)
+                                np_uic:SetStateText(effect.get_localised_string("pooled_resources_display_name_necropower") .. ": +"..np_result)
 
                                 local value = find_uicomponent(np_uic, "value")
                                 value:SetState('positive')

@@ -1,11 +1,13 @@
 local lm = _G._LICHEMANAGER
 local UTILITY = lm._UTILITY
 
---v function(key: string, text: string)
-local function new_unit_card(key, text)
+--v function(key: string)
+local function new_unit_card(key)
     local root = core:get_ui_root()
     local ui_panel_name = "legions_of_undeath"
     local frame = find_uicomponent(root, ui_panel_name)
+
+    local text = effect.get_localised_string("land_units_onscreen_name_"..key)
 
     if not frame then
         lm:error("Legions of Undeath panel called, frame not found! Booooo!")
@@ -40,37 +42,6 @@ local function new_unit_card(key, text)
         true
     )
 end
-
---[[
---v function(key: string)
-local function kill_existing_uic(key)
-    local existing_component = Util.getComponentWithName(key)
-    --# assume existing_component: TEXT
-    if not not existing_component then
-        Util.unregisterComponent(key)
-        if not not existing_component.uic and is_uicomponent(existing_component.uic) then
-            utility.removeComponent(existing_component.uic)
-        end
-    end
-end]]
-
---v function(key: string) --> string
-local function key_to_text(key)
-    local units = {
-        ["AK_hobo_ror_doomed_legion"] = "Doomed Legion",
-        ["AK_hobo_ror_caged"] = "The Caged",
-        ["AK_hobo_ror_storm"] = "Guardians of Medhe",
-        ["AK_hobo_ror_wight_knights"] = "The Wight Knights",
-        ["AK_hobo_ror_beast"] = "Beast of Cailledh",
-        ["AK_hobo_ror_skulls"] = "Skulls of Geistenmund",
-        ["AK_hobo_ror_spider"] = "Terror of the Lichemaster",
-        ["AK_hobo_ror_jacsen"] = "Mikeal Jacsen"
-    }--: map<string, string>
-
-    local text = units[key]
-    return text
-end
-
     
 local function position_and_resize_components()
     local root = core:get_ui_root()
@@ -229,7 +200,8 @@ local function create_new_widget_box()
 
     parchment:CreateComponent("widget_main_box_text", "ui/vandy_lib/black_text")
     local widget_main_box_text = find_uicomponent(parchment, "widget_main_box_text")
-    widget_main_box_text:SetStateText("Selected Legion")
+
+    widget_main_box_text:SetStateText("{{tr:kemmler_lou_selected_legion}}")
 
     -- left text box with the ui_tr's
     parchment:CreateComponent("widget_text_box", "ui/kemmler/custom_image")
@@ -244,7 +216,8 @@ local function create_new_widget_box()
 
     parchment:CreateComponent("widget_text_box_text", "ui/vandy_lib/black_text")
     local widget_text_box_text = find_uicomponent(parchment, "widget_text_box_text")
-    widget_text_box_text:SetStateText("Legion Details")
+
+    widget_text_box_text:SetStateText("{{tr:kemmler_lou_legion_details}}")
 end
 
 
@@ -345,15 +318,15 @@ local function initialize_widget_main_box_components()
     local spawn_button_text = UIComponent(spawn_button:Find("button_txt"))
 
     spawn_button:SetState("inactive")
-    spawn_button:SetTooltipText("Select a unit to spawn", true)
-    spawn_button_text:SetStateText("Spawn")
+    spawn_button:SetTooltipText("{{tr:kemmler_lou_spawn_button_tt}}", true)
+    spawn_button_text:SetStateText("{{tr:kemmler_lou_spawn_button_default_text}}")
 
     widget_main_box:CreateComponent("np_cost_icon", "ui/kemmler/custom_image")
     local np_cost_icon = find_uicomponent(widget_main_box, "np_cost_icon")
     np_cost_icon:SetState("custom_state_1")
     np_cost_icon:SetInteractive(true)
     np_cost_icon:SetImagePath("ui/kemmler/AK_hobo_necropowa_lou_cost.png")
-    np_cost_icon:SetTooltipText("Necromantic Power", true)
+    np_cost_icon:SetTooltipText(effect.get_localised_string("pooled_resources_display_name_necropower"), true)
 
     np_cost_icon:SetCanResizeHeight(true)
     np_cost_icon:SetCanResizeWidth(true)
@@ -390,9 +363,10 @@ local function initialize_widget_main_box_components()
     --v function(state: string)
     local function set_button_state(state)
         local spawn_button_uic = find_uicomponent(core:get_ui_root(), "legions_of_undeath", "parchment", "widget_main_box", "lichemaster_spawn_button")
+        local spawn_button_text = UIComponent(spawn_button_uic:Find("button_txt"))
         if state == "active" then
             spawn_button_uic:SetState("active")
-            spawn_button_uic:SetStateText("Spawn")
+            spawn_button_text:SetStateText("{{tr:kemmler_lou_spawn_button_default_text}}")
             spawn_button_uic:SetTooltipText("Spawn selected Legion", true)
             core:add_listener(
                 "LichemasterSpawnLegion",
@@ -416,7 +390,7 @@ local function initialize_widget_main_box_components()
                                 lm:error("In ror.lua, spawnButtonUIC is not found. WHY?")
                             else
                                 spawn_button_uic:SetState("inactive")
-                                spawn_button_uic:SetTooltipText("Must first unlock Legion by Defiling Barrows", true)
+                                spawn_button_uic:SetTooltipText("{{tr:kemmler_lou_spawn_button_tt_locked}}", true)
                             end
                         end
                     end
@@ -425,16 +399,16 @@ local function initialize_widget_main_box_components()
             )
         elseif state == "inactive" then
             spawn_button_uic:SetState("inactive")
-            spawn_button_uic:SetTooltipText("Must first unlock Legion by Defiling Barrows", true)
+            spawn_button_uic:SetTooltipText("{{tr:kemmler_lou_spawn_button_tt_locked}}", true)
             core:remove_listener("LichemasterSpawnLegion")
         elseif state == "broke" then
             spawn_button_uic:SetState("inactive")
-            spawn_button_uic:SetTooltipText("Not enough Necromantic Power!", true)
+            spawn_button_uic:SetTooltipText("{{tr:kemmler_lou_spawn_button_tt_broke}}", true)
             core:remove_listener("LichemasterSpawnLegion")
         end
     end
 
-    set_selected_text("Please Select a Unit Below")
+    set_selected_text("{{tr:kemmler_lou_selected_text_default}}")
 
     spawn_button:SetCanResizeHeight(true)
     spawn_button:SetCanResizeWidth(true)
@@ -444,9 +418,11 @@ local function initialize_widget_main_box_components()
 
     local spawn_button_width, spawn_button_height = spawn_button:Bounds()
     local gap = box_width/2 - spawn_button_width/2
-    lm:log("BOX SHTUFF")
+
+    --[[lm:log("BOX SHTUFF")
     lm:log("POS: "..box_x ..",".. box_y)
-    lm:log("DIMENSIONS: "..box_width..","..box_height)
+    lm:log("DIMENSIONS: "..box_width..","..box_height)]]
+
     spawn_button:MoveTo(box_x + gap, box_y + box_height - (spawn_button_height * 1.2))
 
     local icon_width, icon_height = np_cost_icon:Bounds()
@@ -458,11 +434,11 @@ local function initialize_widget_main_box_components()
         "LichemasterLegionSelected",
         true,
         function(context)
-            local text = key_to_text(context.string)
-            if not text then
+            local loc_text = effect.get_localised_string("land_units_onscreen_name_"..context.string)
+            if not loc_text then
                 lm:error("LichemasterLegionSelected triggered, but the text returned blank?!?")
             else
-                set_selected_text(text)
+                set_selected_text(loc_text)
                 if lm:is_regiment_unlocked(context.string) and lm:get_necropower() >= 5 then
                     set_button_state("active")
                 elseif lm:is_regiment_unlocked(context.string) and not (lm:get_necropower() >= 5) then
@@ -503,7 +479,7 @@ local function populate_panel()
 
     -- create a new unit card for all of the above!
     for key, text in pairs(units) do
-        new_unit_card(key, text)
+        new_unit_card(key)
         --table.insert(unit_cards, find_uicomponent(parchment, key.."_unit_card"))
     end
 

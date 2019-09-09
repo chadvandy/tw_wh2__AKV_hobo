@@ -2,8 +2,8 @@ local lm = _G._LICHEMANAGER
 local UTILITY = lm._UTILITY
 local LOG = lm._LOG
 
---v function(turns: number, isLocked: boolean, button_number: string?)
-local function set(turns, isLocked, button_number)
+--v function(turns: number, is_locked: boolean, button_number: string?)
+local function set(turns, is_locked, button_number)
     local root = core:get_ui_root()
 
     local panel = find_uicomponent(root, "settlement_captured")
@@ -12,70 +12,62 @@ local function set(turns, isLocked, button_number)
     root:CreateComponent("turnsRuined", "ui/templates/buildingframe")
     root:CreateComponent("templateOption", "ui/campaign ui/settlement_captured")
 
-    local turnCenter = find_uicomponent(root, "turnsRuined", "turns_center")
+    local turn_center = find_uicomponent(root, "turnsRuined", "turns_center")
     local option = find_uicomponent(root, "templateOption", "button_parent", "template_button_occupy")
 
-    panel:Adopt(turnCenter:Address())
+    panel:Adopt(turn_center:Address())
     parent:Adopt(option:Address())
 
 
     --[[ Occupy Button Additions!]]
 
-    local optionButton = find_uicomponent(option, "option_button")
-    if isLocked then
-        optionButton:SetTooltipText("The barrows have been ransacked once already; there's nothing left to defile.", true)
-        optionButton:SetState("inactive")
-    else
-        optionButton:SetTooltipText("The abandoned city is filled with corpses, ripe for the taking.", true)
-        optionButton:SetState("active")
+    local option_button = find_uicomponent(option, "option_button")
+
+    local state = "active"
+    if is_locked then
+        local state = "inactive"
     end
 
-    local optionText = find_uicomponent(option, "option_button", "dy_option")
-    optionText:SetStateText("Defile Barrows")
+    option_button:SetTooltipText("{{tr:kemmler_ruins_option_button_tt_"..state.."}}", true)
+    option_button:SetState(state)
+
+    local option_text = find_uicomponent(option, "option_button", "dy_option")
+    option_text:SetStateText("{{tr:kemmler_ruins_option_button_text}}")
 
     local picture = find_uicomponent(option, "picture_parent", "dy_pic")
     picture:SetImagePath("ui/campaign ui/settlement_captured_pics/AK_hobo_ruin_stuff.png")
 
     local replen = find_uicomponent(option, "frame", "icon_parent", "dy_replenish")
-    local replenIcon = find_uicomponent(replen, "icon")
-    replenIcon:SetTooltipText("TEST", false)
-    replen:SetTooltipText("Unit replenishment \n For Barrow units only!", false)
+    local replen_icon = find_uicomponent(replen, "icon")
+    replen:SetTooltipText("{{tr:kemmler_ruins_replen_tt}}", false)
     replen:SetStateText("100%")
 
-    local doNothing = find_uicomponent(parent, "915")
-    local defileBarrow = find_uicomponent(parent, "template_button_occupy")
+    local do_nothing_uic = find_uicomponent(parent, "915")
+    local defile_barrow_uic = find_uicomponent(parent, "template_button_occupy")
 
-    local mX, mY = doNothing:Position()
-    local nX, nY = defileBarrow:Position()
+    local mX, mY = do_nothing_uic:Position()
+    local nX, nY = defile_barrow_uic:Position()
 
-    turnCenter:SetVisible(true)
-    turnCenter:SetStateText(tostring(turns))
+    turn_center:SetVisible(true)
+    turn_center:SetStateText(tostring(turns))
 
     if button_number then
         panel:Resize(option:Width() * 3 + option:Width() / 3, panel:Height())
 
         local extra_button = find_uicomponent(parent, button_number)
-        --extra_button:MoveTo(nX + option:Width(), nY)
 
-        doNothing:MoveTo(mX - option:Width(), mY)
-        defileBarrow:MoveTo(mX, mY)
+        do_nothing_uic:MoveTo(mX - option:Width(), mY)
+        defile_barrow_uic:MoveTo(mX, mY)
         extra_button:MoveTo(nX, nY)
-        -- doNothing:MoveTo(nX, nY)
-        -- defileBarrow:MoveTo(mX, mY)
     else
         panel:Resize(option:Width() * 2 + option:Width() / 3, panel:Height())
-
-        
-
     end
 
     local pX, pY = panel:Position()
     local pW, pH = panel:Width(), panel:Height()
-    local tW, tH = turnCenter:Width(), turnCenter:Height()
+    local tW, tH = turn_center:Width(), turn_center:Height()
 
-    turnCenter:MoveTo(pX + (pW - (tW)), pY + (tH / 3))
-
-
+    turn_center:MoveTo(pX + (pW - (tW)), pY + (tH / 3))
 
     local icons = find_uicomponent(option, "frame", "icon_parent")
 

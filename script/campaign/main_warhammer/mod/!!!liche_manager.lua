@@ -1321,6 +1321,7 @@ end
 -------------- NECRO POWER! -------------
 -----------------------------------------
 
+--[[
 --v method()
 function liche_manager:necropower_button()
     --# assume self: LICHE_MANAGER
@@ -1428,6 +1429,7 @@ function liche_manager:populate_necropower_panel()
     new_text_pair("factor_ror", "Legions of Undeath:", tostring(factor_ror_value))
 end
 
+
 --v method()
 function liche_manager:set_necropower_panel()
     --# assume self: LICHE_MANAGER
@@ -1507,7 +1509,7 @@ function liche_manager:set_necropower_panel()
     end
 
     self:populate_necropower_panel()
-end
+end]]
 
 ---- apply attrition to any lords who aren't in Kemmler's region
 --v method()
