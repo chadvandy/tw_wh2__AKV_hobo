@@ -612,7 +612,7 @@ function liche_init_listeners()
                 if xp_to_apply > 0 then
                     cm:add_agent_experience(char_str, xp_to_apply, true)
                 end
-                lm:add_ancillaries_to_lord(subtype, char_str)
+                lm:add_ancillaries_to_lord(char)
             end,
             true
         )

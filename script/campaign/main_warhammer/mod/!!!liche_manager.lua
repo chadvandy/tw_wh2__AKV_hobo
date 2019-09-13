@@ -264,14 +264,15 @@ end
 
 -- TODO make this easier to edit, read subtypes.lua fam
 ---- Apply ancillaries to LL's upon spawn
---v method(subtype: string, char_str: string)
-function liche_manager:add_ancillaries_to_lord(subtype, char_str)
+--v method(char: CA_CHAR)
+function liche_manager:add_ancillaries_to_lord(char)
     --# assume self: LICHE_MANAGER
+    local subtype = char:character_subtype_key()
     if subtype == "AK_hobo_draesca" then
-        cm:force_add_and_equip_ancillary(char_str, "AK_hobo_draesca_helmet")
+        cm:force_add_ancillary(char, "AK_hobo_draesca_helmet", true, true)
     elseif subtype == "AK_hobo_priestess" then
-        cm:force_add_and_equip_ancillary(char_str, "AK_hobo_priestess_trickster")
-        cm:force_add_and_equip_ancillary(char_str, "AK_hobo_priestess_charms")
+        cm:force_add_ancillary(char, "AK_hobo_priestess_trickster", true, true)
+        cm:force_add_ancillary(char, "AK_hobo_priestess_charms", true, true)
     end
 end
 
