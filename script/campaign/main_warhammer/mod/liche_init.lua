@@ -750,23 +750,30 @@ function liche_init_listeners()
             end,
             function(context)
                 local root = core:get_ui_root()
-                -- this is a very unfortunate work around I had to do in order to read the "Settlement Captured" UI panel for the region's name.
-                -- currently potentially buggy if more than one of Vaul's Anvils are ruins
 
                 local panel = find_uicomponent(core:get_ui_root(), "settlement_captured")
-                local name = find_uicomponent(panel, "header_docker", "panel_subtitle", "settlement_name"):GetStateText()
-                local region
+                --local name = find_uicomponent(panel, "header_docker", "panel_subtitle", "settlement_name"):GetStateText()
 
-                for k, v in pairs(lm:get_region_names()) do
+                local character = cm:get_character_by_cqi(lm:get_character_selected_cqi())
+                local region = character:region()
+
+                if region:is_null_interface() then
+                    lm:error("LicheRuinsUI listener triggered, but the current selected character's region is null? Aborting!")
+                    return
+                end
+
+                local region_key = region:name()
+
+                --[[for k, v in pairs(lm:get_region_names()) do
                     if k == name then
                         region = cm:get_region(v)
                     end
-                end
+                end]]
 
-                if not region then 
+                --[[if not region then 
                     lm:error("LicheRuinsUI listener triggered, but region with key ["..name.."] not found in the regionNames table! Aborting")
                     return
-                end
+                end]]
                 
                 if region:is_abandoned() then
                     local search_ruins_button = find_uicomponent(panel, "1240")
@@ -775,7 +782,7 @@ function liche_init_listeners()
                     if not not search_ruins_button then 
                         UTILITY.remove_component(search_ruins_button) 
                     end
-                    if not lm:can_occupy_region(region:name()) then
+                    if not lm:can_occupy_region(region_key) then
                         -- remove occupation options
                         if not not colonise_button then
                             UTILITY.remove_component(colonise_button)
@@ -784,20 +791,20 @@ function liche_init_listeners()
                             UTILITY.remove_component(resettle_button)
                         end
 
-                        lm:ruinsUI(region:name())
+                        lm:ruinsUI(region_key)
                     else
                         -- keep occupation options, passing the number in order to move the UIC over
                         if not not colonise_button then
-                            lm:ruinsUI(region:name(), "906")
+                            lm:ruinsUI(region_key, "906")
                         elseif not not resettle_button then
-                            lm:ruinsUI(region:name(), "948")
+                            lm:ruinsUI(region_key, "948")
                         else
                             lm:error("How did this happen?")
                         end
                     end
                 else
                     -- get rid of occupation options 
-                    if not lm:can_occupy_region(region:name()) then
+                    if not lm:can_occupy_region(region_key) then
                         local loot_and_occupy_button = find_uicomponent(panel, "924")
                         local occupy_button = find_uicomponent(panel, "930")
                         local option_width, option_height = occupy_button:Width(), occupy_button:Height()
@@ -946,24 +953,21 @@ function liche_init_listeners()
             function(context)
                 -- no direct way to access the region, so we're reading UI, ugh. MUST BE DONE BEFORE THE SIMCLICK! DUH!
                 local panel = find_uicomponent(core:get_ui_root(), "settlement_captured")
-                local name = find_uicomponent(panel, "header_docker", "panel_subtitle", "settlement_name"):GetStateText()
+                
+                --local name = find_uicomponent(panel, "header_docker", "panel_subtitle", "settlement_name"):GetStateText()
 
-                local region
-                for k, v in pairs(lm:get_region_names()) do
-                    if k == name then
-                        region = cm:get_region(v)
-                    end
-                end
-
-                if not region then 
-                    lm:error("LicheOccupyButtonPressed listener triggered, but region with key ["..name.."] not found in the regionNames table! Aborting")
+                local character = cm:get_character_by_cqi(lm:get_character_selected_cqi())
+                local region = character:region()
+                if region:is_null_interface() then
+                    lm:error("LicheOccupyButtonPressed listener triggered, but the character's region is null? Aborting!")
                     return
                 end
+                local region_key = region:name()
 
                 local button = find_uicomponent(panel, "button_parent", "915", "option_button")
                 button:SimulateLClick() -- click the "Do Nothing" button
 
-                lm:defile_ruin(region:name()) -- set the ruin as defiled
+                lm:defile_ruin(region_key) -- set the ruin as defiled
 
             end,
             true

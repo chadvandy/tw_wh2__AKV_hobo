@@ -83,7 +83,7 @@ end
 
 liche_manager._faction_key = "wh2_dlc11_vmp_the_barrow_legion"
 
-liche_manager._regionNames = require("script/lichemaster/tables/regionNames")
+--liche_manager._regionNames = require("script/lichemaster/tables/regionNames")
 liche_manager._units = require("script/lichemaster/tables/units")
 
 liche_manager._forenames = names[1]
@@ -166,11 +166,12 @@ function liche_manager:get_faction_key()
     return self._faction_key
 end
 
+--[[ disbabled
 --v method() --> map<string, string>
 function liche_manager:get_region_names()
     --# assume self: LICHE_MANAGER
     return self._regionNames
-end
+end]]
 
 ---- Check if lord is still locked
 --v method(subtype: string) --> boolean
