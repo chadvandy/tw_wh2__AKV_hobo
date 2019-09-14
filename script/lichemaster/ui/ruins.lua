@@ -25,7 +25,7 @@ local function set(turns, is_locked, button_number)
 
     local state = "active"
     if is_locked then
-        local state = "inactive"
+        state = "inactive"
     end
 
     option_button:SetTooltipText("{{tr:kemmler_ruins_option_button_tt_"..state.."}}", true)

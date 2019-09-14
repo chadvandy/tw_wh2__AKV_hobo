@@ -763,17 +763,6 @@ function liche_init_listeners()
                 end
 
                 local region_key = region:name()
-
-                --[[for k, v in pairs(lm:get_region_names()) do
-                    if k == name then
-                        region = cm:get_region(v)
-                    end
-                end]]
-
-                --[[if not region then 
-                    lm:error("LicheRuinsUI listener triggered, but region with key ["..name.."] not found in the regionNames table! Aborting")
-                    return
-                end]]
                 
                 if region:is_abandoned() then
                     local search_ruins_button = find_uicomponent(panel, "1240")

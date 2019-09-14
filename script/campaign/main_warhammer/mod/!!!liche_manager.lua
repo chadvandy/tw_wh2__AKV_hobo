@@ -844,7 +844,7 @@ function liche_manager:set_ruin(ruin)
 
     -- save the current turn number, used when the ruin is defiled
     local turn = cm:model():turn_number()
-    self._ruins[ruin] = {["turn"] = turn, ["isLocked"] = false};
+    self._ruins[ruin] = {turn = turn, isLocked = false}
 
     self:log("RUIN TRACKER: Setting ruin for region ["..ruin.."] on turn number ["..tostring(turn).."]")
 end
@@ -1762,13 +1762,13 @@ end
 liche_manager.init()
 
 -- needed for some of the external files, since these apparently don't exist in the global env?
-_G.UIComponent = UIComponent;
-_G.find_uicomponent = find_uicomponent;
-_G.print_all_uicomponent_children = print_all_uicomponent_children;
-_G.is_uicomponent = is_uicomponent;
-_G.out = out;
-_G.core = core;
-_G.output_uicomponent = output_uicomponent;
+_G.UIComponent = UIComponent
+_G.find_uicomponent = find_uicomponent
+_G.print_all_uicomponent_children = print_all_uicomponent_children
+_G.is_uicomponent = is_uicomponent
+_G.out = out
+_G.core = core
+_G.output_uicomponent = output_uicomponent
 
 -- save details 
 cm:add_saving_game_callback(
