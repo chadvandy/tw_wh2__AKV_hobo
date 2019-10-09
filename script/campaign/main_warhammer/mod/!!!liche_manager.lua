@@ -166,13 +166,6 @@ function liche_manager:get_faction_key()
     return self._faction_key
 end
 
---[[ disbabled
---v method() --> map<string, string>
-function liche_manager:get_region_names()
-    --# assume self: LICHE_MANAGER
-    return self._regionNames
-end]]
-
 ---- Check if lord is still locked
 --v method(subtype: string) --> boolean
 function liche_manager:is_lord_unlocked(subtype)
