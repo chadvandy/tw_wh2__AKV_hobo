@@ -18,6 +18,110 @@ local LicheLog = require("script/lichemaster/log") --# assume LicheLog: LICHE_LO
 -- Helper Functions --
 ----------------------
 
+--v function() --> number
+local function calculate_post_battle_np()
+    -- get kemmler's CQI to check if he was in the battle
+    local cqi = lm:get_real_cqi()
+
+    -- player variable is used to define which side the player was on, defense or offense
+    local player --: string
+
+    -- enemy faction key
+    local enemy_faction --: string
+
+    if cm:pending_battle_cache_char_is_defender(cqi) then
+        player = "defender"
+    elseif cm:pending_battle_cache_char_is_attacker(cqi) then
+        player = "attacker"
+    else
+        -- Kemmy proper is not in the battle, cease fire
+        return 0
+    end
+
+    if not player then
+        lm:log("POST-BATTLE: Kemmler's faction not found in battle, despite being cached! Investigate?")
+        return 0
+    end
+
+    if player == "defender" then
+        local this_char_cqi, this_mf_cqi, this_faction = cm:pending_battle_cache_get_attacker(1)
+        enemy_faction = this_faction
+    elseif player == "attacker" then
+        local this_char_cqi, this_mf_cqi, this_faction = cm:pending_battle_cache_get_defender(1)
+        enemy_faction = this_faction
+    end
+
+    local attacker_won = cm:pending_battle_cache_attacker_victory()
+    local attacker_value = cm:pending_battle_cache_attacker_value()
+
+    local defender_won = cm:pending_battle_cache_defender_victory()
+    local defender_value = cm:pending_battle_cache_defender_value()
+
+    if not attacker_won and not defender_won then
+        -- draw or retreat or flee, do nothing
+        lm:log("POST-BATTLE: Both sides lost battle; not tracking NP change!")
+        return 0
+    end
+
+    lm:log("POST-BATTLE: Kemmler fought as ["..player.."].")
+    lm:log("POST-BATTLE: Enemy faction key ["..enemy_faction.."].")
+
+
+    -- divide value of defender and attacker armies, to get a multiplier for NP value, if the player wins
+    -- base the amount of NP lost on how many troops were lost
+
+    local np_result
+    if player == "attacker" then 
+        if attacker_won then 
+            local multiplier = defender_value / attacker_value 
+            multiplier = math.clamp(multiplier, 0.5, 1.5)
+
+            np_result = (defender_value / 1000) * multiplier
+            local kill_ratio = cm:model():pending_battle():percentage_of_defender_killed()
+
+            np_result = np_result * kill_ratio
+
+            if np_result >= 5 then 
+                np_result = 5 
+            end
+        end
+    elseif player == "defender" then
+        if defender_won then
+            local multiplier = attacker_value / defender_value
+            multiplier = math.clamp(multiplier, 0.5, 1.5)
+
+            local np_result = (attacker_value / 1000) * multiplier
+            local kill_ratio = cm:model():pending_battle():percentage_of_attacker_killed()
+
+            np_result = np_result * kill_ratio
+
+            if np_result >= 5 then 
+                np_result = 5 
+            end
+        end
+    end
+
+    np_result = math.floor(np_result)
+
+    return np_result
+end
+
+-- checks curent NP value and applies attrition or adds a life
+local function check_np_effects()
+    -- quick check for NP life added
+    local turn = cm:model():turn_number()
+    local npvalue = lm:get_necropower()
+
+    if npvalue >= 80 then
+        -- checks the last turn lives changed within this method
+        lm:add_life()
+    end
+
+    if npvalue <= 20 then
+        lm:apply_attrition()
+    end
+end
+
 -- triggered on campaign load and on per turn
 -- disables unnecessary UIC's
 local function kill_blood_kisses_and_tech()
@@ -458,9 +562,6 @@ local function set_hunters_panel()
         end,
         function(context)
             panel_check(context.string)
-            cm:callback(function()
-                --panel_check(context.string)
-            end, 0.1)
         end,
         true
     )
@@ -506,21 +607,6 @@ function liche_init_listeners()
         -- remove unwanted tech
         kill_technologies()
 
-        -- every Kemmler turn, hide the blood kisses and tech UI, and create the necropower button.
-        core:add_listener(
-            "LicheNPUI",
-            "FactionTurnStart",
-            function(context)
-                return context:faction():name() == legion and cm:get_local_faction() == legion
-            end,
-            function(context)
-                CampaignUI.ClearSelection()
-                kill_blood_kisses_and_tech()
-                set_hunters_panel()
-            end,
-            true
-        )
-
         -- every Kemmler turn, check NP. 
         -- If it's over 80, and lives hasn't been increased for 20 turns, then +1 lives
         -- If under 20, add attrition throughout the character list to any character not in Kemmler's region
@@ -528,20 +614,10 @@ function liche_init_listeners()
             "LicheKemmlerLives",
             "FactionTurnStart",
             function(context)
-                return context:faction():name() == legion and context:faction():is_human()
+                return context:faction():name() == legion --and context:faction():is_human()
             end,
             function(context)
-                local turn = cm:model():turn_number()
-                local npvalue = context:faction():pooled_resource("necropower"):value()
-
-                if npvalue >= 80 then
-                    -- checks the last turn lives changed within this method
-                    lm:add_life()
-                end
-
-                if npvalue <= 20 then
-                    lm:apply_attrition()
-                end
+                check_np_effects()
             end,
             true
         )
@@ -732,8 +808,8 @@ function liche_init_listeners()
                     if lm:get_num_razed_settlements() >= 3 and not lm:is_lord_unlocked("AK_hobo_draesca") then
                         cm:complete_scripted_mission_objective("lichemaster_lord_draesca", "lichemaster_lord_draesca", true)
                         lm:unlock_lord("AK_hobo_draesca")
+                        core:remove_listener("LicheDraescaUnlock")
                     end
-                    core:remove_listener("LicheDraescaUnlock")
                 end,
                 true
             )
@@ -746,7 +822,7 @@ function liche_init_listeners()
             "LicheSettlementCapturedPanel",
             "PanelOpenedCampaign",
             function(context)
-                return context.string == "settlement_captured" and cm:whose_turn_is_it() == legion and cm:get_local_faction() == legion
+                return context.string == "settlement_captured" and cm:get_local_faction(true) == legion
             end,
             function(context)
                 local root = core:get_ui_root()
@@ -818,7 +894,7 @@ function liche_init_listeners()
             "PanelOpenedCampaign",
             function(context)
                 local cuim = cm:get_campaign_ui_manager()
-                return context.string == "units_panel" and cuim:is_char_selected_from_faction(legion) and cm:whose_turn_is_it() == legion and cm:get_local_faction() == legion
+                return context.string == "units_panel" and cuim:is_char_selected_from_faction(legion) and cm:get_local_faction(true) == legion
             end,
             function(context)
                 local cuim = cm:get_campaign_ui_manager()
@@ -855,53 +931,26 @@ function liche_init_listeners()
             "LicheCharacterTracker",
             "CharacterSelected",
             function(context)
-                return context:character():faction():name() == legion and cm:whose_turn_is_it() == legion and cm:get_local_faction() == legion
+                return context:character():faction():name() == legion and cm:get_local_faction(true) == legion
             end,
             function(context)
                 lm:set_character_selected_cqi(context:character():cqi())
             end,
             true
         )
-
-        --[[
-        core:add_listener(
-            "LicheNecroButtonPressed",
-            "ComponentLClickUp",
-            function(context)
-                return context.string == "button_necropower"
-            end,
-            function(context)
-                CampaignUI.ClearSelection()
-                lm:set_necropower_panel()
-            end,
-            true
-        )]]
             
         -- idk
         core:add_listener(
             "LicheHordePanel",
             "ComponentLClickUp",
             function(context)
-                return context.string == "tab_horde_buildings" and cm:whose_turn_is_it() == legion and cm:get_local_faction() == legion
+                return context.string == "tab_horde_buildings" and cm:get_local_faction(true) == legion
             end,
             function(context)
                 lm:lord_lock_UI()
             end,
             true
         )
-
-        -- idk
-        --[[core:add_listener(
-            "LicheGeneralUI",
-            "PanelOpenedCampaign",
-            function(context)
-                return context.string == "character_panel" and cm:whose_turn_is_it() == legion
-            end,
-            function(context)
-                lm:lord_pool_UI()
-            end,
-            true
-        )]]
 
         core:add_listener(
             "LicheGeneralUI2",
@@ -926,7 +975,7 @@ function liche_init_listeners()
                 return context:faction():name() == legion
             end,
             function(context)
-
+                
             end,
             true
         )]]
@@ -937,7 +986,7 @@ function liche_init_listeners()
             "ComponentLClickUp",
             function(context)
                 local component = find_uicomponent(core:get_ui_root(), "settlement_captured", "button_parent", "template_button_occupy", "option_button")
-                return UIComponent(context.component) == component
+                return UIComponent(context.component) == component and cm:get_local_faction(true) == legion
             end,
             function(context)
                 -- no direct way to access the region, so we're reading UI, ugh. MUST BE DONE BEFORE THE SIMCLICK! DUH!
@@ -957,7 +1006,6 @@ function liche_init_listeners()
                 button:SimulateLClick() -- click the "Do Nothing" button
 
                 lm:defile_ruin(region_key) -- set the ruin as defiled
-
             end,
             true
         )
@@ -1006,7 +1054,6 @@ function liche_init_listeners()
                 lm:kill_wounded_kemmy()
     
                 lm:set_turn_to_spawn(0)
-    
             end,
             true
         )
@@ -1026,7 +1073,6 @@ function liche_init_listeners()
             end,
             function(context)
                 lm:log("WOUNDED KEMMY: Kemmler is in a battle and has enough stuff to revive. Spawning Wounded Kemmy off-screen.")
-
 
                 local kemmy --: CA_CHAR
                 local pb = context:pending_battle()
@@ -1167,186 +1213,51 @@ function liche_init_listeners()
             true
         )
 
-        -- this actually doesn't do anything right now I think
-        --[[core:add_listener(
-            "LicheShadowDruidUIThing",
-            "CharacterSelected",
-            function(context)
-                return context:character():character_subtype("AK_hobo_druid_shadow")
-            end,
-            function(context)
-                local panel = find_uicomponent(core:get_ui_root(), "layout", "info_panel_holder")
-                if not not panel then
-                    local icon = find_uicomponent(panel, "secondary_info_panel_holder", "info_panel_background", "AgentInfoPopup", "action_list", "wh2_main_agent_action_wizard_passive_spread_corruption", "wh2_main_agent_action_wizard_passive_spread_corruption", "dy_action", "dy_icon")
-                    if not not icon then
-                        icon:SetImagePath("ui/campaign ui/effect_bundles/religion_undeath.png")
-                    end
-                    local text = find_uicomponent(panel, "secondary_info_panel_holder", "info_panel_background", "AgentInfoPopup", "action_list", "wh2_main_agent_action_wizard_passive_spread_corruption", "wh2_main_agent_action_wizard_passive_spread_corruption", "dy_action")
-                    if not not text then
-                        text:SetStateText("Spread Corruption")
-                    end
-                end
-            end,
-            true
-        )]]
-
         core:add_listener(
-            "LicheBattleTracker",
-            "PanelOpenedCampaign",
+            "LicheTTSet",
+            "ComponentMouseOn",
             function(context)
-                -- only run this if Kemmy's faction is in the battle
-                return context.string == "popup_battle_results" and cm:pending_battle_cache_faction_is_involved(legion) and cm:get_faction(legion):is_human() and cm:get_local_faction() == legion
+                return context.string == "enslavewh_captive_option_enslave_vampire_counts" and cm:pending_battle_cache_faction_is_involved(legion) and cm:get_local_faction(true) == legion
             end,
             function(context)
-                -- needed to prevent some weird bugginess
-                if cm:pending_battle_cache_num_defenders() >= 1 and cm:pending_battle_cache_num_attackers() >=1 then
+                local np_result = calculate_post_battle_np()
 
-                    -- get kemmler's CQI to check if he was in the battle
-                    local cqi = lm:get_real_cqi()
+                cm:callback(function() 
+                    local tt = find_uicomponent(core:get_ui_root(), "tooltip_captive_options")
+                    local pr_uic = find_uicomponent(tt, "effects_list", "pooled_resources")
 
-                    -- player variable is used to define which side the player was on, defense or offense
-                    local player --: string
+                    pr_uic:SetVisible(true)
+                    local np_uic = core:get_or_create_component("necropower", "ui/kemmler/pr_captive_tooltip_template", pr_uic)
+                    pr_uic:Adopt(np_uic:Address())
 
-                    -- enemy faction key
-                    local enemy_faction --: string
+                    np_uic:SetState('positive')
+                    np_uic:SetImagePath('ui/kemmler/AK_hobo_necropowa_bullet.png')
+                    np_uic:SetStateText(effect.get_localised_string("pooled_resources_display_name_necropower") .. ": +"..np_result)
 
-                    if cm:pending_battle_cache_char_is_defender(cqi) then
-                        player = "defender"
-                    elseif cm:pending_battle_cache_char_is_attacker(cqi) then
-                        player = "attacker"
-                    else
-                        -- Kemmy proper is not in the battle, cease fire
-                        return
-                    end
-
-                    if not player then
-                        lm:log("POST-BATTLE: Kemmler's faction not found in battle, despite being cached! Investigate?")
-                        return
-                    end
-
-                    if player == "defender" then
-                        local this_char_cqi, this_mf_cqi, this_faction = cm:pending_battle_cache_get_attacker(1)
-                        enemy_faction = this_faction
-                    elseif player == "attacker" then
-                        local this_char_cqi, this_mf_cqi, this_faction = cm:pending_battle_cache_get_defender(1)
-                        enemy_faction = this_faction
-                    end
-
-                    local attacker_won = cm:pending_battle_cache_attacker_victory()
-                    local attacker_value = cm:pending_battle_cache_attacker_value()
-
-                    local defender_won = cm:pending_battle_cache_defender_victory()
-                    local defender_value = cm:pending_battle_cache_defender_value()
-
-                    if not attacker_won and not defender_won then
-                        -- draw or retreat or flee, do nothing
-                        lm:log("POST-BATTLE: Both sides lost battle; not tracking NP change!")
-                        return
-                    end
-
-                    lm:log("POST-BATTLE: Kemmler fought as ["..player.."].")
-                    lm:log("POST-BATTLE: Enemy faction key ["..enemy_faction.."].")
-
-
-                    -- divide value of defender and attacker armies, to get a multiplier for NP value, if the player wins
-                    -- base the amount of NP lost on how many troops were lost
-
-                    local np_result
-                    if player == "attacker" then 
-                        if attacker_won then 
-                            local multiplier = defender_value / attacker_value 
-                            multiplier = math.clamp(multiplier, 0.5, 1.5)
-
-                            np_result = (defender_value / 1000) * multiplier
-                            local kill_ratio = cm:model():pending_battle():percentage_of_defender_killed()
-
-                            np_result = np_result * kill_ratio
-
-                            if np_result >= 5 then 
-                                np_result = 5 
-                            end
-                        end
-                    elseif player == "defender" then
-                        if defender_won then
-                            local multiplier = attacker_value / defender_value
-                            multiplier = math.clamp(multiplier, 0.5, 1.5)
-
-                            local np_result = (attacker_value / 1000) * multiplier
-                            local kill_ratio = cm:model():pending_battle():percentage_of_attacker_killed()
-
-                            np_result = np_result * kill_ratio
-
-                            if np_result >= 5 then 
-                                np_result = 5 
-                            end
-                        end
-                    end
-
-                    np_result = math.floor(np_result)
-
-                    core:add_listener(
-                        "LicheTTSet",
-                        "ComponentMouseOn",
-                        function(context)
-                            return context.string == "enslavewh_captive_option_enslave_vampire_counts"
-                        end,
-                        function(context)
-                            cm:callback(function() 
-                                local tt = find_uicomponent(core:get_ui_root(), "tooltip_captive_options")
-                                local pr_uic = find_uicomponent(tt, "effects_list", "pooled_resources")
-
-                                pr_uic:SetVisible(true)
-                                local np_uic = core:get_or_create_component("necropower", "ui/kemmler/pr_captive_tooltip_template", pr_uic)
-                                pr_uic:Adopt(np_uic:Address())
-
-                                np_uic:SetState('positive')
-                                np_uic:SetImagePath('ui/kemmler/AK_hobo_necropowa_bullet.png')
-                                np_uic:SetStateText(effect.get_localised_string("pooled_resources_display_name_necropower") .. ": +"..np_result)
-
-                                local value = find_uicomponent(np_uic, "value")
-                                value:SetState('positive')
-                                value:SetStateText('')
-                            end, 0.1)
-                        end,
-                        true
-                    )
-
-                    -- add the NP when that button is pressed
-                    core:add_listener(
-                        "LicheApplyNP",
-                        "ComponentLClickUp",
-                        function(context)
-                            return context.string == "enslavewh_captive_option_enslave_vampire_counts"
-                        end,
-                        function(context)
-                            -- add on the PR and log it!
-                            cm:faction_add_pooled_resource(legion, "necropower", "necropower_battles", np_result)
-
-                            lm:log("POST-BATTLE: Kemmler wins! Necromantic Power added for Kemmler.")
-                            lm:log("POST-BATTLE: Necromantic Power added [" .. np_result .. "].")
-                            lm:log("POST-BATTLE: Other army gold-value is [" .. defender_value .. "].")
-                            lm:log("POST-BATTLE: Kemmler army gold-value is [" .. attacker_value .. "].")
-                        end,
-                        false
-                    )
-
-                    -- remove the above listener when the panel closed, to prevent any over-hang
-                    core:add_listener(
-                        "LicheKillAboveListener",
-                        "PanelClosedCampaign",
-                        function(context)
-                            return context.string == "popup_battle_results"
-                        end,
-                        function(context)
-                            core:remove_listener("LicheApplyNP")
-                        end,
-                        false
-                    )
-                end    
+                    local value = find_uicomponent(np_uic, "value")
+                    value:SetState('positive')
+                    value:SetStateText('')
+                end, 0.1)
             end,
             true
         )
-
+        
+        core:add_listener(
+            "LicheApplyNP",
+            "CharacterPostBattleEnslave",
+            function(context)
+                return context:character():faction():name() == legion
+            end,
+            function(context)
+                local np_result = calculate_post_battle_np()
+                if np_result == 0 then
+                    -- issue!
+                    return
+                end
+                cm:faction_add_pooled_resource(legion, "necropower", "necropower_battles", np_result)
+            end,
+            true
+        )
 
         local killBloodlines = {
             "wh2_dlc11_vmp_ritual_bloodline_awaken_blood_dragon_01",
@@ -1365,24 +1276,14 @@ function liche_init_listeners()
             "wh2_dlc11_vmp_ritual_bloodline_awaken_von_carstein_02",
             "wh2_dlc11_vmp_ritual_bloodline_awaken_von_carstein_03"
         }--: vector<string>
+
         local cqi = cm:get_faction(legion):command_queue_index()
         for i = 1, #killBloodlines do
             cm:set_ritual_unlocked(cqi, killBloodlines[i], false)
         end
-
-
-        end)
+    end)
     if not ok then LicheLog.error(tostring(err)) end
 end
-
--- needed to be done on UI created for obvious reasons
-core:add_ui_created_callback(
-    function()
-        if cm:whose_turn_is_it() == legion then
-            kill_blood_kisses_and_tech()
-        end
-    end
-)
 
 cm:add_first_tick_callback(
     function()
@@ -1391,29 +1292,17 @@ cm:add_first_tick_callback(
 
         liche_init_listeners()
 
-        if cm:get_local_faction() == legion then
-            -- UI stuff
-            kill_blood_kisses_and_tech()
+        -- UI stuff
+        if cm:get_local_faction(true) == legion then
             CampaignUI.ClearSelection()
-
-            add_pr_uic()
-
+            
+            kill_blood_kisses_and_tech()
             set_hunters_panel()
-
-            -- quick check for NP life added
-            local turn = cm:model():turn_number()
-            local npvalue = lm:get_necropower()
-
-            if npvalue >= 80 then
-                -- checks the last turn lives changed within this method
-                lm:add_life()
-            end
-
-            if npvalue <= 20 then
-                lm:apply_attrition()
-            end
+            add_pr_uic()
         else
             hide_kemmler_hunter_panel()
         end
+
+        check_np_effects()
     end
 )
