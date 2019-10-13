@@ -207,21 +207,6 @@ local function add_missions_and_unlock_requirements()
     priestess_mission:trigger()
 end
 
--- during VC turn, make blood kisses/lines visible.
-local function return_blood_kisses()
-    local bloodKiss = find_uicomponent(core:get_ui_root(), "layout", "resources_bar", "topbar_list_parent", "canopic_jars_holder")
-    bloodKiss:SetVisible(true)
-
-    local bloodlines = find_uicomponent(core:get_ui_root(), "layout", "faction_buttons_docker", "button_group_management", "button_bloodlines")
-    bloodlines:SetVisible(true)
-end
-
--- after Kemmler's turn, make these other technologies visible. Necessary for other players
-local function return_tech()
-    local tech = find_uicomponent(core:get_ui_root(), "layout", "faction_buttons_docker", "button_group_management", "button_technology")
-    tech:SetVisible(true)
-end
-
 -- functionality for the NP icon on the topbar
 local function add_pr_uic()
     local parent = find_uicomponent(core:get_ui_root(), "layout", "resources_bar", "topbar_list_parent")
@@ -269,7 +254,7 @@ local function add_pr_uic()
         end
     end
 
-    if cm:whose_turn_is_it() == legion then
+    if cm:get_local_faction(true) == legion then
         create_uic()
         check_value()
     end
@@ -405,7 +390,7 @@ local function add_pr_uic()
         pooled_resource_key.."_value_changed",
         "PooledResourceEffectChangedEvent",
         function(context)
-            return context:faction():name() == legion and context:resource():key() == pooled_resource_key and context:faction():is_human() and cm:whose_turn_is_it() == legion
+            return context:faction():name() == legion and context:resource():key() == pooled_resource_key and context:faction():is_human() and cm:get_local_faction(true) == legion
         end,
         function(context)
             check_value()
@@ -583,7 +568,7 @@ end
 function liche_init_listeners()
     local ok, err = pcall(function()
         -- read through the entirety of the current region list on script load
-        -- needed for every script load, as the ruins list isn't saved
+        -- done on every script load, the ruins are saved but doing this will catch any mistakes or changes
         do
             local region_list = cm:model():world():region_manager():region_list()
             for i = 0, region_list:num_items() - 1 do
@@ -898,28 +883,14 @@ function liche_init_listeners()
             function(context)
                 local cuim = cm:get_campaign_ui_manager()
                 local selected = cuim:get_char_selected_cqi()
+
+                local char_obj = cm:get_character_by_cqi(selected)
+                if not char_obj:has_military_force() then
+                    -- not general, don't go on
+                    return
+                end
+
                 lm:ror_UI(selected)
-
-                -- repeat callback to make sure the ror button stays invisible
-                cm:repeat_callback(function()
-                    local ror_button = find_uicomponent(core:get_ui_root(), "layout", "hud_center_docker", "hud_center", "small_bar", "button_group_army", "button_renown")
-                    if is_uicomponent(ror_button) then
-                        ror_button:SetVisible(false)
-                    end
-                end, 0.1, "kill_that_ror_button")
-
-                -- once the panel is closed, stop forcing the ror button invisible every 0.1s
-                core:add_listener(
-                    "LicheRorUIKiller",
-                    "PanelClosedCampaign",
-                    function(context)
-                        return context.string == "units_panel"
-                    end,
-                    function(context)
-                        cm:remove_callback("kill_that_ror_button")
-                    end,
-                    false
-                )
             end,
             true
         )
@@ -955,7 +926,7 @@ function liche_init_listeners()
             "LicheGeneralUI2",
             "ComponentLClickUp",
             function(context)
-                return context.string == "button_create_army" and cm:whose_turn_is_it() == legion
+                return context.string == "button_create_army" and cm:get_local_faction(true) == legion
             end,
             function(context)
                 cm:callback(function()
@@ -1258,6 +1229,69 @@ function liche_init_listeners()
             true
         )
 
+        -- MP Compat listeners
+        core:add_listener(
+            "LichemasterLegionOfUndeathSpawn",
+            "UITriggerScriptEvent",
+            function(context)
+                return context:trigger():starts_with("lichemanager_ror|")
+            end,
+            function(context)
+                local str = context:trigger()
+                local char_cqi = context:faction_cqi()
+                local regiment_key = string.gsub(str, "lichemanager_ror|", "")
+
+                -- make sure that regiment object exists
+                local regiment_obj = lm:get_regiment_with_key(regiment_key)
+
+                -- lock the object, to prevent more than one existing
+                regiment_obj:set_unlocked(false)
+
+                -- add the unit and charge the -5 NP
+                cm:grant_unit_to_character("character_cqi:"..char_cqi, regiment_key)
+                cm:faction_add_pooled_resource(lm._faction_key, "necropower", "necropower_ror", -5)
+
+                lm:log("LEGIONS OF UNDEATH: Spawning Legion with key ["..regiment_key.."] for character with CQI ["..char_cqi.."].")
+            end,
+            true
+        )
+
+        core:add_listener(
+            "LichemasterDefileBarrowTrigger",
+            "UITriggerScriptEvent",
+            function(context)
+                return context:trigger():starts_with("lm_db|")
+            end,
+            function(context)
+                local str = context:trigger()
+                local char_cqi = context:faction_cqi()
+                local effect = string.gsub(str, "lm_db|", "")
+
+                -- tell both clients which character to apply this all to!
+                lm:set_character_selected_cqi(char_cqi)
+
+                --if effect == "effectBundle" then
+                    --self:ruinsEffectBundle()
+                if effect == "spawnAgent" then
+                    lm:ruins_spawn_agent()
+                elseif effect == "spawnRoR" then
+                    lm:ruins_spawn_ror()
+                elseif effect == "enemy" then
+                    lm:ruins_spawn_enemy()
+                elseif effect == "item" then
+                    lm:ruins_spawn_item()
+                end
+
+                --self:force_replen()
+                if effect ~= "enemy" then
+                    lm:revive_barrow_units()
+                end
+                
+                lm:apply_defile_xp()
+            end,
+            true
+        )
+
         local killBloodlines = {
             "wh2_dlc11_vmp_ritual_bloodline_awaken_blood_dragon_01",
             "wh2_dlc11_vmp_ritual_bloodline_awaken_blood_dragon_02",
@@ -1286,10 +1320,10 @@ end
 
 cm:add_first_tick_callback(
     function()
-        -- check if Kemmler is the local player
         -- all the stuff that has to be done on Liche turnstart will also be done here, for loading games
 
         liche_init_listeners()
+        check_np_effects()
 
         -- UI stuff
         if cm:get_local_faction(true) == legion then
@@ -1301,7 +1335,5 @@ cm:add_first_tick_callback(
         else
             hide_kemmler_hunter_panel()
         end
-
-        check_np_effects()
     end
 )

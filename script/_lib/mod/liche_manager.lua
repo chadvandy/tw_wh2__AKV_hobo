@@ -178,16 +178,9 @@ function liche_manager:load_module(module_name, folder)
     self:error(err)
 end
 
---v method(file_name: string, folder: string) --> WHATEVER
-function liche_manager:get_module_by_name(file_name, folder)
+--v method(file_name: string) --> WHATEVER
+function liche_manager:get_module_by_name(file_name)
     --# assume self: LICHE_MANAGER
-    local path = "script/lichemanager/"..folder.."/"
-    local file = path .. file_name
-
-    if not vfs.exists(file .. ".lua") then
-        self:error("No helper found with name ["..file_name..".lua].")
-        return nil
-    end
 
     if file_name == "ruins" then
         return self._RUINSUI
@@ -209,6 +202,40 @@ end
 ----
 ---- Functions that make life easier later on
 ----
+
+--v method(unit_key: string) --> boolean
+function liche_manager:does_regiment_exist_in_faction(unit_key)
+    --# assume self: LICHE_MANAGER
+    local faction_obj = cm:get_faction(self._faction_key)
+
+    local char_list = faction_obj:character_list()
+    for i = 0, char_list:num_items() - 1 do
+        local char_obj = char_list:item_at(i)
+        if char_obj:has_military_force() then
+            local mf_obj = char_obj:military_force()
+            local unit_list = mf_obj:unit_list()
+            if unit_list:has_unit(unit_key) then
+                return true
+            end
+        end
+    end
+
+    return false
+end
+
+--v method() --> boolean
+function liche_manager:does_faction_have_unspawned_regiments()
+    --# assume self: LICHE_MANAGER
+
+    for key, regiments in pairs(self._regiments) do
+        if not self:does_regiment_exist_in_faction(key) then
+            return true
+        end
+    end
+
+    -- all regiments are spawned!
+    return false
+end
 
 --v method() --> string
 function liche_manager:get_unit_list()
@@ -675,12 +702,37 @@ end
 function liche_manager:ruins_spawn_ror()
     --# assume self: LICHE_MANAGER
 
-    -- list of rors that haven't been unlocked yet
-    local rors = self:get_locked_regiments()
+    local valid = false
+    local ror
 
-    -- pick between a random one!
-    local chance = cm:random_number(#rors, 1)
-    local ror = rors[chance]
+    -- prevent spawning a regiment that is already spawned on the map
+    while not valid do
+
+        -- list of rors that haven't been unlocked yet
+        local rors = self:get_locked_regiments()
+
+        if #rors == 0 then
+            -- no RoR are left! We shouldn't have gotten here, but breaking to prevent an endless loop.
+            -- TODO error log
+            return
+        end
+
+        -- pick between a random one!
+        local chance = cm:random_number(#rors, 1)
+        local test_ror = rors[chance]
+        
+        if not self:does_regiment_exist_in_faction(test_ror._key) then
+            ror = test_ror
+            break
+        else
+            test_ror:set_unlocked(false)
+        end
+    end
+
+    if not ror then
+        -- TODO error log
+        return
+    end
 
     self:set_regiment_unlocked(ror._key)
     cm:trigger_incident(self._faction_key, "barrow_"..ror._key, true)
@@ -865,24 +917,18 @@ function liche_manager:apply_effect(ruin)
         effect = self._defile_debug
     end
 
-    --if effect == "effectBundle" then
-        --self:ruinsEffectBundle()
-    if effect == "spawnAgent" then
-        self:ruins_spawn_agent()
-    elseif effect == "spawnRoR" then
-        self:ruins_spawn_ror()
-    elseif effect == "enemy" then
-        self:ruins_spawn_enemy()
-    elseif effect == "item" then
-        self:ruins_spawn_item()
+    -- prevent double-spawn of RoR's
+    if effect == "spawnRoR" and not self:does_faction_have_unspawned_regiments() then
+        local ran = cm:random_number(2)
+        if ran == 2 then 
+            effect = "spawnAgent" 
+        else 
+            effect = "item" 
+        end
     end
 
-    --self:force_replen()
-    if effect ~= "enemy" then
-        self:revive_barrow_units()
-    end
-    
-    self:apply_defile_xp()
+    CampaignUI.TriggerCampaignScriptEvent(self:get_character_selected_cqi(), "lm_db|"..effect)
+
 end
 
 -- TODO save the character's id better
@@ -912,6 +958,12 @@ function liche_manager:set_ruin(ruin)
     local region = cm:get_region(ruin)
     if not region:is_abandoned() then
         self:error("set_ruin() called, but the region supplied, ["..ruin.."], is not abandoned!")
+        return
+    end
+
+    -- make sure the ruin isn't already set (ie. via save game!)
+    if not is_nil(self._ruins[ruin]) then
+        -- do nuffin'
         return
     end
 
@@ -963,7 +1015,6 @@ end
 ---- regiment object which saves basic data about the different legions of undeath
 local regiment = {} --# assume regiment: LICHE_REGIMENT
 
--- TODO make this work for non-English
 ---- instantiate a new regiment
 --v function(key: string, ui_name: string) --> LICHE_REGIMENT
 function regiment.new_regiment(key, ui_name)
@@ -1029,15 +1080,6 @@ function regiment:set_unlocked(enable)
     self._is_unlocked = not not enable
 end
 
----- Create a new regiment using the regiment.new_regiment() constructor, and then save the resulting regiment in the LM
---v method(key: string, ui_name: string)
-function liche_manager:new_regiment(key, ui_name)
-    --# assume self: LICHE_MANAGER
-
-    local new = regiment.new_regiment(key, ui_name)
-    self._regiments[key] = new
-end
-
 --- Grab a regiment by a key
 --v method(key: string) --> ( LICHE_REGIMENT | nil )
 function liche_manager:get_regiment_with_key(key)
@@ -1050,6 +1092,26 @@ function liche_manager:get_regiment_with_key(key)
     end
 
     return get
+end
+
+---- Create a new regiment using the regiment.new_regiment() constructor, and then save the resulting regiment in the LM
+--v method(key: string, ui_name: string)
+function liche_manager:new_regiment(key, ui_name)
+    --# assume self: LICHE_MANAGER
+
+    local new = regiment.new_regiment(key, ui_name)
+    self._regiments[key] = new
+end
+
+---- On load-game, grab the existing regiments from the save file and turn them into the Lua object here
+--v method(key: string, o: table)
+function liche_manager:instantiate_existing_regiment(key, o)
+    --# assume self: LICHE_MANAGER
+
+    setmetatable(o, {__index = regiment})
+
+    --# assume o: LICHE_REGIMENT
+    self._regiments[key] = o
 end
 
 --- Grab all regiments that are unlocked
@@ -1145,27 +1207,25 @@ function liche_manager:set_regiment_locked(key)
     regiment_obj:set_unlocked(false)
 end
 
+--v method(unit_key: string) --> boolean
+function liche_manager:is_unit_key_a_regiment(unit_key)
+    --# assume self: LICHE_MANAGER
+
+    local regiment_obj = self:get_regiment_with_key(unit_key)
+    if is_nil(regiment_obj) then
+        return false
+    end
+
+    return true
+end
+
 ---- Spawn specific unit for the current 'character_selected' characted
 --v method(selectedCQI: CA_CQI, key: string)
 function liche_manager:spawn_ror_for_character(selectedCQI, key)
     --# assume self: LICHE_MANAGER
     --# assume selectedCQI: number
 
-    -- make sure that regiment object exists
-    local regiment_obj = self:get_regiment_with_key(key)
-    if is_nil(regiment_obj) then
-        self:error("spawn_ror_for_character() called but there's no saved regiment with the key ["..key.."]")
-        return
-    end
-
-    -- lock the object, to prevent more than one existing
-    regiment_obj:set_unlocked(false)
-
-    -- add the unit and charge the -5 NP
-    cm:grant_unit_to_character("character_cqi:"..selectedCQI, key)
-    cm:faction_add_pooled_resource(self._faction_key, "necropower", "necropower_ror", -5)
-
-    self:log("LEGIONS OF UNDEATH: Spawning Legion with key ["..key.."] for character with CQI ["..selectedCQI.."].")
+    CampaignUI.TriggerCampaignScriptEvent(selectedCQI, "lichemanager_ror|"..key)
 end
 
 ---- Internal function from the UI
@@ -1190,23 +1250,65 @@ function liche_manager:ror_UI(cqi)
     -- the actual functions to create the UI panel are in this subfile
     local ROR = self._RORUI
 
+    --v function(valid: string, button: CA_UIC)
+    local function apply_validity(valid, button)
+        local tt_tr = "{{tr:kemmler_lou_button_tt_"
+        local tr_close = "}}"
+        if valid == "valid" then
+            button:SetState("active")
+            button:SetTooltipText(tt_tr .. valid .. tr_close, true)
+
+            -- when the new button is pressed, create the panel!
+            core:add_listener(
+                "LicheRorButtonPressed",
+                "ComponentLClickUp",
+                function(context)
+                    return context.string == "LicheRorButton"
+                end,
+                function(context)
+                    local ok, err = pcall(function()
+                        ROR.create_panel()
+                    end)
+                    if not ok then self:error(err) end
+                end,
+                true
+            )
+        else
+            button:SetState("inactive")
+            button:SetTooltipText(tt_tr .. valid .. tr_close, true)
+            core:remove_listener("LicheRorButtonPressed")
+        end
+    end
+
+    --v function(button: CA_UIC)
+    local function check_validity(button)
+        local char_obj = cm:get_character_by_cqi(cqi)
+        local mf_obj = char_obj:military_force()
+        if mf_obj:unit_list():num_items() == 20 then
+            -- no room
+            apply_validity("no_room", button)
+            return
+        end
+        local faction_obj = char_obj:faction()
+        if faction_obj:pooled_resource("necropower"):value() < 5 then
+            apply_validity("low_np", button)
+            return
+        end
+        apply_validity("valid", button)
+    end
+
     -- see if the button was already created
     local parent = find_uicomponent(core:get_ui_root(), "layout", "hud_center_docker", "hud_center", "small_bar", "button_group_army")
-    local test = find_uicomponent(parent, "LicheRorButton")
-    if not test then
-        -- create the button!
-        parent:CreateComponent("LicheRorButton", "ui/templates/square_medium_button")
-        local button = find_uicomponent(parent, "LicheRorButton")
-        button:SetImagePath("ui/skins/default/icon_renown.png")
+    if not is_uicomponent(parent) then
+        -- parent not found? aborting
+        return
+    end
+    local button = find_uicomponent(parent, "LicheRorButton")
 
-        -- hide and prevent the use of the vanilla RoR button
-        local ror = find_uicomponent(parent, "button_renown")
-        if is_uicomponent(ror) then
-            button:MoveTo(ror:Position())
-            ror:SetDisabled(true)
-            ror:SetVisible(false)
-            ror:SetInteractive(false)
-        end
+    if not is_uicomponent(button) then
+        -- create the button!
+        button = UIComponent(parent:CreateComponent("LicheRorButton", "ui/templates/square_medium_button"))
+        button:SetImagePath("ui/skins/default/icon_renown.png")
 
         -- swap positions of raise dead and the new button
         local raise_dead = find_uicomponent(parent, "button_mercenaries")
@@ -1215,45 +1317,47 @@ function liche_manager:ror_UI(cqi)
 
         raise_dead:MoveTo(x2, y2)
         button:MoveTo(x1, y1)
-
-        button:SetTooltipText("Raise Legions of Undeath||Bolster the ranks with ancient warriors.", true)
-
-        -- when the new button is pressed, create the panel!
-        core:add_listener(
-            "LicheRorButtonPressed",
-            "ComponentLClickUp",
-            function(context)
-                return context.string == "LicheRorButton"
-            end,
-            function(context)
-                local ok, err = pcall(function()
-                    ROR.create_panel()
-                end)
-                if not ok then self:error(err) end
-            end,
-            true
-        )
-    else
-        -- if the button already exists, hide the vanilla RoR button and call it a day
-        local ror = find_uicomponent(parent, "button_renown")
-        if is_uicomponent(ror) then
-            ror:SetVisible(false)
-        end
     end
 
+    -- repeat callback to make sure the ror button stays invisible, and to continually check if the LoU button is valid
+    cm:repeat_callback(function()
+        local ror_button = find_uicomponent(core:get_ui_root(), "layout", "hud_center_docker", "hud_center", "small_bar", "button_group_army", "button_renown")
+
+        if is_uicomponent(ror_button) and is_uicomponent(button) then
+            ror_button:SetVisible(false)
+            check_validity(button)
+        else
+            cm:remove_callback("kill_that_ror_button")
+        end
+    end, 0.1, "kill_that_ror_button")
+
+    -- once the panel is closed, stop forcing the ror button invisible every 0.1s
+    core:add_listener(
+        "LicheRorUIKiller",
+        "PanelClosedCampaign",
+        function(context)
+            return context.string == "units_panel"
+        end,
+        function(context)
+            cm:remove_callback("kill_that_ror_button")
+        end,
+        false
+    )
 end
 
 --v method()
 function liche_manager:setup_regiments()
     --# assume self: LICHE_MANAGER
-    self:new_regiment("AK_hobo_ror_doomed_legion", "The Doomed Legion")
-    self:new_regiment("AK_hobo_ror_caged", "The Caged")
-    self:new_regiment("AK_hobo_ror_storm", "Guardians of Medhe")
-    self:new_regiment("AK_hobo_ror_wight_knights", "Wight Knights")
-    self:new_regiment("AK_hobo_ror_jacsen", "Mikeal Jacsen")
-    self:new_regiment("AK_hobo_ror_beast", "Beast of Cailledh")
-    self:new_regiment("AK_hobo_ror_skulls", "Skulls of Geistenmund")
-    self:new_regiment("AK_hobo_ror_spider", "Terror of the Lichemaster")
+    if self._regiments == {} then
+        self:new_regiment("AK_hobo_ror_doomed_legion", "The Doomed Legion")
+        self:new_regiment("AK_hobo_ror_caged", "The Caged")
+        self:new_regiment("AK_hobo_ror_storm", "Guardians of Medhe")
+        self:new_regiment("AK_hobo_ror_wight_knights", "Wight Knights")
+        self:new_regiment("AK_hobo_ror_jacsen", "Mikeal Jacsen")
+        self:new_regiment("AK_hobo_ror_beast", "Beast of Cailledh")
+        self:new_regiment("AK_hobo_ror_skulls", "Skulls of Geistenmund")
+        self:new_regiment("AK_hobo_ror_spider", "Terror of the Lichemaster")
+    end
 end
 
 -----------------------------------------
@@ -1674,6 +1778,8 @@ cm:add_saving_game_callback(
         cm:save_named_value("lichemaster_is_draesca_unlocked", liche_manager._is_draesca_unlocked, context)
         cm:save_named_value("lichemaster_is_nameless_unlocked", liche_manager._is_nameless_unlocked, context)
         cm:save_named_value("lichemaster_is_priestess_unlocked", liche_manager._is_priestess_unlocked, context)
+        cm:save_named_value("lichemaster_regiments", liche_manager._regiments, context)
+        cm:save_named_value("lichemaster_ruins", liche_manager._ruins, context)
     end
 )
 
@@ -1691,6 +1797,14 @@ cm:add_loading_game_callback(
             liche_manager._is_draesca_unlocked = cm:load_named_value("lichemaster_is_draesca_unlocked", false, context)
             liche_manager._is_nameless_unlocked = cm:load_named_value("lichemaster_is_nameless_unlocked", false, context)
             liche_manager._is_priestess_unlocked = cm:load_named_value("lichemaster_is_priestess_unlocked", false, context)
+            liche_manager._ruins = cm:load_named_value("lichemaster_ruins", {}, context)
+            liche_manager._regiments = cm:load_named_value("lichemaster_regiments", {}, context)
+
+            for key, regiment in pairs(liche_manager._regiments) do
+                --# assume regiment: table
+                liche_manager:instantiate_existing_regiment(key, regiment)
+            end
+
         end
     end
 )
