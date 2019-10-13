@@ -1,5 +1,8 @@
-local lm = _G._LICHEMANAGER
-local UTILITY = lm._UTILITY
+--# assume lichemanager: LICHE_MANAGER
+
+local lm = lichemanager
+
+local UTILITY = lm._UTILITY --# assume UTILITY: LICHE_UTILITY
 
 --v function(key: string)
 local function new_unit_card(key)
@@ -585,4 +588,6 @@ local function create_panel()
     populate_panel()
 end
 
-return create_panel
+local retval = {create_panel = create_panel} --: RORUI
+
+return retval

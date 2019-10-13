@@ -2,7 +2,12 @@
 --# assume global class VANDY_UC
 --# assume global class VANDY_ABILITY
 
-local UTILITY = require("script/lichemaster/ui/utility")
+if __game_mode ~= __lib_type_frontend then
+    -- disabled, only for frontend!
+    return
+end
+
+local UTILITY = require("script/lichemanager/helpers/utility")
 
 local attributes = require("script/vandy_lib_tables/attributes")
 local invalid_usage_flags = require("script/vandy_lib_tables/invalid_usage_flags")
