@@ -7,11 +7,11 @@
 
 -- refernces some stuff that will be used ALL over
 
-local lm = get_lichemanager()
+local lm = _G._LICHEMANAGER
 local legion = lm:get_faction_key()
-
 local UTILITY = lm._UTILITY
-local LicheLog = lm._LOG
+
+local LicheLog = require("script/lichemaster/log") --# assume LicheLog: LICHE_LOG
 
 
 ----------------------
@@ -594,10 +594,9 @@ function liche_init_listeners()
             end
         end
 
-        -- set up the regiments! This data is baked into the save game, so it only needs to be done once
-        if lm._regiments == nil then
-            lm:setup_regiments()
-        end
+        -- TODO this can be done better and somewhere else, but this will do for now
+        -- set up the regiments!
+        lm:setup_regiments()
         
         -- disable confederation betwixt Kemmy and Vampies
         cm:force_diplomacy(legion, "culture:wh_main_vmp_vampire_counts", "form confederation", false, false, true)

@@ -1,21 +1,16 @@
-local LOG = require("script/lichemanager/helpers/log") --# assume LOG: LICHE_LOG
+local LOG = require("script/lichemaster/log") --# assume LOG: LICHE_LOG
 
-local names = require("script/lichemanager/tables/legionNames")
+local names = require("script/lichemaster/tables/legionNames")
+
+--[[
+local liche_manager = {
+    _lives = 0,
+    _currentPower = 0,
+    _ruins = {},
+    _faction_key = "wh2_dlc11_vmp_the_barrow_legion"
+} --# assume liche_manager: LICHE_MANAGER]]
 
 local liche_manager = {} --# assume liche_manager: LICHE_MANAGER
-
------------------------------------------
---------------- CREATION ----------------
------------------------------------------
-
---v function() --> LICHE_MANAGER
-function liche_manager.init()
-    --# assume self: LICHE_MANAGER
-    local self = {}
-    setmetatable(self, {__index = liche_manager})
-    --# assume self: LICHE_MANAGER
-    return self
-end
 
 -----------------------------------------
 ----------------- LOGS! -----------------
@@ -31,9 +26,55 @@ function liche_manager:error(text)
     LOG.error(tostring(text))
 end
 
---v method()
-function liche_manager:log_init()
-    LOG.init()
+-----------------------------------------
+--------------- CREATION ----------------
+-----------------------------------------
+
+--v function() --> LICHE_MANAGER
+function liche_manager.init()
+    --# assume self: LICHE_MANAGER
+    local self = {}
+    setmetatable(self, {__index = liche_manager})
+    --# assume self: LICHE_MANAGER
+    --self._UI = UI
+    self._LOG = LOG
+    self._UTILITY = require("script/lichemaster/ui/utility")
+
+    --[[ REGIMENTS ]]
+    self._regiments = {}
+    self._selected_legion = "" --: string
+    
+    -- [[ LORDS ]]
+    self._can_recruit_lord = {
+        ["AK_hobo_draesca"] = false,
+        ["AK_hobo_priestess"] = false,
+        ["AK_hobo_nameless"] = false
+    }
+    self._is_draesca_unlocked = false
+    self._is_priestess_unlocked = false
+    self._is_nameless_unlocked = false
+
+    --[[ RUINS ]]
+    self._ruins = {}
+    self._num_ruins_defiled = 0 --: number
+    self._num_razed_settlements = 0 --: number
+    self._defile_debug = ""
+
+    --[[ MINOR INFOS ]]
+    self._hero_spawn_rank_increase = 0 --: number
+    self._turn_to_spawn = 0 --: number
+    self._currentPower = 0
+
+    --[[ WOUNDED KEMMY DEETS ]]
+    self._last_turn_lives_changed = 0 --: number
+    self._remaining_max_lives = 0 --: number
+    self._unit_list = "" --: string
+
+    -- create the log file and beginning text
+    self._LOG.init()
+
+    _G._LICHEMANAGER = self
+    return self
 end
 
 -----------------------------------------
@@ -43,41 +84,10 @@ end
 liche_manager._faction_key = "wh2_dlc11_vmp_the_barrow_legion"
 
 --liche_manager._regionNames = require("script/lichemaster/tables/regionNames")
-liche_manager._units = require("script/lichemanager/tables/units")
+liche_manager._units = require("script/lichemaster/tables/units")
 
 liche_manager._forenames = names[1]
 liche_manager._family_names = names[2]
-
---[[ REGIMENTS ]]
-liche_manager._regiments = {}
-liche_manager._selected_legion = ""
-
--- [[ LORDS ]]
-liche_manager._can_recruit_lord = {
-    ["AK_hobo_draesca"] = false,
-    ["AK_hobo_priestess"] = false,
-    ["AK_hobo_nameless"] = false
-}
-
-liche_manager._is_draesca_unlocked = false
-liche_manager._is_priestess_unlocked = false
-liche_manager._is_nameless_unlocked = false
-
---[[ RUINS ]]
-liche_manager._ruins = {}
-liche_manager._num_ruins_defiled = 0
-liche_manager._num_razed_settlements = 0
-liche_manager._defile_debug = ""
-
---[[ MINOR INFOS ]]
-liche_manager._hero_spawn_rank_increase = 0
-liche_manager._turn_to_spawn = 0
-liche_manager._currentPower = 0
-
---[[ WOUNDED KEMMY DEETS ]]
-liche_manager._last_turn_lives_changed = 0
-liche_manager._remaining_max_lives = 0
-liche_manager._unit_list = ""
 
 ------------------------------------
 ------------- DEBUGGING ------------
@@ -110,91 +120,6 @@ end
 function liche_manager:reset_defile_debug()
     --# assume self: LICHE_MANAGER
     self._defile_debug = ""
-end
-
--------------------------------------
--------------- MODULES --------------
--------------------------------------
---- Eternal modules loaded and saved within the liche_manager
-
---v method(module_name: string, folder: string)
-function liche_manager:load_module(module_name, folder)
-    --# assume self: LICHE_MANAGER
-    if package.loaded[module_name] then
-        return 
-    end
-
-    local path = "script/lichemanager/"..folder.."/"
-    local file = loadfile(path .. module_name .. ".lua")
-
-    if not file then
-        self:error("Attempted to load module with name ["..module_name.."], but none was found in the path!")
-        return
-    else
-        self:log("Loading module with name [" .. module_name .. ".lua]")
-
-        local global_env = core:get_env()
-        local attach_env = {}
-        setmetatable(attach_env, {__index = global_env})
-
-        -- pass valuable stuff to the modules
-        attach_env.lichemanager = self
-        attach_env.core = core
-
-        setfenv(file, attach_env)
-        --# assume file: function(string)
-        local lua_module = file(module_name)
-        package.loaded[module_name] = lua_module or true
-
-        self:log("[" .. module_name .. ".lua] loaded successfully!")
-
-        if module_name == "ruins" then
-            self._RUINSUI = lua_module
-        end
-
-        if module_name == "ror" then
-            self._RORUI = lua_module
-        end
-        
-        if module_name == "log" then
-            self._LOG = lua_module
-        end
-
-        if module_name == "utility" then
-            self._UTILITY = lua_module
-        end
-
-        return
-    end
-
-    local ok, err = pcall(function() require(module_name) end)
-
-    self:error("Tried to load module with name [" .. module_name .. ".lua], failed on runtime. Error below:")
-    self:error(err)
-end
-
---v method(file_name: string, folder: string) --> WHATEVER
-function liche_manager:get_module_by_name(file_name, folder)
-    --# assume self: LICHE_MANAGER
-    local path = "script/lichemanager/"..folder.."/"
-    local file = path .. file_name
-
-    if not vfs.exists(file .. ".lua") then
-        self:error("No helper found with name ["..file_name..".lua].")
-        return nil
-    end
-
-    if file_name == "ruins" then
-        return self._RUINSUI
-    elseif file_name == "log" then
-        return self._LOG
-    elseif file_name == "utility" then
-        return self._UTILITY
-    elseif file_name == "ror" then
-        return self._RORUI
-    end
-
-    return nil
 end
 
 -------------------------------------
@@ -890,7 +815,7 @@ function liche_manager:ruinsUI(region, button_number)
     local turns = self:calculate_turns_ruined(region)
     local isLocked = self._ruins[region].isLocked
 
-    local RUINSUI = self._RUINSUI
+    local RUINSUI = require("script/lichemaster/ui/ruins")
     if not button_number then
         RUINSUI.set(turns, isLocked)
     else
@@ -1183,7 +1108,7 @@ function liche_manager:ror_UI(cqi)
     end
 
     -- the actual functions to create the UI panel are in this subfile
-    local ROR = self._RORUI
+    local create_panel = require("script/lichemaster/ui/ror")
 
     -- see if the button was already created
     local parent = find_uicomponent(core:get_ui_root(), "layout", "hud_center_docker", "hud_center", "small_bar", "button_group_army")
@@ -1222,7 +1147,7 @@ function liche_manager:ror_UI(cqi)
             end,
             function(context)
                 local ok, err = pcall(function()
-                    ROR.create_panel()
+                    create_panel()
                 end)
                 if not ok then self:error(err) end
             end,
@@ -1356,7 +1281,7 @@ end
 function liche_manager:unlock_lord(subtype)
     --# assume self: LICHE_MANAGER
 
-    local subtypes = require("script/lichemanager/tables/subtypes")
+    local subtypes = require("script/lichemaster/tables/subtypes")
     for key, table in pairs(subtypes) do
         if subtype == key then
             cm:spawn_character_to_pool(
@@ -1636,39 +1561,31 @@ function liche_manager:spawn_wounded_kemmy(x, y, kem_cqi, position)
 
 end
 
--- make sure it's global! Also, initialize the logfile.
+-- initialize the actual manager, now that everything is loaded
+liche_manager.init()
 
-local lm = liche_manager.init()
-
-lm:log_init()
-
-lm:load_module("log", "helpers")
-lm:load_module("utility", "helpers")
-lm:load_module("ror", "modules")
-lm:load_module("ruins", "modules")
-
-_G.lichemanager = lm
-
---v function() --> LICHE_MANAGER
-function get_lichemanager()
-    return _G.lichemanager
-end
-
-_G.get_lichemanager = get_lichemanager
+-- needed for some of the external files, since these apparently don't exist in the global env?
+_G.UIComponent = UIComponent
+_G.find_uicomponent = find_uicomponent
+_G.print_all_uicomponent_children = print_all_uicomponent_children
+_G.is_uicomponent = is_uicomponent
+_G.out = out
+_G.core = core
+_G.output_uicomponent = output_uicomponent
 
 -- save details 
 cm:add_saving_game_callback(
     function(context)
-        cm:save_named_value("lichemaster_can_recruit_lord_table", liche_manager._can_recruit_lord, context)
-        cm:save_named_value("lichemaster_hero_spawn_rank_increase", liche_manager._hero_spawn_rank_increase, context)
-        cm:save_named_value("lichemaster_turn_to_spawn", liche_manager._turn_to_spawn, context)
-        cm:save_named_value("lichemaster_unit_list", liche_manager._unit_list, context)
-        cm:save_named_value("lichemaster_num_ruins_defiled", liche_manager._num_ruins_defiled, context)
-        cm:save_named_value("lichemaster_num_razed_settlements", liche_manager._num_razed_settlements, context)
-        cm:save_named_value("lichemaster_remaining_max_lives", liche_manager._remaining_max_lives, context)
-        cm:save_named_value("lichemaster_is_draesca_unlocked", liche_manager._is_draesca_unlocked, context)
-        cm:save_named_value("lichemaster_is_nameless_unlocked", liche_manager._is_nameless_unlocked, context)
-        cm:save_named_value("lichemaster_is_priestess_unlocked", liche_manager._is_priestess_unlocked, context)
+        cm:save_named_value("lichemaster_can_recruit_lord_table", _G._LICHEMANAGER._can_recruit_lord, context)
+        cm:save_named_value("lichemaster_hero_spawn_rank_increase", _G._LICHEMANAGER._hero_spawn_rank_increase, context)
+        cm:save_named_value("lichemaster_turn_to_spawn", _G._LICHEMANAGER._turn_to_spawn, context)
+        cm:save_named_value("lichemaster_unit_list", _G._LICHEMANAGER._unit_list, context)
+        cm:save_named_value("lichemaster_num_ruins_defiled", _G._LICHEMANAGER._num_ruins_defiled, context)
+        cm:save_named_value("lichemaster_num_razed_settlements", _G._LICHEMANAGER._num_razed_settlements, context)
+        cm:save_named_value("lichemaster_remaining_max_lives", _G._LICHEMANAGER._remaining_max_lives, context)
+        cm:save_named_value("lichemaster_is_draesca_unlocked", _G._LICHEMANAGER._is_draesca_unlocked, context)
+        cm:save_named_value("lichemaster_is_nameless_unlocked", _G._LICHEMANAGER._is_nameless_unlocked, context)
+        cm:save_named_value("lichemaster_is_priestess_unlocked", _G._LICHEMANAGER._is_priestess_unlocked, context)
     end
 )
 
@@ -1676,16 +1593,16 @@ cm:add_saving_game_callback(
 cm:add_loading_game_callback(
     function(context)
         if not cm:is_new_game() then
-            liche_manager._can_recruit_lord = cm:load_named_value("lichemaster_can_recruit_lord_table", {}, context)
-            liche_manager._turn_to_spawn = cm:load_named_value("lichemaster_turn_to_spawn", 0, context)
-            liche_manager._unit_list = cm:load_named_value("lichemaster_unit_list", "", context)
-            liche_manager._num_ruins_defiled = cm:load_named_value("lichemaster_num_ruins_defiled", 0, context)
-            liche_manager._num_razed_settlements = cm:load_named_value("lichemaster_num_razed_settlements", 0, context)
-            liche_manager._hero_spawn_rank_increase = cm:load_named_value("lichemaster_hero_spawn_rank_increase", 0, context)
-            liche_manager._remaining_max_lives = cm:load_named_value("lichemaster_remaining_max_lives", 3, context)
-            liche_manager._is_draesca_unlocked = cm:load_named_value("lichemaster_is_draesca_unlocked", false, context)
-            liche_manager._is_nameless_unlocked = cm:load_named_value("lichemaster_is_nameless_unlocked", false, context)
-            liche_manager._is_priestess_unlocked = cm:load_named_value("lichemaster_is_priestess_unlocked", false, context)
+            _G._LICHEMANAGER._can_recruit_lord = cm:load_named_value("lichemaster_can_recruit_lord_table", {}, context)
+            _G._LICHEMANAGER._turn_to_spawn = cm:load_named_value("lichemaster_turn_to_spawn", 0, context)
+            _G._LICHEMANAGER._unit_list = cm:load_named_value("lichemaster_unit_list", "", context)
+            _G._LICHEMANAGER._num_ruins_defiled = cm:load_named_value("lichemaster_num_ruins_defiled", 0, context)
+            _G._LICHEMANAGER._num_razed_settlements = cm:load_named_value("lichemaster_num_razed_settlements", 0, context)
+            _G._LICHEMANAGER._hero_spawn_rank_increase = cm:load_named_value("lichemaster_hero_spawn_rank_increase", 0, context)
+            _G._LICHEMANAGER._remaining_max_lives = cm:load_named_value("lichemaster_remaining_max_lives", 3, context)
+            _G._LICHEMANAGER._is_draesca_unlocked = cm:load_named_value("lichemaster_is_draesca_unlocked", false, context)
+            _G._LICHEMANAGER._is_nameless_unlocked = cm:load_named_value("lichemaster_is_nameless_unlocked", false, context)
+            _G._LICHEMANAGER._is_priestess_unlocked = cm:load_named_value("lichemaster_is_priestess_unlocked", false, context)
         end
     end
 )

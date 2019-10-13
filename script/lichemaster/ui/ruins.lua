@@ -1,8 +1,6 @@
---# assume lichemanager: LICHE_MANAGER
-
-local lm = lichemanager
-local UTILITY = lm._UTILITY --# assume UTILITY: LICHE_UTILITY
-local LOG = lm._LOG --# assume LOG: LICHE_LOG
+local lm = _G._LICHEMANAGER
+local UTILITY = lm._UTILITY
+local LOG = lm._LOG
 
 --v function(turns: number, is_locked: boolean, button_number: string?)
 local function set(turns, is_locked, button_number)
@@ -91,5 +89,4 @@ local function set(turns, is_locked, button_number)
 
 end
 
-local retval = { set = set } --: RUINSUI
-return retval
+return { set = set }

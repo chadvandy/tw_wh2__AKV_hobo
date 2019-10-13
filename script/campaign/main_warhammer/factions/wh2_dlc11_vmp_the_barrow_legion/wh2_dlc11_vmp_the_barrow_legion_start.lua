@@ -311,7 +311,7 @@ local function fix_necropower()
 end
 
 local function setup_kemmler()
-    local lm = get_lichemanager()
+    local lm = _G._LICHEMANAGER
     local faction = cm:get_faction("wh2_dlc11_vmp_the_barrow_legion")
 
     local kemmler = faction:faction_leader()
@@ -424,7 +424,7 @@ function cutscene_postbattle()
                 cm:show_shroud(true)
                 cm:set_camera_position(282.9, 342.4, 15.2, -0.4, 4.0)
 
-                local lm = get_lichemanager()
+                local lm = _G._LICHEMANAGER
                 -- first things first, get rid of the ownership of the Blackstone Post!
                 cm:set_region_abandoned("wh_main_northern_grey_mountains_blackstone_post")
                 -- needed because the above command doesn't trigger any events

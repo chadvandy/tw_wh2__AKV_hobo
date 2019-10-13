@@ -1,5 +1,8 @@
 local LicheLog = {
+    lines = {},
     filePath = "!!!liche_log.txt",
+    errorPath = "!!!liche_errors.txt",
+    errorLines = {},
     writeLog = true
 } --# assume LicheLog: LICHE_LOG
 
@@ -13,6 +16,14 @@ function LicheLog.init()
         file:write("[" .. timeStamp .. "]\n")
         file:close()
     end
+    --[[do
+        local file = io.open(LicheLog.errorPath, "w+")
+        file:write("NEW LOG INITIALIZED \n")
+        local timeStamp = os.date("%d, %m %Y %X")
+        --# assume timeStamp: string
+        file:write("[" .. timeStamp .. "]\n")
+        file:close()
+    end]]
 end
 
 --v function(enabled: bool)
