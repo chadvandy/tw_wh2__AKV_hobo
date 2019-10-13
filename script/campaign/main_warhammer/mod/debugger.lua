@@ -131,4 +131,5 @@ function debugger_enable()
 	end
 	core.add_listener = myAddListener;
 end
+
 debugger_enable()

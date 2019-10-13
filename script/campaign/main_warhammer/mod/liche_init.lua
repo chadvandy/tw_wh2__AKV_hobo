@@ -594,10 +594,8 @@ function liche_init_listeners()
             end
         end
 
-        -- set up the regiments! This data is baked into the save game, so it only needs to be done once
-        if lm._regiments == nil then
-            lm:setup_regiments()
-        end
+        -- set up the regiments!
+        lm:setup_regiments()
         
         -- disable confederation betwixt Kemmy and Vampies
         cm:force_diplomacy(legion, "culture:wh_main_vmp_vampire_counts", "form confederation", false, false, true)
