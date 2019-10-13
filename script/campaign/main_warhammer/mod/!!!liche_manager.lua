@@ -1,8 +1,3 @@
-if __game_mode ~= __lib_type_campaign then
-    -- disabled, only for campaign!
-    return
-end
-
 local LOG = require("script/lichemanager/helpers/log") --# assume LOG: LICHE_LOG
 
 local names = require("script/lichemanager/tables/legionNames")

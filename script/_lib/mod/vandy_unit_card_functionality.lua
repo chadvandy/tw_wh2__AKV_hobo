@@ -9,13 +9,13 @@ end
 
 local UTILITY = require("script/lichemanager/helpers/utility")
 
-local attributes = require("script/lichemanager/tables/unit_card_manager/attributes")
-local invalid_usage_flags = require("script/lichemanager/tables/unit_card_manager/invalid_usage_flags")
-local additional_ui_effects = require("script/lichemanager/tables/unit_card_manager/additional_ui_effects")
-local unit_ability_types = require("script/lichemanager/tables/unit_card_manager/unit_ability_types")
-local ui_unit_bullet_point_enums = require("script/lichemanager/tables/unit_card_manager/ui_unit_bullet_point_enums")
-local ui_unit_groupings = require("script/lichemanager/tables/unit_card_manager/ui_unit_groupings")
-local unit_ability_source_types = require("script/lichemanager/tables/unit_card_manager/unit_ability_source_types")
+local attributes = require("script/vandy_lib_tables/attributes")
+local invalid_usage_flags = require("script/vandy_lib_tables/invalid_usage_flags")
+local additional_ui_effects = require("script/vandy_lib_tables/additional_ui_effects")
+local unit_ability_types = require("script/vandy_lib_tables/unit_ability_types")
+local ui_unit_bullet_point_enums = require("script/vandy_lib_tables/ui_unit_bullet_point_enums")
+local ui_unit_groupings = require("script/vandy_lib_tables/ui_unit_groupings")
+local unit_ability_source_types = require("script/vandy_lib_tables/unit_ability_source_types")
 
 local unit_card_manager = {} --# assume unit_card_manager: VANDY_UCM
 
