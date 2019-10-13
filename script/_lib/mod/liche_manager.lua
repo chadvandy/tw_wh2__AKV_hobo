@@ -237,6 +237,24 @@ function liche_manager:does_faction_have_unspawned_regiments()
     return false
 end
 
+--v method(unit_key: string) --> boolean
+function liche_manager:is_regiment_key(unit_key)
+    --# assume self: LICHE_MANAGER
+
+    local regiments = {
+        AK_hobo_ror_doomed_legion = true,
+        AK_hobo_ror_caged = true,
+        AK_hobo_ror_storm = true,
+        AK_hobo_ror_wight_knights = true,
+        AK_hobo_ror_jacsen = true,
+        AK_hobo_ror_beast = true,
+        AK_hobo_ror_skulls = true,
+        AK_hobo_ror_spider = true
+    } --: map<string, boolean>
+
+    return not not regiments[unit_key]
+end
+
 --v method() --> string
 function liche_manager:get_unit_list()
     --# assume self: LICHE_MANAGER

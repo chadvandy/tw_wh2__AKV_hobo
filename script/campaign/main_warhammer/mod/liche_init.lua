@@ -1229,6 +1229,19 @@ function liche_init_listeners()
             true
         )
 
+        -- re-unlock RoR if they die/are disbanded
+        core:add_listener(
+            "LichemasterRorDisbanded",
+            "UnitDisbanded",
+            function(context)
+                return context:unit():faction():name() == legion and lm:is_regiment_key(context:unit():unit_key())
+            end,
+            function(context)
+                lm:set_regiment_unlocked(context:unit():unit_key())
+            end,
+            true
+        )
+
         -- MP Compat listeners
         core:add_listener(
             "LichemasterLegionOfUndeathSpawn",
