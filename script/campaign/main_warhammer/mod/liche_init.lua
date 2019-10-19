@@ -207,6 +207,35 @@ local function add_missions_and_unlock_requirements()
     priestess_mission:trigger()
 end
 
+-- uggo resolution to the tech notification shit
+local function disable_tech_notification()
+    local docker = find_uicomponent(core:get_ui_root(), "layout", "faction_buttons_docker", "end_turn_docker")
+    if not is_uicomponent(docker) then
+        return
+    end
+
+    local settings_button = find_uicomponent(docker, "notification_frame", "button_notification_settings")
+
+    if not is_uicomponent(settings_button) then
+        return
+    end
+
+    settings_button:SimulateLClick()
+    local checkbox = find_uicomponent(docker, "notification_settings_list", "2", "checkbox_toggle")
+    
+    if not is_uicomponent(checkbox) then
+        return
+    end
+
+    if checkbox:CurrentState() == "selected" then
+        checkbox:SimulateLClick()
+    end
+
+    cm:callback(function()
+        settings_button:SimulateLClick()
+    end)
+end
+
 -- functionality for the NP icon on the topbar
 local function add_pr_uic()
     local parent = find_uicomponent(core:get_ui_root(), "layout", "resources_bar", "topbar_list_parent")
@@ -1349,11 +1378,9 @@ cm:add_first_tick_callback(
 
         -- UI stuff
         if cm:get_local_faction(true) == legion then
-            local cuim = cm:get_campaign_ui_manager()
-            cuim:suppress_end_of_turn_warning("tech", true)
-
             CampaignUI.ClearSelection()
             
+            disable_tech_notification()
             kill_blood_kisses_and_tech()
             set_hunters_panel()
             add_pr_uic()
