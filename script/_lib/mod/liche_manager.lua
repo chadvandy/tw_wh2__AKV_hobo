@@ -273,6 +273,49 @@ function liche_manager:is_regiment_key(unit_key)
     return not not regiments[unit_key]
 end
 
+--v method()
+function liche_manager:refresh_upkeep_penalty()
+    --# assume self: LICHE_MANAGER
+    local faction = cm:get_faction(self._faction_key)
+
+	local difficulty = cm:model():combined_difficulty_level()
+	
+	local effect_bundle = "wh_main_bundle_force_additional_army_upkeep_easy"			-- easy
+	
+	if difficulty == 0 then
+		effect_bundle = "wh_main_bundle_force_additional_army_upkeep_normal"			-- normal
+	elseif difficulty == -1 then
+		effect_bundle = "wh_main_bundle_force_additional_army_upkeep_hard"				-- hard
+	elseif difficulty == -2 then
+		effect_bundle = "wh_main_bundle_force_additional_army_upkeep_very_hard"			-- very hard
+	elseif difficulty == -3 then
+		effect_bundle = "wh_main_bundle_force_additional_army_upkeep_legendary"		-- legendary
+	end
+	
+	local mf_list = faction:military_force_list()
+	local army_list = {} --: vector<CA_MILITARY_FORCE>
+	
+	-- clone the military force list, excluding any garrisons and black arks
+	for i = 0, mf_list:num_items() - 1 do
+		local current_mf = mf_list:item_at(i)
+		
+		if not current_mf:is_armed_citizenry() and current_mf:has_general() then
+			table.insert(army_list, current_mf)
+		end
+	end
+	
+	-- if there is more than one army, apply the effect bundle to the second army onwards
+	if #army_list > 1 then
+		for i = 2, #army_list do
+			local current_mf = army_list[i]
+			
+			if not current_mf:has_effect_bundle(effect_bundle) then
+				cm:apply_effect_bundle_to_characters_force(effect_bundle, army_list[i]:general_character():cqi(), 0, true)
+            end
+		end
+	end
+end
+
 --v method() --> string
 function liche_manager:get_unit_list()
     --# assume self: LICHE_MANAGER
@@ -1657,23 +1700,30 @@ function liche_manager:kill_wounded_kemmy()
     self:log("WOUNDED KEMMY: Killing wounded Kemmy.")
     local cqi = self:get_wounded_cqi()
     local char = cm:get_character_by_cqi(cqi)
+
+    -- hide killed and trespassing
     cm:disable_event_feed_events(true, "wh_event_category_character", "", "")
+    cm:disable_event_feed_events(true, "wh_event_category_diplomacy", "", "")
+
     if not char then
         --# assume cqi: number
         self:error("WOUNDED KEMMY: Kill Wounded Kemmy failed, char with CQI ["..cqi.."] unfound. Investigate!")
         return
     end
+
     if not char:character_subtype("AK_hobo_kemmy_wounded") then
         --# assume cqi: number
         self:error("WOUNDED KEMMY: Kill Wounded Kemmy failed, char with CQI ["..cqi.."] does not have the correct subtype. Investigate!")
         return
     end
+
     cm:kill_character(cqi, true, false)
     
     cm:callback(function() 
         cm:disable_event_feed_events(false, "wh_event_category_character", "", "") 
-        apply_upkeep_penalty(cm:get_faction(self._faction_key)) -- needed to refresh the upkeep penalty
-    end, 1)
+        cm:disable_event_feed_events(false, "wh_event_category_diplomacy", "", "")
+        self:refresh_upkeep_penalty()
+    end, 2)
 end
 
 -- TODO test that this works between saves
@@ -1690,6 +1740,10 @@ function liche_manager:respawn_kemmy(turn, unit_list)
     self:spend_life()
 
     local kemmy_cqi = self:get_real_cqi()
+
+    local wounded_kemmy_cqi = self:get_wounded_cqi()
+    local wounded_kemmy_obj = cm:get_character_by_cqi(wounded_kemmy_cqi)
+    cm:remove_effect_bundle_from_character("AK_hobo_wounded_kemmy_default", wounded_kemmy_obj)
 
     self._unit_list = unit_list
 end
@@ -1737,7 +1791,8 @@ function liche_manager:spawn_wounded_kemmy(x, y, kem_cqi)
         "",
         false,
         function(cqi)
-            -- for later? idk
+            local char_obj = cm:get_character_by_cqi(cqi)
+            cm:apply_effect_bundle_to_character("AK_hobo_wounded_kemmy_default", char_obj, -1)
         end
     )
 
