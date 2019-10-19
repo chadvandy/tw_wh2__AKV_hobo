@@ -304,10 +304,6 @@ end
 local function fix_necropower()
     cm:faction_add_pooled_resource("wh2_dlc11_vmp_the_barrow_legion", "necropower", "bribes", 1)
     cm:faction_add_pooled_resource("wh2_dlc11_vmp_the_barrow_legion", "necropower", "bribes", -1)
-    
-    -- doing this here because why not
-    cm:faction_add_pooled_resource("wh2_dlc11_vmp_the_barrow_legion", "lichemaster_lives", "bribes", 1)
-    cm:faction_add_pooled_resource("wh2_dlc11_vmp_the_barrow_legion", "lichemaster_lives", "bribes", -1)
 end
 
 local function setup_kemmler()

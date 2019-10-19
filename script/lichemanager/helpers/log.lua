@@ -1,5 +1,5 @@
 local LicheLog = {
-    filePath = "!!!liche_log.txt",
+    filePath = "liche_log.txt",
     writeLog = true
 } --# assume LicheLog: LICHE_LOG
 

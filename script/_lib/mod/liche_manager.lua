@@ -81,7 +81,6 @@ liche_manager._currentPower = 0
 
 --[[ WOUNDED KEMMY DEETS ]]
 liche_manager._last_turn_lives_changed = 0
-liche_manager._remaining_max_lives = 0
 liche_manager._unit_list = ""
 
 ------------------------------------
@@ -1532,8 +1531,8 @@ end
 --v method() --> number
 function liche_manager:get_max_lives()
     --# assume self: LICHE_MANAGER
-    local remaining = self._remaining_max_lives
-    return remaining
+    local faction = cm:get_faction(self._faction_key)
+    return faction:pooled_resource("lichemaster_max_remaining_lives"):value()
 end
 
 ---- Check if the player can revive
@@ -1569,14 +1568,12 @@ function liche_manager:add_life()
     end
 end
 
----- Remove one of the lives!
+---- Remove one of the lives & one Max Remaining Life
 --v method()
 function liche_manager:spend_life()
     --# assume self: LICHE_MANAGER
     cm:faction_add_pooled_resource(self._faction_key, "lichemaster_lives", "bribes", -1)
-
-    -- subtract 1 from the remaining max lives
-    self._remaining_max_lives = self._remaining_max_lives - 1
+    cm:faction_add_pooled_resource(self._faction_key, "lichemaster_max_remaining_lives", "lichemaster_max_remaining_lives", -1)
 end
 
 ---- run through the character list of the faction and return the CQI of Wounded Kemmy
@@ -1711,8 +1708,8 @@ function liche_manager:wounded_kemmy_unit_list()
 end
 
 ---- Spawn Wounded Kemmy off-screen when Kemmler is in a pending battle and has at least one life.
---v method(x: number, y: number, kem_cqi: CA_CQI, position: string)
-function liche_manager:spawn_wounded_kemmy(x, y, kem_cqi, position)
+--v method(x: number, y: number, kem_cqi: CA_CQI)
+function liche_manager:spawn_wounded_kemmy(x, y, kem_cqi)
     --# assume self: LICHE_MANAGER
 
     local unit_list = self:wounded_kemmy_unit_list()
@@ -1771,7 +1768,6 @@ cm:add_saving_game_callback(
         cm:save_named_value("lichemaster_unit_list", liche_manager._unit_list, context)
         cm:save_named_value("lichemaster_num_ruins_defiled", liche_manager._num_ruins_defiled, context)
         cm:save_named_value("lichemaster_num_razed_settlements", liche_manager._num_razed_settlements, context)
-        cm:save_named_value("lichemaster_remaining_max_lives", liche_manager._remaining_max_lives, context)
         cm:save_named_value("lichemaster_is_draesca_unlocked", liche_manager._is_draesca_unlocked, context)
         cm:save_named_value("lichemaster_is_nameless_unlocked", liche_manager._is_nameless_unlocked, context)
         cm:save_named_value("lichemaster_is_priestess_unlocked", liche_manager._is_priestess_unlocked, context)
@@ -1790,7 +1786,6 @@ cm:add_loading_game_callback(
             liche_manager._num_ruins_defiled = cm:load_named_value("lichemaster_num_ruins_defiled", 0, context)
             liche_manager._num_razed_settlements = cm:load_named_value("lichemaster_num_razed_settlements", 0, context)
             liche_manager._hero_spawn_rank_increase = cm:load_named_value("lichemaster_hero_spawn_rank_increase", 0, context)
-            liche_manager._remaining_max_lives = cm:load_named_value("lichemaster_remaining_max_lives", 3, context)
             liche_manager._is_draesca_unlocked = cm:load_named_value("lichemaster_is_draesca_unlocked", false, context)
             liche_manager._is_nameless_unlocked = cm:load_named_value("lichemaster_is_nameless_unlocked", false, context)
             liche_manager._is_priestess_unlocked = cm:load_named_value("lichemaster_is_priestess_unlocked", false, context)

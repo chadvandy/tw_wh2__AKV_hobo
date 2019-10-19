@@ -1034,16 +1034,16 @@ function liche_init_listeners()
             "LicheKemmyWoundedOffscreen",
             "PendingBattle",
             function(context)
-                if context:pending_battle():has_attacker() and context:pending_battle():has_defender() then
-                    local attacker_faction = context:pending_battle():attacker():faction():name()
-                    local defender_faction = context:pending_battle():defender():faction():name()
+                local pb = context:pending_battle()
+                if pb:has_attacker() and pb:has_defender() then
+                    local attacker_faction = pb:attacker():faction():name()
+                    local defender_faction = pb:defender():faction():name()
                     return (attacker_faction == legion or defender_faction == legion) and lm:can_revive()
                 end
                 return false
             end,
             function(context)
-                lm:log("WOUNDED KEMMY: Kemmler is in a battle and has enough stuff to revive. Spawning Wounded Kemmy off-screen.")
-
+                local ok, err = pcall(function()
                 local kemmy --: CA_CHAR
                 local pb = context:pending_battle()
 
@@ -1056,16 +1056,13 @@ function liche_init_listeners()
                 -- try to find if Kemmler is in the battle
                 if attacker:character_subtype("vmp_heinrich_kemmler") then
                     kemmy = attacker
-                    position = "attacker"
                 elseif defender:character_subtype("vmp_heinrich_kemmler") then
                     kemmy = defender
-                    position = "defender"
                 else
                     for i = 0, secondary_attackers:num_items() - 1 do
                         local secondary_attacker = secondary_attackers:item_at(i)
                         if secondary_attacker:character_subtype("vmp_heinrich_kemmler") then
                             kemmy = secondary_attacker
-                            position = "secondary_attacker_"..i
                             break
                         end
                     end
@@ -1073,7 +1070,6 @@ function liche_init_listeners()
                         local secondary_defender = secondary_defenders:item_at(i)
                         if secondary_defender:character_subtype("vmp_heinrich_kemmler") then
                             kemmy = secondary_defender
-                            position = "secondary_defender_"..i
                             break
                         end
                     end
@@ -1083,6 +1079,8 @@ function liche_init_listeners()
                 if not kemmy then
                     return
                 end
+
+                lm:log("WOUNDED KEMMY: Kemmler is in a battle and has enough stuff to revive. Spawning Wounded Kemmy off-screen.")
 
                 local x, y = kemmy:logical_position_x(), kemmy:logical_position_y()
 
@@ -1107,10 +1105,11 @@ function liche_init_listeners()
 
                 -- the last two parameters aren't even used anymore, but it's easier to just keep them in
                 -- spawn the wounded version of kemmy offscreen, and use the (x,y) arguments passed here to spawn Kemmler there later on
-                lm:spawn_wounded_kemmy(x, y, kemmy:command_queue_index(), position)
+                lm:spawn_wounded_kemmy(x, y, kemmy:command_queue_index())
                 lm:log("WOUNDED KEMMY: Wounded Kemmy spawned at ("..x..", "..y..").")
 
                 -- check if, after the battle, Kemmler is wounded - if not, kill the fake version of Kemmler. If he is, begin the respawn mechanic
+                -- TODO this won't work if the Lua state changes
                 core:add_listener(
                     "WoundedKemmyBattleCompleted",
                     "BattleCompleted",
@@ -1127,6 +1126,7 @@ function liche_init_listeners()
                     end,
                     false
                 )
+                end) if not ok then lm:error(err) end
             end,
             true
         )
