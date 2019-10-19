@@ -233,7 +233,7 @@ local function disable_tech_notification()
 
     cm:callback(function()
         settings_button:SimulateLClick()
-    end)
+    end, 0.1)
 end
 
 -- functionality for the NP icon on the topbar

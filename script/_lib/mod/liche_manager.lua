@@ -316,7 +316,15 @@ function liche_manager:refresh_upkeep_penalty()
 				cm:apply_effect_bundle_to_characters_force(effect_bundle, army_list[i]:general_character():cqi(), 0, true)
             end
 		end
-	end
+    end
+    
+    -- jostle this shit to make the income UI refresh?
+    if #army_list == 1 then
+        cm:apply_effect_bundle_to_characters_force("AK_hobo_tunnel", army_list[1]:general_character():cqi(), 0, true)
+        cm:callback(function()
+            cm:remove_effect_bundle_from_characters_force("AK_hobo_tunnel", army_list[1]:general_character():cqi())
+        end, 0.1)
+    end
 end
 
 --v method() --> boolean
