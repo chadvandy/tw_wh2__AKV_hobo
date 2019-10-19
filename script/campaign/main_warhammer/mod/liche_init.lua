@@ -1084,14 +1084,14 @@ function liche_init_listeners()
 
                 local x, y = kemmy:logical_position_x(), kemmy:logical_position_y()
 
-                local kem_unit_list --: string
+                local kem_unit_list = "" --: string
                 local unit_list = kemmy:military_force():unit_list()
                 for i = 0, unit_list:num_items() -1 do
                     local unit = unit_list:item_at(i)
                     local unit_key = unit:unit_key()
                     if unit_key:find("_cha_") then
                         -- ignore characters
-                    elseif i == 0 then
+                    elseif kem_unit_list == "" then
                         -- create the beginning of the unit key string
                         kem_unit_list = unit_key .. ","
                     elseif i == unit_list:num_items() -1 then

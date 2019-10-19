@@ -1654,22 +1654,26 @@ end
 --v method()
 function liche_manager:kill_wounded_kemmy()
     --# assume self: LICHE_MANAGER
-    self:log("WOUNDED KEMMLER: Killing wounded Kemmy.")
+    self:log("WOUNDED KEMMY: Killing wounded Kemmy.")
     local cqi = self:get_wounded_cqi()
     local char = cm:get_character_by_cqi(cqi)
-    cm:disable_event_feed_events(true, "", "", "character_dies_in_action")
+    cm:disable_event_feed_events(true, "wh_event_category_character", "", "")
     if not char then
         --# assume cqi: number
-        self:error("WOUNDED KEMMLER: Kill Wounded Kemmy failed, char with CQI ["..cqi.."] unfound. Investigate!")
+        self:error("WOUNDED KEMMY: Kill Wounded Kemmy failed, char with CQI ["..cqi.."] unfound. Investigate!")
         return
     end
     if not char:character_subtype("AK_hobo_kemmy_wounded") then
         --# assume cqi: number
-        self:error("WOUNDED KEMMLER: Kill Wounded Kemmy failed, char with CQI ["..cqi.."] does not have the correct subtype. Investigate!")
+        self:error("WOUNDED KEMMY: Kill Wounded Kemmy failed, char with CQI ["..cqi.."] does not have the correct subtype. Investigate!")
         return
     end
     cm:kill_character(cqi, true, false)
-    cm:callback(function() cm:disable_event_feed_events(false, "", "", "character_dies_in_action") end, 1)
+    
+    cm:callback(function() 
+        cm:disable_event_feed_events(false, "wh_event_category_character", "", "") 
+        apply_upkeep_penalty(cm:get_faction(self._faction_key)) -- needed to refresh the upkeep penalty
+    end, 1)
 end
 
 -- TODO test that this works between saves
