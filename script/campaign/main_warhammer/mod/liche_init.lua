@@ -1043,7 +1043,6 @@ function liche_init_listeners()
                 return false
             end,
             function(context)
-                local ok, err = pcall(function()
                 local kemmy --: CA_CHAR
                 local pb = context:pending_battle()
 
@@ -1105,30 +1104,31 @@ function liche_init_listeners()
 
                 -- the last two parameters aren't even used anymore, but it's easier to just keep them in
                 -- spawn the wounded version of kemmy offscreen, and use the (x,y) arguments passed here to spawn Kemmler there later on
-                lm:spawn_wounded_kemmy(x, y, kemmy:command_queue_index())
+                lm:spawn_wounded_kemmy(x, y, kemmy:command_queue_index(), kem_unit_list)
                 lm:log("WOUNDED KEMMY: Wounded Kemmy spawned at ("..x..", "..y..").")
-
-                -- check if, after the battle, Kemmler is wounded - if not, kill the fake version of Kemmler. If he is, begin the respawn mechanic
-                -- TODO this won't work if the Lua state changes
-                core:add_listener(
-                    "WoundedKemmyBattleCompleted",
-                    "BattleCompleted",
-                    true,
-                    function(context)
-                        local liche = cm:get_faction("wh2_dlc11_vmp_the_barrow_legion")
-                        if liche:faction_leader():is_wounded() then
-                            lm:log("WOUNDED KEMMY: Kemmler was wounded in the battle. Beginning the respawn process!")
-                            lm:respawn_kemmy(cm:model():turn_number(), kem_unit_list)
-                        else
-                            lm:log("WOUNDED KEMMY: Kemmler survived the battle. Axing wounded kemmy.")
-                            lm:kill_wounded_kemmy()
-                        end
-                    end,
-                    false
-                )
-                end) if not ok then lm:error(err) end
             end,
             true
+        )
+
+        -- check if, after the battle, Kemmler is wounded - if not, kill the fake version of Kemmler. If he is, begin the respawn mechanic
+        core:add_listener(
+            "WoundedKemmyBattleCompleted",
+            "BattleCompleted",
+            function(context)
+                -- should only be true through spawn_wounded_kemmy()
+                return lm:is_respawn_pending()
+            end,
+            function(context)
+                local liche = cm:get_faction("wh2_dlc11_vmp_the_barrow_legion")
+                if liche:faction_leader():is_wounded() then
+                    lm:log("WOUNDED KEMMY: Kemmler was wounded in the battle. Beginning the respawn process!")
+                    lm:respawn_kemmy(cm:model():turn_number())
+                else
+                    lm:log("WOUNDED KEMMY: Kemmler survived the battle. Axing wounded kemmy.")
+                    lm:kill_wounded_kemmy()
+                end
+            end,
+            false
         )
 
         -- spawns a new agent on specific skills being learned

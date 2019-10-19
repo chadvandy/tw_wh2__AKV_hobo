@@ -76,12 +76,15 @@ liche_manager._defile_debug = ""
 
 --[[ MINOR INFOS ]]
 liche_manager._hero_spawn_rank_increase = 0
-liche_manager._turn_to_spawn = 0
 liche_manager._currentPower = 0
 
 --[[ WOUNDED KEMMY DEETS ]]
 liche_manager._last_turn_lives_changed = 0
-liche_manager._unit_list = ""
+liche_manager._respawn_details = {
+    respawn_post_battle_pending = false,
+    turn_to_spawn = 0,
+    unit_list = ""
+} --: LICHE_SPAWN_DETAILS
 
 ------------------------------------
 ------------- DEBUGGING ------------
@@ -316,22 +319,40 @@ function liche_manager:refresh_upkeep_penalty()
 	end
 end
 
+--v method() --> boolean
+function liche_manager:is_respawn_pending()
+    --# assume self: LICHE_MANAGER
+    return self._respawn_details.respawn_post_battle_pending
+end
+
+--v method(enable: boolean)
+function liche_manager:set_respawn_pending(enable)
+    --# assume self: LICHE_MANAGER
+    self._respawn_details.respawn_post_battle_pending = not not enable
+end
+
+--v method(unit_list: string)
+function liche_manager:set_unit_list(unit_list)
+    --# assume self: LICHE_MANAGER
+    self._respawn_details.unit_list = unit_list
+end
+
 --v method() --> string
 function liche_manager:get_unit_list()
     --# assume self: LICHE_MANAGER
-    return self._unit_list
+    return self._respawn_details.unit_list
 end
 
 --v method() --> number
 function liche_manager:get_turn_to_spawn()
     --# assume self: LICHE_MANAGER
-    return self._turn_to_spawn
+    return self._respawn_details.turn_to_spawn
 end
 
 --v method(turn: number)
 function liche_manager:set_turn_to_spawn(turn)
     --# assume self: LICHE_MANAGER
-    self._turn_to_spawn = turn
+    self._respawn_details.turn_to_spawn = turn
 end
 
 --v method() --> CA_CQI
@@ -1717,6 +1738,11 @@ function liche_manager:kill_wounded_kemmy()
     end
 
     cm:kill_character(cqi, true, false)
+
+    -- reset the respawn details to default
+    self:set_respawn_pending(false)
+    self:set_unit_list("")
+    self:set_turn_to_spawn(0)
     
     cm:callback(function() 
         cm:disable_event_feed_events(false, "wh_event_category_character", "", "") 
@@ -1727,23 +1753,22 @@ end
 -- TODO test that this works between saves
 ---- Called to establish the countdown until the wounded kemmy is killed and real kemmy is revived!
 ---- Wounded Kemmy is spawned elsewhere, this method simply costs the life and tracks the 
---v method(turn: number, unit_list: string)
-function liche_manager:respawn_kemmy(turn, unit_list)
+--v method(turn: number)
+function liche_manager:respawn_kemmy(turn)
     --# assume self: LICHE_MANAGER
-    self._turn_to_spawn = turn + 5
+
+    self:set_turn_to_spawn(turn + 5)
+    self:set_respawn_pending(false)
 
     self:log("WOUNDED KEMMY: Kemmler wounded on turn ["..turn.."], and will be revived on turn ["..(turn + 5).."].")
-    self:log("WOUNDED KEMMY: Removing the stored life.")
 
+    self:log("WOUNDED KEMMY: Removing the stored life.")
     self:spend_life()
 
-    local kemmy_cqi = self:get_real_cqi()
-
+    -- remove the visibility debuff on wounded kemmy
     local wounded_kemmy_cqi = self:get_wounded_cqi()
     local wounded_kemmy_obj = cm:get_character_by_cqi(wounded_kemmy_cqi)
     cm:remove_effect_bundle_from_character("AK_hobo_wounded_kemmy_default", wounded_kemmy_obj)
-
-    self._unit_list = unit_list
 end
 
 ---- Build a basic army for the Wounded Kemmy temporary spawn
@@ -1764,8 +1789,8 @@ function liche_manager:wounded_kemmy_unit_list()
 end
 
 ---- Spawn Wounded Kemmy off-screen when Kemmler is in a pending battle and has at least one life.
---v method(x: number, y: number, kem_cqi: CA_CQI)
-function liche_manager:spawn_wounded_kemmy(x, y, kem_cqi)
+--v method(x: number, y: number, kem_cqi: CA_CQI, unit_list: string)
+function liche_manager:spawn_wounded_kemmy(x, y, kem_cqi, unit_list)
     --# assume self: LICHE_MANAGER
 
     local unit_list = self:wounded_kemmy_unit_list()
@@ -1774,6 +1799,10 @@ function liche_manager:spawn_wounded_kemmy(x, y, kem_cqi)
     if spawnRegion == "" then
         self:error("WOUNDED KEMMY: Spawn Wounded Kemmy called but the coordinates returned were -1, -1. Investigate!")
     end
+
+    -- setup details for the game to save 
+    self:set_unit_list(unit_list)
+    self:set_respawn_pending(true)
 
     cm:disable_event_feed_events(true, "wh_event_category_diplomacy", "", "")
 
@@ -1824,8 +1853,7 @@ cm:add_saving_game_callback(
     function(context)
         cm:save_named_value("lichemaster_can_recruit_lord_table", liche_manager._can_recruit_lord, context)
         cm:save_named_value("lichemaster_hero_spawn_rank_increase", liche_manager._hero_spawn_rank_increase, context)
-        cm:save_named_value("lichemaster_turn_to_spawn", liche_manager._turn_to_spawn, context)
-        cm:save_named_value("lichemaster_unit_list", liche_manager._unit_list, context)
+        cm:save_named_value("lichemaster_respawn_details", liche_manager._respawn_details, context)
         cm:save_named_value("lichemaster_num_ruins_defiled", liche_manager._num_ruins_defiled, context)
         cm:save_named_value("lichemaster_num_razed_settlements", liche_manager._num_razed_settlements, context)
         cm:save_named_value("lichemaster_is_draesca_unlocked", liche_manager._is_draesca_unlocked, context)
@@ -1841,8 +1869,7 @@ cm:add_loading_game_callback(
     function(context)
         if not cm:is_new_game() then
             liche_manager._can_recruit_lord = cm:load_named_value("lichemaster_can_recruit_lord_table", {}, context)
-            liche_manager._turn_to_spawn = cm:load_named_value("lichemaster_turn_to_spawn", 0, context)
-            liche_manager._unit_list = cm:load_named_value("lichemaster_unit_list", "", context)
+            liche_manager._respawn_details = cm:load_named_value("lichemaster_respawn_details", {}, context)
             liche_manager._num_ruins_defiled = cm:load_named_value("lichemaster_num_ruins_defiled", 0, context)
             liche_manager._num_razed_settlements = cm:load_named_value("lichemaster_num_razed_settlements", 0, context)
             liche_manager._hero_spawn_rank_increase = cm:load_named_value("lichemaster_hero_spawn_rank_increase", 0, context)
