@@ -1701,9 +1701,8 @@ function liche_manager:kill_wounded_kemmy()
     local cqi = self:get_wounded_cqi()
     local char = cm:get_character_by_cqi(cqi)
 
-    -- hide killed and trespassing
+    -- hide killed
     cm:disable_event_feed_events(true, "wh_event_category_character", "", "")
-    cm:disable_event_feed_events(true, "wh_event_category_diplomacy", "", "")
 
     if not char then
         --# assume cqi: number
@@ -1721,7 +1720,6 @@ function liche_manager:kill_wounded_kemmy()
     
     cm:callback(function() 
         cm:disable_event_feed_events(false, "wh_event_category_character", "", "") 
-        cm:disable_event_feed_events(false, "wh_event_category_diplomacy", "", "")
         self:refresh_upkeep_penalty()
     end, 2)
 end
@@ -1777,6 +1775,8 @@ function liche_manager:spawn_wounded_kemmy(x, y, kem_cqi)
         self:error("WOUNDED KEMMY: Spawn Wounded Kemmy called but the coordinates returned were -1, -1. Investigate!")
     end
 
+    cm:disable_event_feed_events(true, "wh_event_category_diplomacy", "", "")
+
     cm:create_force_with_general(
         self._faction_key,
         unit_list,
@@ -1796,6 +1796,7 @@ function liche_manager:spawn_wounded_kemmy(x, y, kem_cqi)
         end
     )
 
+    cm:callback(function() cm:disable_event_feed_events(false, "wh_event_category_diplomacy", "", "") end, 1)
 end
 
 -- make sure it's global! Also, initialize the logfile.
