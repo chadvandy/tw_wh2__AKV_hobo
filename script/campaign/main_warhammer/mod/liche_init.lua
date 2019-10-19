@@ -503,6 +503,11 @@ local function set_hunters_panel()
             local title = find_uicomponent(panel, "header_frame", "dy_faction") 
             title:SetStateText("{{tr:kemmler_hunter_panel_title}}")
 
+            -- hide the character name component and replace it, hopefully?
+            local dy_character_name = find_uicomponent(panel, "main", "characters_holder", "dy_character_name")
+            dy_character_name:CopyComponent("dy_character_name_copy")
+            dy_character_name:PropagatePriority(1)
+
             -- set up the scene to be on Nameless, instead of on Van Hel
             local click = find_uicomponent(char_list, "AK_hobo_nameless") 
             if click then 
@@ -521,12 +526,6 @@ local function set_hunters_panel()
 
             priestess:SetImagePath("ui/kemmler/AK_hobo_priestess_mini.png")
             priestess:SetTooltipText("{{tr:AK_hobo_priestess_mini}}", true)
-
-            -- hide the character name component and replace it, hopefully?
-            local dy_character_name = find_uicomponent(panel, "main", "characters_holder", "dy_character_name")
-            dy_character_name:CopyComponent("dy_character_name_copy")
-            dy_character_name:PropagatePriority(1)
-            --dy_character_name:SetVisible(false)
 
             -- hide the vanilla Hunters
             hide_vanilla_bois()
@@ -1020,10 +1019,8 @@ function liche_init_listeners()
                 )
                 lm:log("WOUNDED KEMMY: Kemmler respawned in region ["..spawnRegion.."] at location ("..spawnX..", "..spawnY.."). Enjoy.")
                 
-                -- axe the wounded version
+                -- axe the wounded version and revert all the respawn details
                 lm:kill_wounded_kemmy()
-    
-                lm:set_turn_to_spawn(0)
             end,
             true
         )
@@ -1119,7 +1116,7 @@ function liche_init_listeners()
                 return lm:is_respawn_pending()
             end,
             function(context)
-                local liche = cm:get_faction("wh2_dlc11_vmp_the_barrow_legion")
+                local liche = cm:get_faction(legion)
                 if liche:faction_leader():is_wounded() then
                     lm:log("WOUNDED KEMMY: Kemmler was wounded in the battle. Beginning the respawn process!")
                     lm:respawn_kemmy(cm:model():turn_number())
@@ -1352,6 +1349,9 @@ cm:add_first_tick_callback(
 
         -- UI stuff
         if cm:get_local_faction(true) == legion then
+            local cuim = cm:get_campaign_ui_manager()
+            cuim:suppress_end_of_turn_warning("tech", true)
+
             CampaignUI.ClearSelection()
             
             kill_blood_kisses_and_tech()
