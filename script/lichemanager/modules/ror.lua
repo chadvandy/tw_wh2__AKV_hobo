@@ -386,7 +386,7 @@ local function initialize_widget_main_box_components()
                     if not selected_cqi or not key then
                         lm:error("Tried to spawn an RoR, but no selected CQI or selected legion was found. Cancelling the input.")
                     else
-                        if lm:is_regiment_unlocked(key) then
+                        if lm:get_regiment_status(key) == "AVAILABLE" then
                             lm:spawn_ror_for_character(selected_cqi, key)
                             local spawn_button_uic = find_uicomponent(core:get_ui_root(), "legions_of_undeath", "parchment", "widget_main_box", "lichemaster_spawn_button")
                             if not spawn_button_uic then
@@ -407,6 +407,10 @@ local function initialize_widget_main_box_components()
         elseif state == "broke" then
             spawn_button_uic:SetState("inactive")
             spawn_button_uic:SetTooltipText("{{tr:kemmler_lou_spawn_button_tt_broke}}", true)
+            core:remove_listener("LichemasterSpawnLegion")
+        elseif state == "recruited" then
+            spawn_button_uic:SetState("inactive")
+            spawn_button_uic:SetTooltipText("{{tr:kemmler_lou_spawn_button_tt_recruited}}", true)
             core:remove_listener("LichemasterSpawnLegion")
         end
     end
@@ -443,10 +447,12 @@ local function initialize_widget_main_box_components()
             else
                 set_selected_text(loc_text)
 
-                if lm:is_regiment_unlocked(context.string) and lm:get_necropower() >= 5 then
+                if lm:get_regiment_status(context.string) == "AVAILABLE" and lm:get_necropower() >= 5 then
                     set_button_state("active")
-                elseif lm:is_regiment_unlocked(context.string) and not (lm:get_necropower() >= 5) then
+                elseif lm:get_regiment_status(context.string) == "AVAILABLE" and not (lm:get_necropower() >= 5) then
                     set_button_state("broke")
+                elseif lm:get_regiment_status(context.string) == "RECRUITED" then
+                    set_button_state("recruited")
                 else
                     set_button_state("inactive")
                 end

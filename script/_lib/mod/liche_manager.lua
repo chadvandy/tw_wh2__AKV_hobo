@@ -215,12 +215,31 @@ function liche_manager:does_regiment_exist_in_faction(unit_key)
             local mf_obj = char_obj:military_force()
             local unit_list = mf_obj:unit_list()
             if unit_list:has_unit(unit_key) then
+                -- written ugly to override the error checking
+                self._regiments[unit_key]._status = "RECRUITED"
                 return true
             end
         end
     end
 
     return false
+end
+
+--v method()
+function liche_manager:post_battle_regiment_status_check()
+    --# assume self: LICHE_MANAGER
+
+    local regiments = self:get_regiments_with_status("RECRUITED")
+    if #regiments == 0 then
+        -- no regiments recruited!
+        return
+    end
+    for i = 0, #regiments do
+        local regiment = regiments[i]
+        if not self:does_regiment_exist_in_faction(regiment._key) then
+            self:set_regiment_status(regiment._key, "AVAILABLE")
+        end
+    end
 end
 
 --v method() --> boolean
@@ -727,7 +746,7 @@ function liche_manager:ruins_spawn_ror()
     while not valid do
 
         -- list of rors that haven't been unlocked yet
-        local rors = self:get_locked_regiments()
+        local rors = self:get_regiments_with_status("LOCKED")
 
         if #rors == 0 then
             -- no RoR are left! We shouldn't have gotten here, but breaking to prevent an endless loop.
@@ -743,7 +762,7 @@ function liche_manager:ruins_spawn_ror()
             ror = test_ror
             break
         else
-            test_ror:set_unlocked(false)
+            -- above does_regiment_exist call moves regiments from "LOCKED" to "RECRUITED" for error checking
         end
     end
 
@@ -752,7 +771,7 @@ function liche_manager:ruins_spawn_ror()
         return
     end
 
-    self:set_regiment_unlocked(ror._key)
+    self:set_regiment_status(ror._key, "AVAILABLE")
     cm:trigger_incident(self._faction_key, "barrow_"..ror._key, true)
     self:log("DEFILE BARROWS: Legion of Undeath with key ["..ror._key.."] unlocked")
 end
@@ -1047,9 +1066,8 @@ function regiment.new_regiment(key, ui_name)
     self._key = key
     self._ui_name = ui_name
 
-    -- used to track status later on
-    self._is_recruited = false
-    self._is_unlocked = false
+    -- used to track status later on, can either be LOCKED, AVAILABLE, or RECRUITED
+    self._status = "LOCKED"
 
     -- text from an internal file, determines some UI stuff in the Legions of Undeath panel
     local TEXTS = liche_manager._units[1]
@@ -1084,18 +1102,16 @@ function regiment:ui_name()
     return self._ui_name
 end
 
----- Getter for unlocked status
---v method() --> bool
-function regiment:is_unlocked()
+--v method() --> string
+function regiment:get_status()
     --# assume self: LICHE_REGIMENT
-    return not not self._is_unlocked
+    return self._status
 end
 
----- Setter for unlocked status - true to unlock, false to lock
---v method(enable: boolean)
-function regiment:set_unlocked(enable)
+--v method(status: string) 
+function regiment:set_status(status)
     --# assume self: LICHE_REGIMENT
-    self._is_unlocked = not not enable
+    self._status = status
 end
 
 --- Grab a regiment by a key
@@ -1132,97 +1148,62 @@ function liche_manager:instantiate_existing_regiment(key, o)
     self._regiments[key] = o
 end
 
---- Grab all regiments that are unlocked
---v method() --> vector<LICHE_REGIMENT>
-function liche_manager:get_unlocked_regiments()
-    --# assume self: LICHE_MANAGER
-
-    local regiments = self._regiments
-
-    local get = {}
-    for k, v in pairs(regiments) do
-        if v._is_unlocked == true then
-            table.insert(get, v)
-        end
-    end
-
-    return get
-end
-
---- Grab all regiments that are locked
---v method() --> vector<LICHE_REGIMENT>
-function liche_manager:get_locked_regiments()
-    --# assume self: LICHE_MANAGER
-
-    local regiments = self._regiments
-
-    local get = {}
-    for k, v in pairs(regiments) do
-        if v._is_unlocked == false then
-            table.insert(get, v)
-        end
-    end
-
-    return get 
-end
-
----- Grab all regiments that are already recruited
---v method() --> vector<LICHE_REGIMENT>
-function liche_manager:get_recruited_regiments()
-    --# assume self: LICHE_MANAGER
-
-    local regiments = self._regiments
-
-    local get = {}
-    for k, v in pairs(regiments) do
-        if v._is_recruited == true then
-            table.insert(get, v)
-        end
-    end
-
-    return get 
-end
-
 ---- Wrapper to read the unlock status of a regiment
---v method(key: string) --> bool
-function liche_manager:is_regiment_unlocked(key)
+--v method(key: string) --> string
+function liche_manager:get_regiment_status(key)
     --# assume self: LICHE_MANAGER
 
     local regiment_obj = self:get_regiment_with_key(key)
     if is_nil(regiment_obj) then
-        self:error("is_regiment_unlocked() called but there's no saved regiment with the key ["..key.."]")
-        return false
+        self:error("get_regiment_status() called but there's no saved regiment with the key ["..key.."], returning 'NULL'")
+        return "NULL"
     end
 
-    return regiment_obj:is_unlocked()
+    return regiment_obj:get_status()
 end
 
----- Wrapper to unlock a regiment by the key
---v method(key: string)
-function liche_manager:set_regiment_unlocked(key)
+--v method(key: string, status: string)
+function liche_manager:set_regiment_status(key, status)
     --# assume self: LICHE_MANAGER
 
-    local regiment_obj = self:get_regiment_with_key(key)
-    if is_nil(regiment_obj) then
-        self:error("set_regiment_unlocked() called but there's no saved regiment with the key ["..key.."]")
+    local options = {LOCKED = true, AVAILABLE = true, RECRUITED = true} --: map<string, bool>
+    if not options[status] then
+        self:error("set_regiment_status() called, but '"..status.."' is not a valid option!")
         return
     end
 
-    regiment_obj:set_unlocked(true)
-end
-
----- Wrapper to lock a regiment by the key
---v method(key: string)
-function liche_manager:set_regiment_locked(key)
-    --# assume self: LICHE_MANAGER
-
     local regiment_obj = self:get_regiment_with_key(key)
     if is_nil(regiment_obj) then
-        self:error("set_regiment_locked() called but there's no saved regiment with the key ["..key.."]")
+        self:error("set_regiment_status() called but there's no saved regiment with the key ["..key.."], aborting!")
         return
     end
 
-    regiment_obj:set_unlocked(false)
+    local current_status = regiment_obj:get_status()
+
+    if current_status == "LOCKED" and status == "RECRUITED" then
+        self:error("set_regiment_status() called, attempted to transfer regiment ["..key.."] from LOCKED to RECRUITED, aborting!")
+        return
+    elseif current_status == "AVAILABLE" or current_status == "RECRUITED" and status == "LOCKED" then
+        self:error("set_regiment_status() called, attempted to transfer regiment ["..key.."] from "..current_status.." to LOCKED, aborting!")
+        return
+    end
+
+    regiment_obj:set_status(status)
+end
+
+--v method(status: string) --> vector<LICHE_REGIMENT>
+function liche_manager:get_regiments_with_status(status)
+    --# assume self: LICHE_MANAGER
+
+    local retval = {}
+
+    for key, regiment in pairs(self._regiments) do
+        if regiment:get_status() == status then
+            table.insert(retval, regiment)
+        end
+    end
+
+    return retval
 end
 
 --v method(unit_key: string) --> boolean

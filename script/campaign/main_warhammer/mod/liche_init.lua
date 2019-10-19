@@ -1237,7 +1237,19 @@ function liche_init_listeners()
                 return context:unit():faction():name() == legion and lm:is_regiment_key(context:unit():unit_key())
             end,
             function(context)
-                lm:set_regiment_unlocked(context:unit():unit_key())
+                lm:set_regiment_status(context:unit():unit_key(), "AVAILABLE")
+            end,
+            true
+        )
+
+        core:add_listener(
+            "LichemasterRorDestroyed",
+            "BattleCompleted",
+            function(context)
+                return cm:pending_battle_cache_faction_is_involved(legion)
+            end,
+            function(context)
+                lm:post_battle_regiment_status_check()
             end,
             true
         )
@@ -1258,7 +1270,7 @@ function liche_init_listeners()
                 local regiment_obj = lm:get_regiment_with_key(regiment_key)
 
                 -- lock the object, to prevent more than one existing
-                regiment_obj:set_unlocked(false)
+                regiment_obj:set_status("RECRUITED")
 
                 -- add the unit and charge the -5 NP
                 cm:grant_unit_to_character("character_cqi:"..char_cqi, regiment_key)
