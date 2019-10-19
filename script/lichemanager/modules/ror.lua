@@ -522,8 +522,6 @@ local function create_panel()
         return
     end
 
-    -- refresh the UI; some bugginess right now with editing an already-existing panel, so I destroy it and remake it. I'd like to fix that.
-    -- TODO fix that
     local existing_frame = find_uicomponent(root, ui_panel_name)
     if is_uicomponent(existing_frame) then
         existing_frame:SetVisible(true)

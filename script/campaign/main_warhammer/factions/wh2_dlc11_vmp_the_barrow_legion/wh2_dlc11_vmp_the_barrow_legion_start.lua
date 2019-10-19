@@ -357,7 +357,6 @@ local function setup_kemmler()
         local first_turn_army = startingArmy._armyList
 
         if cm:get_saved_value("Faction_Unlocker") then
-            --TODO this
             first_turn_army = "AK_hobo_skeleton_2h,AK_hobo_skeleton_spears,AK_hobo_skeleton_spears,AK_hobo_hexwr,AK_hobo_barrow_guardians,AK_hobo_glooms,AK_hobo_skeleton_spears,AK_hobo_skeleton_spears,AK_hobo_cairn"
         end
 

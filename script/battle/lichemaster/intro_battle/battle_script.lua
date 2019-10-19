@@ -120,7 +120,6 @@ ga_dwarf_1 = gb:get_army(gb:get_non_player_alliance_num(), 1, "dwarf_1")        
 ga_dwarf_2 = gb:get_army(gb:get_non_player_alliance_num(), 1, "dwarf_2")                -- ENEMY REINFORCEMENTS
 
 ---- OBJECTIVES ----
--- TODO customize this properly
 
 ga_kemmler:message_on_victory("player_wins")
 
