@@ -234,7 +234,7 @@ function liche_manager:post_battle_regiment_status_check()
         -- no regiments recruited!
         return
     end
-    for i = 0, #regiments do
+    for i = 1, #regiments do
         local regiment = regiments[i]
         if not self:does_regiment_exist_in_faction(regiment._key) then
             self:set_regiment_status(regiment._key, "AVAILABLE")
@@ -1347,16 +1347,14 @@ end
 --v method()
 function liche_manager:setup_regiments()
     --# assume self: LICHE_MANAGER
-    if self._regiments == {} then
-        self:new_regiment("AK_hobo_ror_doomed_legion", "The Doomed Legion")
-        self:new_regiment("AK_hobo_ror_caged", "The Caged")
-        self:new_regiment("AK_hobo_ror_storm", "Guardians of Medhe")
-        self:new_regiment("AK_hobo_ror_wight_knights", "Wight Knights")
-        self:new_regiment("AK_hobo_ror_jacsen", "Mikeal Jacsen")
-        self:new_regiment("AK_hobo_ror_beast", "Beast of Cailledh")
-        self:new_regiment("AK_hobo_ror_skulls", "Skulls of Geistenmund")
-        self:new_regiment("AK_hobo_ror_spider", "Terror of the Lichemaster")
-    end
+    self:new_regiment("AK_hobo_ror_doomed_legion", "The Doomed Legion")
+    self:new_regiment("AK_hobo_ror_caged", "The Caged")
+    self:new_regiment("AK_hobo_ror_storm", "Guardians of Medhe")
+    self:new_regiment("AK_hobo_ror_wight_knights", "Wight Knights")
+    self:new_regiment("AK_hobo_ror_jacsen", "Mikeal Jacsen")
+    self:new_regiment("AK_hobo_ror_beast", "Beast of Cailledh")
+    self:new_regiment("AK_hobo_ror_skulls", "Skulls of Geistenmund")
+    self:new_regiment("AK_hobo_ror_spider", "Terror of the Lichemaster")
 end
 
 -----------------------------------------
