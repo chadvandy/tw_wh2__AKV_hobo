@@ -549,7 +549,6 @@ local function create_panel()
     local parchment = find_uicomponent(panel, "parchment")
 
     -- assure that the parchment is properly oriented within the panel
-    -- TODO figure out why da heck it's bugging out like it is
     local fX, fY = panel:Position()
     local fW, fH = panel:Bounds()
 

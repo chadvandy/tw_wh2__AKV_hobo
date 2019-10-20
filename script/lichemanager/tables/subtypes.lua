@@ -1,5 +1,4 @@
 -- spawn deets!
--- TODO variable names for the High King and the Priestess
 --# type SUBTYPE = {
 --# forename: string,
 --# family_name: string,

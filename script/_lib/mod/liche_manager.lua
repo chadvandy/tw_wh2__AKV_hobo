@@ -471,7 +471,6 @@ function liche_manager:get_num_razed_settlements()
     return self._num_razed_settlements
 end
 
--- TODO make this easier to edit, read subtypes.lua fam
 ---- Apply ancillaries to LL's upon spawn
 --v method(char: CA_CHAR)
 function liche_manager:add_ancillaries_to_lord(char)
@@ -522,7 +521,6 @@ function liche_manager:can_occupy_region(region_name)
     return false
 end
 
--- TODO this list should be outsourced to a secondary Lua file, for Cataph's sake
 ---- Simple and quick check to see if a unit is in the Barrow unit set.
 --v method(unit_key: string) --> boolean
 function liche_manager:is_unit_barrow(unit_key)
@@ -586,7 +584,6 @@ function liche_manager:calculate_tier(region_name)
     return tier
 end
 
--- TODO make these less fucked up
 ---- Grab the effect, based on the tier of the ruin and some randomized chances
 --v method(ruin: string) --> string
 function liche_manager:calculate_effect(ruin)
@@ -724,28 +721,6 @@ function liche_manager:revive_barrow_units(cqi)
 
     --# assume cqi: number -- I HATE DOING THIS 
     self:log("DEFILE BARROW: Revived Barrow units for character with CQI ["..cqi.."] and killed that cruel Colonel.")
-end
-
-
--- TODO maybe variable turn number? defaulting to 5 for now
--- TODO decide if I want to do this. Disabled for now.
----- Unattached method, just exists if I want to use it later
---v method()
-function liche_manager:ruins_effect_bundle()
-    --# assume self: LICHE_MANAGER
-    local cqi = self:get_character_selected_cqi()
-    if not cqi then
-        self:error("ruins_effect_bundle() called, but no character selected is found!")
-    end
-
-    local bundles = {
-        -- build the effect bundles!
-    } --: vector < string >
-
-    local chance = cm:random_number(#bundles, 1)
-    local bundle = bundles[chance]
-
-    cm:apply_effect_bundle_to_characters_force(bundle, cqi, 5, false)
 end
 
 ---- random shot between spawning a Druid or Barrow King
@@ -1039,7 +1014,6 @@ function liche_manager:apply_effect(ruin)
 
 end
 
--- TODO save the character's id better
 ---- to be called whenever a settlement_captured panel is opened by Kemmler for a ruined faction
 --v method(region: string, button_number: string?)
 function liche_manager:ruinsUI(region, button_number)
@@ -1512,8 +1486,8 @@ function liche_manager:lord_pool_UI()
 
         -- stop loop if there is not UIC with that name
         if not agent then break end
+        
         -- check the on-screen text
-        -- TODO make this work for non-English
         local subtype = find_uicomponent(agent, "dy_subtype"):GetStateText()
         if subtype ~= "Legendary Evil" and subtype ~= "Legendary Druid" and subtype ~= "Legendary Wight King" and subtype ~= "Legendary Lord"  then
             agent:SetVisible(false)
@@ -1758,7 +1732,6 @@ function liche_manager:kill_wounded_kemmy()
     end, 2)
 end
 
--- TODO test that this works between saves
 ---- Called to establish the countdown until the wounded kemmy is killed and real kemmy is revived!
 ---- Wounded Kemmy is spawned elsewhere, this method simply costs the life and tracks the 
 --v method(turn: number)

@@ -963,20 +963,6 @@ function liche_init_listeners()
             end,
             true
         )
-            
-        -- why don't you work?
-        -- TODO make this work
-        --[[core:add_listener(
-            "RemoveNotificationForTech",
-            "ScriptEventPlayerFactionTurnStart",
-            function(context)
-                return context:faction():name() == legion
-            end,
-            function(context)
-                
-            end,
-            true
-        )]]
 
         -- listens for the custom occupy option being pressed
         core:add_listener(
