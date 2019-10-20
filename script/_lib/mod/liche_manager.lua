@@ -1770,8 +1770,8 @@ function liche_manager:wounded_kemmy_unit_list()
 end
 
 ---- Spawn Wounded Kemmy off-screen when Kemmler is in a pending battle and has at least one life.
---v method(x: number, y: number, kem_cqi: CA_CQI, unit_list: string)
-function liche_manager:spawn_wounded_kemmy(x, y, kem_cqi, unit_list)
+--v method(x: number, y: number, kem_cqi: CA_CQI, og_unit_list: string)
+function liche_manager:spawn_wounded_kemmy(x, y, kem_cqi, og_unit_list)
     --# assume self: LICHE_MANAGER
 
     local unit_list = self:wounded_kemmy_unit_list()
@@ -1782,7 +1782,7 @@ function liche_manager:spawn_wounded_kemmy(x, y, kem_cqi, unit_list)
     end
 
     -- setup details for the game to save 
-    self:set_unit_list(unit_list)
+    self:set_unit_list(og_unit_list)
     self:set_respawn_pending(true)
 
     cm:disable_event_feed_events(true, "wh_event_category_diplomacy", "", "")
