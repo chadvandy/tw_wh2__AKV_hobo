@@ -1,18 +1,4 @@
 -- spawn deets!
---# type SUBTYPE = {
---# forename: string,
---# family_name: string,
---# clan_name: string,
---# other_name: string,
---# age: int,
---# is_male: boolean,
---# agent_type: string,
---# agent_subtype: string,
---# is_immortal: boolean,
---# art_set_id: string,
---# ancillary1: string?,
---# ancillary2: string?
---# }
 
 local subtypes = {
     ["AK_hobo_nameless"] = {
@@ -25,7 +11,8 @@ local subtypes = {
         ["agent_type"] = "general",
         ["agent_subtype"] = "AK_hobo_nameless",
         ["is_immortal"] = true, 
-        ["art_set_id"] = "AK_hobo_nameless"
+        ["art_set_id"] = "AK_hobo_nameless",
+        ["ancillaries"] = {}
     },
     ["AK_hobo_draesca"] = {
         ["forename"] = "names_name_666777893",
@@ -38,7 +25,7 @@ local subtypes = {
         ["agent_subtype"] = "AK_hobo_draesca",
         ["is_immortal"] = true, 
         ["art_set_id"] = "AK_hobo_draesca",
-        ["ancillary1"] = "AK_hobo_draesca_helmet"
+        ["ancillaries"] = {"AK_hobo_draesca_helmet"}
     },
     ["AK_hobo_priestess"] = {
         ["forename"] = "names_name_666777895",
@@ -51,9 +38,8 @@ local subtypes = {
         ["agent_subtype"] = "AK_hobo_priestess",
         ["is_immortal"] = true, 
         ["art_set_id"] = "AK_hobo_priestess",
-        ["ancillary1"] = "AK_hobo_priestess_trickster",
-        ["ancillary2"] = "AK_hobo_priestess_charms"
+        ["ancillaries"] = {"AK_hobo_priestess_trickster", "AK_hobo_priestess_charms"}
     }
-} --: map<string, SUBTYPE>
+} --: map<string, LICHE_SUBTYPE>
 
 return subtypes

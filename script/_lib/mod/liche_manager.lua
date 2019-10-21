@@ -5,7 +5,7 @@ end
 
 local LOG = require("script/lichemanager/helpers/log") --# assume LOG: LICHE_LOG
 
-local names = require("script/lichemanager/tables/legionNames")
+local names = require("script/lichemanager/tables/legion_names")
 
 local liche_manager = {} --# assume liche_manager: LICHE_MANAGER
 
@@ -50,23 +50,14 @@ liche_manager._faction_key = "wh2_dlc11_vmp_the_barrow_legion"
 --liche_manager._regionNames = require("script/lichemaster/tables/regionNames")
 liche_manager._units = require("script/lichemanager/tables/units")
 
-liche_manager._forenames = names[1]
-liche_manager._family_names = names[2]
+liche_manager._names = {names[1], names[2]}
 
 --[[ REGIMENTS ]]
 liche_manager._regiments = {}
 liche_manager._selected_legion = ""
 
 -- [[ LORDS ]]
-liche_manager._can_recruit_lord = {
-    ["AK_hobo_draesca"] = false,
-    ["AK_hobo_priestess"] = false,
-    ["AK_hobo_nameless"] = false
-}
-
-liche_manager._is_draesca_unlocked = false
-liche_manager._is_priestess_unlocked = false
-liche_manager._is_nameless_unlocked = false
+liche_manager._lords = {}
 
 --[[ RUINS ]]
 liche_manager._ruins = {}
@@ -366,13 +357,27 @@ end
 --v method() --> CA_CQI
 function liche_manager:get_character_selected_cqi()
     --# assume self: LICHE_MANAGER
-    return self._characterSelected
+    return self._character_selected
 end
 
 --v method(cqi: CA_CQI)
 function liche_manager:set_character_selected_cqi(cqi)
     --# assume self: LICHE_MANAGER
-    self._characterSelected = cqi
+    self._character_selected = cqi
+end
+
+---- Internal function from the UI
+--v method(key: string)
+function liche_manager:set_selected_legion(key)
+    --# assume self: LICHE_MANAGER
+    self._selected_legion = key
+    core:trigger_event("LichemasterLegionSelected", key)
+end
+
+--v method() --> string
+function liche_manager:get_selected_legion()
+    --# assume self: LICHE_MANAGER
+    return self._selected_legion
 end
 
 --v method() --> string
@@ -381,18 +386,25 @@ function liche_manager:get_faction_key()
     return self._faction_key
 end
 
+--v method() --> (vector<string>, vector<string>)
+function liche_manager:get_names()
+    --# assume self: LICHE_MANAGER
+    return self._names[1], self._names[2]
+end
+
 ---- Check if lord is still locked
 --v method(subtype: string) --> boolean
 function liche_manager:is_lord_unlocked(subtype)
     --# assume self: LICHE_MANAGER
-    if subtype == "AK_hobo_nameless" then
-        return self._is_nameless_unlocked
-    elseif subtype == "AK_hobo_draesca" then
-        return self._is_draesca_unlocked
-    elseif subtype == "AK_hobo_priestess" then
-        return self._is_priestess_unlocked
+
+    local lord_obj = self:get_lord_by_key(subtype)
+
+    if is_nil(lord_obj) then
+        -- TODO errmsg
+        return false
     end
-    return false
+
+    return not not lord_obj._is_unlocked
 end
 
 ---- Quick shorthand for checking subtypes of generals
@@ -471,16 +483,39 @@ function liche_manager:get_num_razed_settlements()
     return self._num_razed_settlements
 end
 
----- Apply ancillaries to LL's upon spawn
+--- Setup for XP and ancillaries when an LL is spawned
 --v method(char: CA_CHAR)
-function liche_manager:add_ancillaries_to_lord(char)
+function liche_manager:legendary_lord_spawned(char)
     --# assume self: LICHE_MANAGER
-    local subtype = char:character_subtype_key()
-    if subtype == "AK_hobo_draesca" then
-        cm:force_add_ancillary(char, "AK_hobo_draesca_helmet", true, true)
-    elseif subtype == "AK_hobo_priestess" then
-        cm:force_add_ancillary(char, "AK_hobo_priestess_trickster", true, true)
-        cm:force_add_ancillary(char, "AK_hobo_priestess_charms", true, true)
+    local subtype_key = char:character_subtype_key()
+
+    local char_cqi = char:command_queue_index()
+    local char_str = cm:char_lookup_str(char_cqi)
+
+    --local num_existing = lm:get_num_legendary_lords()
+    local xp_to_apply = 0
+
+    local turn = cm:model():turn_number()
+
+    if turn >= 150 then
+        xp_to_apply = 15
+    elseif turn >= 100 then
+        xp_to_apply = 10
+    elseif turn >= 50 then
+        xp_to_apply = 5
+    end
+
+    if xp_to_apply > 0 then
+        cm:add_agent_experience(char_str, xp_to_apply, true)
+    end
+
+    local lord_obj = self:get_lord_by_key(subtype_key)
+    local data = lord_obj:get_data()
+
+    if #data.ancillaries > 0 then
+        for i = 1, #data.ancillaries do
+            cm:force_add_ancillary(char, data.ancillaries[i], true, true)
+        end
     end
 end
 
@@ -758,8 +793,9 @@ function liche_manager:ruins_spawn_agent()
     art_set = agent .. "_0" .. chance3
 
     -- grab name keys from the integrated Lua file with a huge list of name
-    local forename = self._forenames[cm:random_number(#self._forenames, 1)]
-    local family_name = self._family_names[cm:random_number(#self._family_names, 1)]
+    local forenames, family_names = self:get_names()
+    local forename = forenames[cm:random_number(#forenames, 1)]
+    local family_name = family_names[cm:random_number(#family_names, 1)]
 
     -- spawn the agent to the pool
     cm:spawn_character_to_pool(
@@ -1021,13 +1057,13 @@ function liche_manager:ruinsUI(region, button_number)
 
     local panel = find_uicomponent(core:get_ui_root(), "settlement_captured")
     local turns = self:calculate_turns_ruined(region)
-    local isLocked = self._ruins[region].isLocked
+    local is_locked = self._ruins[region].is_locked
 
     local RUINSUI = self._RUINSUI
     if not button_number then
-        RUINSUI.set(turns, isLocked)
+        RUINSUI.set(turns, is_locked)
     else
-        RUINSUI.set(turns, isLocked, button_number)
+        RUINSUI.set(turns, is_locked, button_number)
     end
 end
 
@@ -1051,7 +1087,7 @@ function liche_manager:set_ruin(ruin)
 
     -- save the current turn number, used when the ruin is defiled
     local turn = cm:model():turn_number()
-    self._ruins[ruin] = {turn = turn, isLocked = false}
+    self._ruins[ruin] = {turn = turn, is_locked = false}
 
     self:log("RUIN TRACKER: Setting ruin for region ["..ruin.."] on turn number ["..tostring(turn).."]")
 end
@@ -1083,7 +1119,7 @@ function liche_manager:defile_ruin(ruin)
     self:apply_effect(ruin)
 
     -- prevent this ruin from being defiled again
-    self._ruins[ruin].isLocked = true
+    self._ruins[ruin].is_locked = true
     
     -- tracker for the Priestess unlock condition
     self._num_ruins_defiled = self._num_ruins_defiled + 1
@@ -1272,14 +1308,6 @@ function liche_manager:spawn_ror_for_character(selectedCQI, key)
     CampaignUI.TriggerCampaignScriptEvent(selectedCQI, "lichemanager_ror|"..key)
 end
 
----- Internal function from the UI
---v method(key: string)
-function liche_manager:set_selected_legion(key)
-    --# assume self: LICHE_MANAGER
-    self._selected_legion = key
-    core:trigger_event("LichemasterLegionSelected", key)
-end
-
 ---- Big function that sets the UI and stuff, called when a LM character is selected by Kemmler player
 --v method(cqi: CA_CQI)
 function liche_manager:ror_UI(cqi)
@@ -1418,17 +1446,77 @@ local liche_lord = {} --# assume liche_lord: LICHE_LORD
     - 
 ]]
 
---v function(subtype_key: string, artset_key: string, unlock_condition: function)
-function liche_lord.new(subtype_key, artset_key, unlock_condition)
-    
+--v function(subtype_key: string, data: LICHE_SUBTYPE) --> LICHE_LORD
+function liche_lord.new(subtype_key, data)
+    local o = {}
+    setmetatable(o, {__index = liche_lord})
 
+    --# assume o: LICHE_LORD
+    o.key = subtype_key
+    o.data = data
+
+    o._can_recruit = false
+    o._is_unlocked = false
+
+    return o
+end
+
+--v method() --> LICHE_SUBTYPE
+function liche_lord:get_data()
+    --# assume self: LICHE_LORD
+
+    return self.data
+end
+
+--v method(key: string) --> LICHE_LORD
+function liche_manager:get_lord_by_key(key)
+    --# assume self: LICHE_MANAGER
+
+    local lord = self._lords[key]
+
+    if is_nil(lord) then
+        -- TODO errmsg
+        return nil
+    end
+
+    return lord
+end
+
+--v method(key: string, obj: table)
+function liche_manager:instantiate_existing_lord(key, obj)
+    --# assume self: LICHE_MANAGER
+
+    setmetatable(obj, {__index = liche_lord})
+    --# assume obj: LICHE_LORD
+
+    self._lords[key] = obj
+end
+
+--v method()
+function liche_manager:setup_lords()
+    --# assume self: LICHE_MANAGER
+
+    local subtypes = require("script/lichemanager/tables/subtypes")
+
+    for key, data in pairs(subtypes) do
+        local lord = liche_lord.new(key, data)
+        self._lords[key] = lord
+    end
 end
 
 ---- Self-explanatory getter
 --v method(subtype: string) --> boolean
 function liche_manager:can_recruit_lord(subtype)
     --# assume self: LICHE_MANAGER
-    return not not self._can_recruit_lord[subtype]
+
+    local lord = self:get_lord_by_key(subtype)
+    
+    if is_nil(lord) then
+        -- TODO errmsg
+        return false
+    end
+
+    return not not lord._can_recruit
 end
 
 --- Self-explanatory getter x2
@@ -1456,7 +1544,7 @@ function liche_manager:lord_lock_UI()
     end
 
     if not self:can_recruit_any_lord() then
-    -- grey the button and give a tooltip for UX
+        -- grey the button and give a tooltip for UX
         component:SetState("inactive")
         component:SetTooltipText("[[col:red]]Cannot recruit a new army - no available lords![[/col]]", false)
         self:log("LORDS: Locking the 'create army' button because there are no available lords to recruit!")
@@ -1464,7 +1552,6 @@ function liche_manager:lord_lock_UI()
         component:SetState("active")
         self:log("LORDS: Unlocking the 'create army' button!")
     end
-
 end
 
 ---- Runs through the pool of lords, when that panel opens up, and hides any lord that isn't one of the legendary lords
@@ -1519,35 +1606,34 @@ end
 function liche_manager:unlock_lord(subtype)
     --# assume self: LICHE_MANAGER
 
-    local subtypes = require("script/lichemanager/tables/subtypes")
-    for key, table in pairs(subtypes) do
-        if subtype == key then
-            cm:spawn_character_to_pool(
-                self._faction_key,
-                table.forename,
-                table.family_name,
-                table.clan_name,
-                table.other_name,
-                table.age,
-                table.is_male,
-                table.agent_type,
-                table.agent_subtype,
-                table.is_immortal,
-                table.art_set_id
-            )
-            self._can_recruit_lord[subtype] = true
+    local lord_obj = self:get_lord_by_key(subtype)
 
-            if key == "AK_hobo_nameless" then
-                self._is_nameless_unlocked = true
-            elseif key == "AK_hobo_draesca" then
-                self._is_draesca_unlocked = true
-            elseif key == "AK_hobo_priestess" then
-                self._is_priestess_unlocked = true
-            end
-
-            self:log("LORDS: Unlocked lord with subtype ["..subtype.."].")
-        end
+    if is_nil(lord_obj) then
+        -- TODO errmsg
+        return
     end
+
+    local data = lord_obj.data
+
+    cm:spawn_character_to_pool(
+        self._faction_key,
+        data.forename,
+        data.family_name,
+        data.clan_name,
+        data.other_name,
+        data.age,
+        data.is_male,
+        data.agent_type,
+        data.agent_subtype,
+        data.is_immortal,
+        data.art_set_id
+    )
+
+    lord_obj._can_recruit_lord = true
+    lord_obj._is_unlocked = true
+
+    self:log("LORDS: Unlocked lord with subtype ["..subtype.."].")
+        
 end
 
 -----------------------------------------
@@ -1844,16 +1930,14 @@ _G.get_lichemanager = get_lichemanager
 -- save details 
 cm:add_saving_game_callback(
     function(context)
-        cm:save_named_value("lichemaster_can_recruit_lord_table", liche_manager._can_recruit_lord, context)
         cm:save_named_value("lichemaster_hero_spawn_rank_increase", liche_manager._hero_spawn_rank_increase, context)
-        cm:save_named_value("lichemaster_respawn_details", liche_manager._respawn_details, context)
         cm:save_named_value("lichemaster_num_ruins_defiled", liche_manager._num_ruins_defiled, context)
         cm:save_named_value("lichemaster_num_razed_settlements", liche_manager._num_razed_settlements, context)
-        cm:save_named_value("lichemaster_is_draesca_unlocked", liche_manager._is_draesca_unlocked, context)
-        cm:save_named_value("lichemaster_is_nameless_unlocked", liche_manager._is_nameless_unlocked, context)
-        cm:save_named_value("lichemaster_is_priestess_unlocked", liche_manager._is_priestess_unlocked, context)
-        cm:save_named_value("lichemaster_regiments", liche_manager._regiments, context)
+
+        cm:save_named_value("lichemaster_respawn_details", liche_manager._respawn_details, context)
         cm:save_named_value("lichemaster_ruins", liche_manager._ruins, context)
+        cm:save_named_value("lichemaster_regiments", liche_manager._regiments, context)
+        cm:save_named_value("lichemaster_lords", liche_manager._lords, context)
     end
 )
 
@@ -1861,22 +1945,24 @@ cm:add_saving_game_callback(
 cm:add_loading_game_callback(
     function(context)
         if not cm:is_new_game() then
-            liche_manager._can_recruit_lord = cm:load_named_value("lichemaster_can_recruit_lord_table", {}, context)
-            liche_manager._respawn_details = cm:load_named_value("lichemaster_respawn_details", {}, context)
+            liche_manager._hero_spawn_rank_increase = cm:load_named_value("lichemaster_hero_spawn_rank_increase", 0, context)
             liche_manager._num_ruins_defiled = cm:load_named_value("lichemaster_num_ruins_defiled", 0, context)
             liche_manager._num_razed_settlements = cm:load_named_value("lichemaster_num_razed_settlements", 0, context)
-            liche_manager._hero_spawn_rank_increase = cm:load_named_value("lichemaster_hero_spawn_rank_increase", 0, context)
-            liche_manager._is_draesca_unlocked = cm:load_named_value("lichemaster_is_draesca_unlocked", false, context)
-            liche_manager._is_nameless_unlocked = cm:load_named_value("lichemaster_is_nameless_unlocked", false, context)
-            liche_manager._is_priestess_unlocked = cm:load_named_value("lichemaster_is_priestess_unlocked", false, context)
+
+            liche_manager._respawn_details = cm:load_named_value("lichemaster_respawn_details", {}, context)
             liche_manager._ruins = cm:load_named_value("lichemaster_ruins", {}, context)
             liche_manager._regiments = cm:load_named_value("lichemaster_regiments", {}, context)
+            liche_manager._lords = cm:load_named_value("lichemaster_lords", {}, context)
 
             for key, regiment in pairs(liche_manager._regiments) do
                 --# assume regiment: table
                 liche_manager:instantiate_existing_regiment(key, regiment)
             end
 
+            for key, lord in pairs(liche_manager._lords) do
+                --# assume lord: table
+                liche_manager:instantiate_existing_lord(key, lord)
+            end
         end
     end
 )

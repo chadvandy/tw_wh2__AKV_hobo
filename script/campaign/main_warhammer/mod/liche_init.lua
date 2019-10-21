@@ -10,8 +10,8 @@
 local lm = get_lichemanager()
 local legion = lm:get_faction_key()
 
-local UTILITY = lm._UTILITY
-local LicheLog = lm._LOG
+local UTILITY = lm:get_module_by_name("utility")
+local LicheLog = lm:get_module_by_name("log")
 
 
 ----------------------
@@ -607,8 +607,9 @@ function liche_init_listeners()
             end
         end
 
-        -- set up the regiments!
+        -- set up data-end objects for tracking LL progress and LoU progress
         lm:setup_regiments()
+        lm:setup_lords()
         
         -- disable confederation betwixt Kemmy and Vampies
         cm:force_diplomacy(legion, "culture:wh_main_vmp_vampire_counts", "form confederation", false, false, true)
@@ -679,28 +680,7 @@ function liche_init_listeners()
             end,
             function(context)
                 local char = context:character()
-                local char_cqi = char:command_queue_index()
-                local char_str = cm:char_lookup_str(char_cqi)
-
-                local subtype = context:character():character_subtype_key()
-
-                --local num_existing = lm:get_num_legendary_lords()
-                local xp_to_apply = 0
-
-                local turn = cm:model():turn_number()
-
-                if turn >= 150 then
-                    xp_to_apply = 15
-                elseif turn >= 100 then
-                    xp_to_apply = 10
-                elseif turn >= 50 then
-                    xp_to_apply = 5
-                end
-
-                if xp_to_apply > 0 then
-                    cm:add_agent_experience(char_str, xp_to_apply, true)
-                end
-                lm:add_ancillaries_to_lord(char)
+                lm:legendary_lord_spawned(char)
             end,
             true
         )
@@ -1171,11 +1151,11 @@ function liche_init_listeners()
                     art_set = subtype.."_"..chance
                 end
 
-                -- grab random names from the legionNames.lua file
-                local chance1 = cm:random_number(#lm._forenames, 1)
-                local chance2 = cm:random_number(#lm._family_names, 1)
-                local forename = lm._forenames[chance1]
-                local family_name = lm._family_names[chance2]
+                -- grab random names from the legion_names.lua file
+                local forenames, family_names = lm:get_names()
+
+                local forename = forenames[cm:random_number(#forenames, 1)]
+                local family_name = family_names[cm:random_number(#family_names, 1)]
 
                 -- spawn the new druid/barrow king to the pool with the deets above
                 cm:spawn_character_to_pool(
@@ -1286,7 +1266,7 @@ function liche_init_listeners()
 
                 -- add the unit and charge the -5 NP
                 cm:grant_unit_to_character("character_cqi:"..char_cqi, regiment_key)
-                cm:faction_add_pooled_resource(lm._faction_key, "necropower", "necropower_ror", -5)
+                cm:faction_add_pooled_resource(legion, "necropower", "necropower_ror", -5)
 
                 lm:log("LEGIONS OF UNDEATH: Spawning Legion with key ["..regiment_key.."] for character with CQI ["..char_cqi.."].")
             end,

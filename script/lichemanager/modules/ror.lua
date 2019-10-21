@@ -378,8 +378,8 @@ local function initialize_widget_main_box_components()
                     return context.string == "lichemaster_spawn_button"
                 end,
                 function(context)
-                    local selected_cqi = lm._characterSelected
-                    local key = lm._selected_legion
+                    local selected_cqi = lm:get_character_selected_cqi()
+                    local key = lm:get_selected_legion()
                     if key == "" then
                         return
                     end
