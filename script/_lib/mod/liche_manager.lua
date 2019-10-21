@@ -1480,6 +1480,7 @@ function liche_manager:lord_pool_UI()
     end
 
     local selected = false
+
     -- loop through all the UIC's found underneath the listbox
     for i = 0, 20 do
         local agent = find_uicomponent(component, "general_candidate_"..i.."_")
@@ -1489,12 +1490,23 @@ function liche_manager:lord_pool_UI()
         
         -- check the on-screen text
         local subtype = find_uicomponent(agent, "dy_subtype"):GetStateText()
-        if subtype ~= "Legendary Evil" and subtype ~= "Legendary Druid" and subtype ~= "Legendary Wight King" and subtype ~= "Legendary Lord"  then
+
+        -- grab the localised strings for each LL (for the sake of non-English!)
+        local checks = {
+            [effect.get_localised_string("agent_subtypes_onscreen_name_override_AK_hobo_draesca")] = true,
+            [effect.get_localised_string("agent_subtypes_onscreen_name_override_AK_hobo_priestess")] = true,
+            [effect.get_localised_string("agent_subtypes_onscreen_name_override_AK_hobo_nameless")] = true,
+            [effect.get_localised_string("agent_subtypes_onscreen_name_override_vmp_heinrich_kemmler")] = true
+        } --: map<string, bool>
+
+        -- if the state text isn't the same as one of the four above, hide it
+        if not checks[subtype] then
             agent:SetVisible(false)
         else
             if not selected then
                 -- select the top legendary lord, to prevent it from defaulting to a vanilla Vamp Lord
                 agent:SimulateLClick()
+                selected = true
             end
         end
     end
