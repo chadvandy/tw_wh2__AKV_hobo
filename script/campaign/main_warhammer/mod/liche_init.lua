@@ -610,6 +610,7 @@ function liche_init_listeners()
         -- set up data-end objects for tracking LL progress and LoU progress
         lm:setup_regiments()
         lm:setup_lords()
+        lm:setup_hero_spawn_rank()
         
         -- disable confederation betwixt Kemmy and Vampies
         cm:force_diplomacy(legion, "culture:wh_main_vmp_vampire_counts", "form confederation", false, false, true)
@@ -701,7 +702,7 @@ function liche_init_listeners()
                 local type = context:character_type_key()
                 local subtype = context:character_subtype_key()
 
-                if lm:get_hero_spawn_rank_increase() == 5 then
+                if lm:get_hero_spawn_rank() == 5 then
                     cm:add_agent_experience(char_str, 5, true)
                 end
             end,

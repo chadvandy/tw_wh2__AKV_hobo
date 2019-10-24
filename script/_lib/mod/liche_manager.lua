@@ -65,10 +65,6 @@ liche_manager._num_ruins_defiled = 0
 liche_manager._num_razed_settlements = 0
 liche_manager._defile_debug = ""
 
---[[ MINOR INFOS ]]
-liche_manager._hero_spawn_rank_increase = 0
-liche_manager._currentPower = 0
-
 --[[ WOUNDED KEMMY DEETS ]]
 liche_manager._last_turn_lives_changed = 0
 liche_manager._respawn_details = {
@@ -458,17 +454,76 @@ function liche_manager:get_necropower()
     return pr:value()
 end
 
+
+--- Checks if Kemmy has the hero spawn rank bundle; if not, give it over!
+--v method()
+function liche_manager:setup_hero_spawn_rank()
+    --# assume self: LICHE_MANAGER
+
+    local faction_key = self:get_faction_key()
+    local faction_obj = cm:get_faction(faction_key)
+    local bundle_key = "AK_hobo_hero_spawn_rank"
+
+    -- check needed to prevent applying the bundle after it's already been edited via scropty bits
+    if not faction_obj:has_effect_bundle(bundle_key) then
+        cm:apply_effect_bundle(bundle_key, faction_key, -1)
+    end
+end
+
 ---- Internal value that determines the rank that heroes spawn at
 --v method() --> number
-function liche_manager:get_hero_spawn_rank_increase()
+function liche_manager:get_hero_spawn_rank()
     --# assume self: LICHE_MANAGER
-    return self._hero_spawn_rank_increase
+
+    local faction_key = self:get_faction_key()
+    local faction_obj = cm:get_faction(faction_key)
+    local bundle_key = "AK_hobo_hero_spawn_rank"
+
+    local bundle_list = faction_obj:effect_bundles()
+    for i = 0, bundle_list:num_items() - 1 do
+        local bundle = bundle_list:item_at(i)
+        if bundle:key() == bundle_key then
+            local effect_list = bundle:effects()
+
+            -- shouild only be one effect!
+            local effect = bundle:effects():item_at(0)
+            if effect:key() == bundle_key then
+                return effect:value()
+            end
+        end
+    end
+    return 0
 end
 
 --v method(increase: number)
 function liche_manager:increase_hero_spawn_rank(increase)
     --# assume self: LICHE_MANAGER
-    self._hero_spawn_rank_increase = self._hero_spawn_rank_increase + increase
+
+    local faction_key = self:get_faction_key()
+    local faction_obj = cm:get_faction(faction_key)
+    local bundle_key = "AK_hobo_hero_spawn_rank"
+
+    local bundle_list = faction_obj:effect_bundles()
+    for i = 0, bundle_list:num_items() - 1 do
+        local bundle = bundle_list:item_at(i)
+        if bundle:key() == bundle_key then
+            local effect_list = bundle:effects()
+            local effect_val = 0 --: number
+
+            -- shouild only be one effect!
+            local effect = bundle:effects():item_at(0)
+            if effect:key() == bundle_key then
+                effect_val = effect:value()
+            end
+
+            local custom_eb = bundle:clone_and_create_custom_effect_bundle(cm:model())
+            local custom_effect = custom_eb:effects():item_at(0)
+            if custom_effect:key() == bundle_key then
+                custom_eb:set_effect_value(custom_effect, effect_val + increase)
+                cm:apply_custom_effect_bundle_to_faction(custom_eb, faction_obj)
+            end
+        end
+    end
 end
 
 --v method()
@@ -1930,7 +1985,6 @@ _G.get_lichemanager = get_lichemanager
 -- save details 
 cm:add_saving_game_callback(
     function(context)
-        cm:save_named_value("lichemaster_hero_spawn_rank_increase", liche_manager._hero_spawn_rank_increase, context)
         cm:save_named_value("lichemaster_num_ruins_defiled", liche_manager._num_ruins_defiled, context)
         cm:save_named_value("lichemaster_num_razed_settlements", liche_manager._num_razed_settlements, context)
 
@@ -1945,7 +1999,6 @@ cm:add_saving_game_callback(
 cm:add_loading_game_callback(
     function(context)
         if not cm:is_new_game() then
-            liche_manager._hero_spawn_rank_increase = cm:load_named_value("lichemaster_hero_spawn_rank_increase", 0, context)
             liche_manager._num_ruins_defiled = cm:load_named_value("lichemaster_num_ruins_defiled", 0, context)
             liche_manager._num_razed_settlements = cm:load_named_value("lichemaster_num_razed_settlements", 0, context)
 

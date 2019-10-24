@@ -412,7 +412,7 @@ function cutscene_postbattle()
 
         cutscene_postbattle:set_skippable(false)
         cutscene_postbattle:set_disable_settlement_labels(false)
-        cutscene_postbattle:set_dismiss_advice_on_end(true)
+        cutscene_postbattle:set_dismiss_advice_on_end(false)
         
         cutscene_postbattle:action(
             function()
