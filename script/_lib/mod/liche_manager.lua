@@ -1985,6 +1985,7 @@ _G.get_lichemanager = get_lichemanager
 -- save details 
 cm:add_saving_game_callback(
     function(context)
+        cm:save_named_value("lichemaster_last_turn_lives_changed", liche_manager._last_turn_lives_changed, context)
         cm:save_named_value("lichemaster_num_ruins_defiled", liche_manager._num_ruins_defiled, context)
         cm:save_named_value("lichemaster_num_razed_settlements", liche_manager._num_razed_settlements, context)
 
@@ -1999,6 +2000,7 @@ cm:add_saving_game_callback(
 cm:add_loading_game_callback(
     function(context)
         if not cm:is_new_game() then
+            liche_manager._last_turn_lives_changed = cm:load_named_value("lichemaster_last_turn_lives_changed", 0, context)
             liche_manager._num_ruins_defiled = cm:load_named_value("lichemaster_num_ruins_defiled", 0, context)
             liche_manager._num_razed_settlements = cm:load_named_value("lichemaster_num_razed_settlements", 0, context)
 
