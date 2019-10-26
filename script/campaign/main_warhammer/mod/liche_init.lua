@@ -669,7 +669,6 @@ function liche_init_listeners()
                     true,
                     131
                 )
-                
             end,
             false
         )
