@@ -122,6 +122,9 @@ local function check_np_effects()
     end
 end
 
+-- checks current max lives - if 0, trigger a single event
+
+
 -- triggered on campaign load and on per turn
 -- disables unnecessary UIC's
 local function kill_blood_kisses_and_tech()
@@ -646,6 +649,29 @@ function liche_init_listeners()
                 check_np_effects()
             end,
             true
+        )
+
+        -- read Max Lives change; if it hits 0, trigger an event
+        core:add_listener(
+            "LicheMaxLivesLost",
+            "PooledResourceEffectChangedEvent",
+            function(context)
+                return context:resource():key() == "lichemaster_max_remaining_lives" and context:faction():is_human()
+            end,
+            function(context)
+                local event_string_base = "event_feed_strings_text_AK_hobo_zero_max_lives_"
+
+                cm:show_message_event(
+                    context:faction():name(),
+                    event_string_base .. "primary_detail",
+                    event_string_base .. "secondary_detail",
+                    event_string_base .. "flavour_text",
+                    true,
+                    131
+                )
+                
+            end,
+            false
         )
 
         -- set ruins whenever a settlement is razed
