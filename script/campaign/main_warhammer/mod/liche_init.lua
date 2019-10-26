@@ -232,8 +232,10 @@ local function disable_tech_notification()
     end
 
     cm:callback(function()
-        settings_button:SimulateLClick()
-    end, 0.1)
+        if is_uicomponent(checkbox) and checkbox:Visible() then
+            settings_button:SimulateLClick()
+        end
+    end, 0.2)
 end
 
 -- functionality for the NP icon on the topbar

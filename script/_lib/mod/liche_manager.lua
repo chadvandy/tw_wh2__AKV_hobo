@@ -1899,10 +1899,22 @@ function liche_manager:respawn_kemmy(turn)
     self:log("WOUNDED KEMMY: Removing the stored life.")
     self:spend_life()
 
-    -- remove the visibility debuff on wounded kemmy
+    -- trigger an event to show the player where Wounded Boi wound up, pun unintended
     local wounded_kemmy_cqi = self:get_wounded_cqi()
     local wounded_kemmy_obj = cm:get_character_by_cqi(wounded_kemmy_cqi)
-    cm:remove_effect_bundle_from_character("AK_hobo_wounded_kemmy_default", wounded_kemmy_obj)
+
+    local event_string_base = "AK_hobo_wounded_"
+
+    cm:show_message_event_located(
+        self._faction_key,
+        event_string_base .. "primary_detail",
+        event_string_base .. "secondary_detail",
+        event_string_base .. "flavour_text",
+        wounded_kemmy_obj:display_position_x(),
+        wounded_kemmy_obj:display_position_y(),
+        true,
+        130
+    )
 end
 
 ---- Build a basic army for the Wounded Kemmy temporary spawn
@@ -1954,9 +1966,8 @@ function liche_manager:spawn_wounded_kemmy(x, y, kem_cqi, og_unit_list)
         "",
         false,
         function(cqi)
-            local char_obj = cm:get_character_by_cqi(cqi)
-            cm:apply_effect_bundle_to_character("AK_hobo_wounded_kemmy_default", char_obj, -1)
-        end
+            -- do naught
+        end 
     )
 
     cm:callback(function() cm:disable_event_feed_events(false, "wh_event_category_diplomacy", "", "") end, 1)
