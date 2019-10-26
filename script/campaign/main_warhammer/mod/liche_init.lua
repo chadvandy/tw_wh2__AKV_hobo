@@ -468,6 +468,22 @@ local function add_pr_uic()
     )
 end
 
+local function jacsen_are_you_ok()
+    if core:svr_load_bool("JacsenSurvived") == true then
+        local lm = get_lichemanager()
+
+        -- prevent Jacsen from being recruited elsewise
+        lm:set_regiment_status("AK_hobo_ror_jacsen", "STASIS")
+    
+        cm:add_turn_countdown_event(
+            legion,
+            9,
+            "LichemanagerUnlockRoR",
+            "AK_hobo_ror_jacsen"
+        )
+    end
+end
+
 local function hide_kemmler_hunter_panel()
     core:add_listener(
         "KillKemmlersHunters",
@@ -626,6 +642,9 @@ function liche_init_listeners()
         lm:setup_regiments()
         lm:setup_lords()
         lm:setup_hero_spawn_rank()
+
+        -- check to see if Jacsen survived pre-battle (done here to make sure it happens after the regiments above)
+        jacsen_are_you_ok()
         
         -- disable confederation betwixt Kemmy and Vampies
         cm:force_diplomacy(legion, "culture:wh_main_vmp_vampire_counts", "form confederation", false, false, true)
@@ -844,6 +863,16 @@ function liche_init_listeners()
                 true
             )
         end
+
+        core:add_listener(
+            "LichemanagerUnlockRoR",
+            "LichemanagerUnlockRoR",
+            true,
+            function(context)
+                lm:set_regiment_status(context.string, "AVAILABLE")
+            end,
+            true
+        )
         
         -- complicated lil' bugger
         -- sets up the Ruins UI, the new button and the turn tracker, on the Settlement Captured screen, if it's a ruin

@@ -888,7 +888,7 @@ function liche_manager:ruins_spawn_ror()
         if #rors == 0 then
             -- no RoR are left! We shouldn't have gotten here, but breaking to prevent an endless loop.
             -- TODO error log
-            return
+            break
         end
 
         -- pick between a random one!
@@ -899,7 +899,7 @@ function liche_manager:ruins_spawn_ror()
             ror = test_ror
             break
         else
-            -- above does_regiment_exist call moves regiments from "LOCKED" to "RECRUITED" for error checking
+            -- above does_regiment_exist() call moves regiments from "LOCKED" to "RECRUITED" for error checking
         end
     end
 
@@ -1269,6 +1269,12 @@ end
 function liche_manager:new_regiment(key, ui_name)
     --# assume self: LICHE_MANAGER
 
+    -- prevent overriding
+    local existing = self:get_regiment_with_key(key)
+    if tostring(existing) == "LICHE_REGIMENT" then
+        self._regiments[key] = existing
+    end
+
     local new = regiment.new_regiment(key, ui_name)
     self._regiments[key] = new
 end
@@ -1302,7 +1308,7 @@ end
 function liche_manager:set_regiment_status(key, status)
     --# assume self: LICHE_MANAGER
 
-    local options = {LOCKED = true, AVAILABLE = true, RECRUITED = true} --: map<string, bool>
+    local options = {LOCKED = true, AVAILABLE = true, RECRUITED = true, STASIS = true} --: map<string, bool>
     if not options[status] then
         self:error("set_regiment_status() called, but '"..status.."' is not a valid option!")
         return
@@ -1475,6 +1481,7 @@ end
 --v method()
 function liche_manager:setup_regiments()
     --# assume self: LICHE_MANAGER
+    self:log("TEST 1")
     self:new_regiment("AK_hobo_ror_doomed_legion", "The Doomed Legion")
     self:new_regiment("AK_hobo_ror_caged", "The Caged")
     self:new_regiment("AK_hobo_ror_storm", "Guardians of Medhe")

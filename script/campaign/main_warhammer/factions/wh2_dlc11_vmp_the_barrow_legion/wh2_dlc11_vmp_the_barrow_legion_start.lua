@@ -318,9 +318,6 @@ local function setup_kemmler()
     cm:disable_event_feed_events(true, "", "", "character_wounded")
 
     do
-        --# assume kemmlerCQI: number
-        -- I have to do this crap for Kailua to not freak out about concat'ing the CQI.
-        -- Ugh.
         cm:force_add_trait("character_cqi:" .. kemmlerCQI, "AK_kemmler_wound_reduction", false)
     end
 
@@ -329,27 +326,20 @@ local function setup_kemmler()
     cm:kill_character(kemmlerCQI, true, true)
     
     cm:callback(function()
-        local kemmy_cqi = lm:get_real_cqi() --# assume kemmy_cqi: CA_CQI
+        local kemmy_cqi = lm:get_real_cqi()
 
         cm:stop_character_convalescing(kemmy_cqi)
 
-        local startingArmy = {
-            _factionKey = "wh2_dlc11_vmp_the_barrow_legion",
-            _armyList = "AK_hobo_skeleton_2h,AK_hobo_skeleton_spears,AK_hobo_skeleton_spears,AK_hobo_hexwr,AK_hobo_barrow_guardians,AK_hobo_glooms",
-            _region = "wh_main_forest_of_arden_gisoreux",
-            _xPos = 423,
-            _yPos = 429,
-            _agentType = "general",
-            _agentSubtype = "AK_hobo_kemmy_wounded",
-            _forename = "names_name_2147345320",
-            _clanname = "",
-            _surname = "names_name_2147345313",
-            _othername = "",
-            _makeFactionLeader = false,
-            _startingBuildings = {"AK_hobo_ruination_1", "AK_hobo_recr1_1"}
+        local starting_army = {
+            faction_key = "wh2_dlc11_vmp_the_barrow_legion",
+            army_list = "AK_hobo_skeleton_2h,AK_hobo_skeleton_spears,AK_hobo_skeleton_spears,AK_hobo_hexwr,AK_hobo_barrow_guardians,AK_hobo_glooms",
+            region = "wh_main_forest_of_arden_gisoreux",
+            x = 423,
+            y = 429,
+            starting_buildings = {"AK_hobo_ruination_1", "AK_hobo_recr1_1"}
         }
 
-        local first_turn_army = startingArmy._armyList
+        local first_turn_army = starting_army.army_list
 
         if cm:get_saved_value("Faction_Unlocker") then
             first_turn_army = "AK_hobo_skeleton_2h,AK_hobo_skeleton_spears,AK_hobo_skeleton_spears,AK_hobo_hexwr,AK_hobo_barrow_guardians,AK_hobo_glooms,AK_hobo_skeleton_spears,AK_hobo_skeleton_spears,AK_hobo_cairn"
@@ -358,12 +348,13 @@ local function setup_kemmler()
         --# assume kemmy_cqi: number
         cm:create_force_with_existing_general(
             "character_cqi:"..kemmy_cqi,
-            startingArmy._factionKey,
+            starting_army.faction_key,
             first_turn_army,
-            startingArmy._region,
-            startingArmy._xPos,
-            startingArmy._yPos,
+            starting_army.region,
+            starting_army.x,
+            starting_army.y,
             function(cqi)
+
             end
         )
 
@@ -386,12 +377,12 @@ local function cutscene_postbattle_prep()
     setup_kemmler()
     cm:callback(function()
 		CampaignUI.ClearSelection()
-	end, 1)
+    end, 1)
+    cm:set_saved_value("lichemaster_first_turn_completed", true)
 end
 
 function cutscene_postbattle()
     cutscene_postbattle_prep()
-    cm:set_saved_value("lichemaster_first_turn_completed", true)
 
     local cam_start_x = 282.9
     local cam_start_y = 342.4

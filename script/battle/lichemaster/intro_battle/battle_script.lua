@@ -6,6 +6,8 @@ bm = battle_manager:new(empire_battle:new())
 local gc = generated_cutscene:new(true, true)
 local cam = bm:camera()
 
+core:svr_save_bool("JacsenSurvived", true)
+
 --# assume end_deployment_phase: function()
 
 gb = generated_battle:new(
@@ -63,7 +65,7 @@ bm:register_phase_change_callback(
 
 
 
-gb.sm:add_listener(
+gb:add_listener(
     "battle_started",
     function()
         --bm:camera():fade(true, 1)
@@ -71,6 +73,13 @@ gb.sm:add_listener(
         if uic_reinforcements_parent then
             uic_reinforcements_parent:SetVisible(false);
         end
+    end
+)
+
+gb:add_listener(
+    "jacsen_dead",
+    function()
+        core:svr_save_bool("JacsenSurvived", false)
     end
 )
 
@@ -193,3 +202,4 @@ ga_jacsen:attack_on_message("help_me_jacsen", 20000);
 ga_jacsen:attack_on_message("help_me_jacsen", 30000);
 ga_jacsen:attack_on_message("help_me_jacsen", 40000);
 
+ga_jacsen:message_on_commander_death("jacsen_dead")
