@@ -1920,7 +1920,7 @@ function liche_manager:respawn_kemmy(turn)
 
     cm:teleport_to("character_cqi:"..wounded_kemmy_cqi, x, y, false)
 
-    local event_string_base = "AK_hobo_wounded_"
+    local event_string_base = "event_feed_strings_text_AK_hobo_wounded_"
 
     cm:show_message_event_located(
         self._faction_key,
