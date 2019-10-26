@@ -430,9 +430,9 @@ function cutscene_postbattle()
         cutscene_postbattle:action(
             function()
                 cm:show_advice("lichemaster_postbattle_1")
-                cm:set_camera_position(280.1, 338.9, 16.3, 0.5, 8.2)
+                cm:scroll_camera_from_current(true, 5, {280.1, 338.9, 16.3, 0.5, 8.2})
             end,
-            6
+            1
         )
 
         cutscene_postbattle:start()
