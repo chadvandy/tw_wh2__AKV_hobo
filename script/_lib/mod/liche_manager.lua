@@ -1814,7 +1814,7 @@ function liche_manager:get_real_cqi()
 end
 
 ---- select one of a few spots for the Wounded Kemmy army to spawn
-function liche_manager:wounded_kemmy_coords() --> (number, number, string)
+function liche_manager:get_wounded_kemmy_coords() --> (number, number, string)
     local regionNames = {
         "wh2_main_albion_albion",
         "wh_main_tilea_miragliano",
@@ -1847,6 +1847,20 @@ function liche_manager:wounded_kemmy_coords() --> (number, number, string)
     end
 
     return -1, -1, ""
+end
+
+--v method() --> (number, number, string)
+function liche_manager:get_wounded_kemmy_position()
+    --# assume self: LICHE_MANAGER
+
+    local wounded_kemmy_cqi = self:get_wounded_cqi()
+    local wounded_kemmy_obj = cm:get_character_by_cqi(wounded_kemmy_cqi)
+
+    if wounded_kemmy_obj:is_null_interface() then
+        return -1, -1, ""
+    end
+
+    return wounded_kemmy_obj:logical_position_x(), wounded_kemmy_obj:logical_position_y(), wounded_kemmy_obj:region():name()
 end
 
 ---- Called to kill Wounded Kemmy if the battle ends and Kemmler is still alive.
@@ -1899,9 +1913,13 @@ function liche_manager:respawn_kemmy(turn)
     self:log("WOUNDED KEMMY: Removing the stored life.")
     self:spend_life()
 
-    -- trigger an event to show the player where Wounded Boi wound up, pun unintended
+    -- teleport Wounded Kemmy onto the map, and then trigger an event displaying their location
     local wounded_kemmy_cqi = self:get_wounded_cqi()
     local wounded_kemmy_obj = cm:get_character_by_cqi(wounded_kemmy_cqi)
+
+    local x, y, _ = self:get_wounded_kemmy_coords()
+
+    cm:teleport_to("character_cqi:"..wounded_kemmy_cqi, x, y, false)
 
     local event_string_base = "AK_hobo_wounded_"
 
@@ -1941,10 +1959,14 @@ function liche_manager:spawn_wounded_kemmy(x, y, kem_cqi, og_unit_list)
 
     local unit_list = self:wounded_kemmy_unit_list()
 
-    local spawnX, spawnY, spawnRegion = self:wounded_kemmy_coords()
-    if spawnRegion == "" then
-        self:error("WOUNDED KEMMY: Spawn Wounded Kemmy called but the coordinates returned were -1, -1. Investigate!")
-    end
+    local kem_x, kem_y, kem_region
+    local kem_obj = cm:get_character_by_cqi(kem_cqi)
+
+    kem_x = kem_obj:logical_position_x()
+    kem_y = kem_obj:logical_position_y()
+    kem_region = kem_obj:region():name()
+
+    spawn_x, spawn_y = cm:find_valid_spawn_location_for_character_from_position(self._faction_key, kem_x, kem_y, true, 7)
 
     -- setup details for the game to save 
     self:set_unit_list(og_unit_list)
@@ -1955,9 +1977,9 @@ function liche_manager:spawn_wounded_kemmy(x, y, kem_cqi, og_unit_list)
     cm:create_force_with_general(
         self._faction_key,
         unit_list,
-        spawnRegion,
-        spawnX,
-        spawnY,
+        kem_region,
+        spawn_x,
+        spawn_y,
         "general",
         "AK_hobo_kemmy_wounded",
         "names_name_2147345320",
@@ -1966,7 +1988,8 @@ function liche_manager:spawn_wounded_kemmy(x, y, kem_cqi, og_unit_list)
         "",
         false,
         function(cqi)
-            -- do naught
+            -- teleport off-screen!
+            cm:teleport_to("character_cqi:"..cqi, 1, 1, false)
         end 
     )
 

@@ -993,13 +993,16 @@ function liche_init_listeners()
 
                 -- grab the CQI and objects needed to go on
                 local wounded_kemmy_cqi = lm:get_wounded_cqi()
+                local wounded_kemmy_obj = cm:get_character_by_cqi(wounded_kemmy_cqi)
                 local kemmy_cqi = lm:get_real_cqi()
-                local woundedKemmy = cm:get_character_by_cqi(wounded_kemmy_cqi)
     
-                local spawnX, spawnY, spawnRegion = lm:wounded_kemmy_coords()
-                if spawnRegion == "" then
+                local spawn_x, spawn_y, spawn_region = lm:get_wounded_kemmy_position()
+                if spawn_x == -1 then
                     lm:error("Spawn Wounded Kemmy but the coordinates returned were -1, -1 - investigate.")
+                    return
                 end
+                
+                spawn_x, spawn_y = cm:find_valid_spawn_location_for_character_from_position(legion, spawn_x, spawn_y, true)
 
                 local unit_list = lm:get_unit_list()
     
@@ -1008,14 +1011,14 @@ function liche_init_listeners()
                     cm:char_lookup_str(kemmy_cqi),
                     legion, 
                     unit_list,
-                    spawnRegion,
-                    spawnX,
-                    spawnY,
+                    spawn_region,
+                    spawn_x,
+                    spawn_y,
                     function(cqi)
                         -- blah
                     end
                 )
-                lm:log("WOUNDED KEMMY: Kemmler respawned in region ["..spawnRegion.."] at location ("..spawnX..", "..spawnY.."). Enjoy.")
+                lm:log("WOUNDED KEMMY: Kemmler respawned in region ["..spawn_region.."] at location ("..spawn_x..", "..spawn_y.."). Enjoy.")
                 
                 -- axe the wounded version and revert all the respawn details
                 lm:kill_wounded_kemmy()
