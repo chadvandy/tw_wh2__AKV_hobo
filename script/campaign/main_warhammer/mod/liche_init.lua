@@ -209,33 +209,43 @@ end
 
 -- uggo resolution to the tech notification shit
 local function disable_tech_notification()
+    --# assume disable_tech_notification: function()
+
     local docker = find_uicomponent(core:get_ui_root(), "layout", "faction_buttons_docker", "end_turn_docker")
     if not is_uicomponent(docker) then
+        cm:callback(function() 
+            disable_tech_notification()
+        end, 0.1)
         return
     end
 
     local settings_button = find_uicomponent(docker, "notification_frame", "button_notification_settings")
 
     if not is_uicomponent(settings_button) then
+        cm:callback(function() 
+            disable_tech_notification()
+        end, 0.1)
         return
     end
 
     settings_button:SimulateLClick()
-    local checkbox = find_uicomponent(docker, "notification_settings_list", "2", "checkbox_toggle")
-    
-    if not is_uicomponent(checkbox) then
-        return
-    end
-
-    if checkbox:CurrentState() == "selected" then
-        checkbox:SimulateLClick()
-    end
 
     cm:callback(function()
-        if is_uicomponent(checkbox) and checkbox:Visible() then
-            settings_button:SimulateLClick()
+        local list = find_uicomponent(docker, "notification_settings_list")
+
+        local checkbox = find_uicomponent(list, "2", "checkbox_toggle")
+        if is_uicomponent(checkbox) then
+            if checkbox:CurrentState() == "selected" then
+                checkbox:SimulateLClick()
+            end
         end
-    end, 0.2)
+
+        cm:callback(function()
+            if is_uicomponent(list) and list:Visible() then
+                settings_button:SimulateLClick()
+            end
+        end, 0.2)
+    end, 0.5)
 end
 
 -- functionality for the NP icon on the topbar
@@ -895,13 +905,7 @@ function liche_init_listeners()
                 local cuim = cm:get_campaign_ui_manager()
                 local selected = cuim:get_char_selected_cqi()
 
-                local char_obj = cm:get_character_by_cqi(selected)
-                if not char_obj:has_military_force() then
-                    -- not general, don't go on
-                    return
-                end
 
-                lm:ror_UI(selected)
             end,
             true
         )
@@ -915,7 +919,18 @@ function liche_init_listeners()
                 return context:character():faction():name() == legion and cm:get_local_faction(true) == legion
             end,
             function(context)
-                lm:set_character_selected_cqi(context:character():cqi())
+                local char_obj = context:character()
+                local char_cqi = char_obj:command_queue_index()
+                lm:set_character_selected_cqi(char_cqi)
+
+                cm:callback(function()
+                    if not char_obj:has_military_force() then
+                        -- not general, don't go on
+                        return
+                    end
+                    
+                    lm:ror_UI(char_cqi)
+                end, 0.1)
             end,
             true
         )
