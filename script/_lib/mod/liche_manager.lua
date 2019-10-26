@@ -1813,7 +1813,7 @@ end
 
 ---- select one of a few spots for the Wounded Kemmy army to spawn
 function liche_manager:get_wounded_kemmy_coords() --> (number, number, string)
-    local regionNames = {
+    local region_names = {
         "wh2_main_albion_albion",
         "wh_main_tilea_miragliano",
         "wh_main_western_border_princes_myrmidens",
@@ -1829,7 +1829,7 @@ function liche_manager:get_wounded_kemmy_coords() --> (number, number, string)
         ["wh_main_the_wasteland_marienburg"] = {420, 434, 453, 462}
     }--: map<string, vector<number>>
 
-    local region = regionNames[cm:random_number(#regionNames, 1)]
+    local region = region_names[cm:random_number(#region_names, 1)]
     local region_coords = regions[region]
 
     local valid = false
