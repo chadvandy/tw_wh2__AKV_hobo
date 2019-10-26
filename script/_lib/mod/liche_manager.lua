@@ -1808,9 +1808,8 @@ function liche_manager:get_real_cqi()
         end
     end
 
-    local cqi = 0
     self:error("WOUNDED KEMMY: Get Real CQI called, none found? Returning 0.")
-    return cqi
+    return 0
 end
 
 ---- select one of a few spots for the Wounded Kemmy army to spawn
@@ -1832,13 +1831,13 @@ function liche_manager:get_wounded_kemmy_coords() --> (number, number, string)
     }--: map<string, vector<number>>
 
     local region = regionNames[cm:random_number(#regionNames, 1)]
-    local regionCoords = regions[region]
+    local region_coords = regions[region]
 
     local valid = false
 
     while not valid do
-        local x = cm:random_number(regionCoords[2], regionCoords[1])
-        local y = cm:random_number(regionCoords[4], regionCoords[3])
+        local x = cm:random_number(region_coords[2], region_coords[1])
+        local y = cm:random_number(region_coords[4], region_coords[3])
 
         if is_valid_spawn_point(x, y) then
             valid = true
@@ -1917,7 +1916,7 @@ function liche_manager:respawn_kemmy(turn)
     local wounded_kemmy_cqi = self:get_wounded_cqi()
     local wounded_kemmy_obj = cm:get_character_by_cqi(wounded_kemmy_cqi)
 
-    local x, y, _ = self:get_wounded_kemmy_coords()
+    local x, y, region_key = self:get_wounded_kemmy_coords()
 
     cm:teleport_to("character_cqi:"..wounded_kemmy_cqi, x, y, false)
 
@@ -1928,11 +1927,13 @@ function liche_manager:respawn_kemmy(turn)
         event_string_base .. "primary_detail",
         event_string_base .. "secondary_detail",
         event_string_base .. "flavour_text",
-        wounded_kemmy_obj:display_position_x(),
-        wounded_kemmy_obj:display_position_y(),
+        x,
+        y,
         true,
         130
     )
+
+    self:log("WOUNDED KEMMY: Wounded Kemmler spawned at ("..x..","..y.."), in ["..region_key.."].")
 end
 
 ---- Build a basic army for the Wounded Kemmy temporary spawn
@@ -1988,12 +1989,17 @@ function liche_manager:spawn_wounded_kemmy(x, y, kem_cqi, og_unit_list)
         "",
         false,
         function(cqi)
-            -- teleport off-screen!
-            cm:teleport_to("character_cqi:"..cqi, 1, 1, false)
-        end 
-    )
+            cm:callback(function()
+                -- teleport off-screen!
+                cm:teleport_to("character_cqi:"..cqi, 1, 1, false)
+                local obj = cm:get_character_by_cqi(cqi)
+                self:log("WOUNDED KEMMY: Wounded Kem at ("..obj:logical_position_x()..", "..obj:logical_position_y()..").")
 
-    cm:callback(function() cm:disable_event_feed_events(false, "wh_event_category_diplomacy", "", "") end, 1)
+                -- rebable the event for trespassing n stuff
+                cm:disable_event_feed_events(false, "wh_event_category_diplomacy", "", "")
+            end, 1)
+        end
+    )
 end
 
 -- make sure it's global! Also, initialize the logfile.

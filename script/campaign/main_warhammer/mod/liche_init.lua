@@ -1001,7 +1001,7 @@ function liche_init_listeners()
                     lm:error("Spawn Wounded Kemmy but the coordinates returned were -1, -1 - investigate.")
                     return
                 end
-                
+
                 spawn_x, spawn_y = cm:find_valid_spawn_location_for_character_from_position(legion, spawn_x, spawn_y, true)
 
                 local unit_list = lm:get_unit_list()
@@ -1103,7 +1103,6 @@ function liche_init_listeners()
                 -- the last two parameters aren't even used anymore, but it's easier to just keep them in
                 -- spawn the wounded version of kemmy offscreen, and use the (x,y) arguments passed here to spawn Kemmler there later on
                 lm:spawn_wounded_kemmy(x, y, kemmy:command_queue_index(), kem_unit_list)
-                lm:log("WOUNDED KEMMY: Wounded Kemmy spawned at ("..x..", "..y..").")
             end,
             true
         )
