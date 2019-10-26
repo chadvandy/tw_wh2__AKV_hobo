@@ -1100,9 +1100,8 @@ function liche_init_listeners()
                     end
                 end
 
-                -- the last two parameters aren't even used anymore, but it's easier to just keep them in
-                -- spawn the wounded version of kemmy offscreen, and use the (x,y) arguments passed here to spawn Kemmler there later on
-                lm:spawn_wounded_kemmy(x, y, kemmy:command_queue_index(), kem_unit_list)
+                -- spawn the wounded version of kemmy offscreen
+                lm:spawn_wounded_kemmy(kemmy:command_queue_index(), kem_unit_list)
             end,
             true
         )

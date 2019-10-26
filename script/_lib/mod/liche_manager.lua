@@ -1789,9 +1789,8 @@ function liche_manager:get_wounded_cqi()
         end
     end
 
-    local cqi = 0
     self:error("WOUNDED KEMMY: Get Wounded CQI called, none found? Returning 0.")
-    return cqi
+    return 0
 end
 
 ---- run through the character list and get the CQI of the actual Kemmy character
@@ -1954,8 +1953,8 @@ function liche_manager:wounded_kemmy_unit_list()
 end
 
 ---- Spawn Wounded Kemmy off-screen when Kemmler is in a pending battle and has at least one life.
---v method(x: number, y: number, kem_cqi: CA_CQI, og_unit_list: string)
-function liche_manager:spawn_wounded_kemmy(x, y, kem_cqi, og_unit_list)
+--v method(kem_cqi: CA_CQI, og_unit_list: string)
+function liche_manager:spawn_wounded_kemmy(kem_cqi, og_unit_list)
     --# assume self: LICHE_MANAGER
 
     local unit_list = self:wounded_kemmy_unit_list()
