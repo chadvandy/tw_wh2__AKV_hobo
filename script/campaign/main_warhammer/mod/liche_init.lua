@@ -481,6 +481,8 @@ local function jacsen_are_you_ok()
             "LichemanagerUnlockRoR",
             "AK_hobo_ror_jacsen"
         )
+
+        cm:trigger_incident(legion, "jacsen_unlocked_early", true)
     end
 end
 
@@ -869,6 +871,7 @@ function liche_init_listeners()
             "LichemanagerUnlockRoR",
             true,
             function(context)
+                cm:trigger_incident(legion, "barrow_"..context.string, true)
                 lm:set_regiment_status(context.string, "AVAILABLE")
             end,
             true
