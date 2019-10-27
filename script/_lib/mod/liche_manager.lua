@@ -47,8 +47,7 @@ end
 
 liche_manager._faction_key = "wh2_dlc11_vmp_the_barrow_legion"
 
---liche_manager._regionNames = require("script/lichemaster/tables/regionNames")
-liche_manager._units = require("script/lichemanager/tables/units")
+liche_manager._barrow_units = require("script/lichemanager/tables/barrow_units")
 
 liche_manager._names = {names[1], names[2]}
 
@@ -593,6 +592,7 @@ function liche_manager:is_landmark_region(region_name)
     if landmarks[region_name] then
         return true
     end
+
     return false
 end
 
@@ -614,24 +614,8 @@ end
 ---- Simple and quick check to see if a unit is in the Barrow unit set.
 --v method(unit_key: string) --> boolean
 function liche_manager:is_unit_barrow(unit_key)
-    local barrow_units = {
-        ["AK_hobo_barrow_guardians"] = true,
-        ["AK_hobo_barrow_guardians_dual"] = true,
-        ["AK_hobo_barrow_guardians_halb"] = true,
-        ["AK_hobo_simulacra"] = true,
-        ["AK_hobo_embalmed"] = true,
-        ["AK_hobo_glooms"] = true,
-        ["AK_hobo_ghost"] = true,
-        ["AK_hobo_stalker"] = true,
-        ["AK_hobo_ror_caged"] = true,
-        ["AK_hobo_ror_storm"] = true,
-        ["AK_hobo_ror_beast"] = true,
-        ["AK_hobo_ror_skulls"] = true,
-        ["CTT_hobo_glooms"] = true
-    }--:map<string, boolean>
-
-    return not not barrow_units[unit_key]
-
+    --# assume self: LICHE_MANAGER
+    return not not self._barrow_units[unit_key]
 end
 
 -----------------------------------------
@@ -1189,8 +1173,8 @@ end
 local regiment = {} --# assume regiment: LICHE_REGIMENT
 
 ---- instantiate a new regiment
---v function(key: string, ui_name: string) --> LICHE_REGIMENT
-function regiment.new_regiment(key, ui_name)
+--v function(key: string) --> LICHE_REGIMENT
+function regiment.new_regiment(key)
     local self = {}
 
     -- give the object the same metatable as the regiment prototype
@@ -1200,27 +1184,10 @@ function regiment.new_regiment(key, ui_name)
 
     -- basic initiation data
     self._key = key
-    self._ui_name = ui_name
 
     -- used to track status later on, can either be LOCKED, AVAILABLE, or RECRUITED
     self._status = "LOCKED"
 
-    -- text from an internal file, determines some UI stuff in the Legions of Undeath panel
-    local TEXTS = liche_manager._units[1]
-    local texts
-    for k, v in pairs(TEXTS) do
-        if k == key then
-            texts = v
-        end
-    end
-
-    if not texts then
-        texts = {"", "", ""}
-    end
-
-    self._t1 = texts[1]
-    self._t2 = texts[2]
-    self._t3 = texts[3]
     return self
 end
 
@@ -1229,13 +1196,6 @@ end
 function regiment:key()
     --# assume self: LICHE_REGIMENT
     return self._key
-end
-
----- Getter for the 'ui_name'
---v method() --> string
-function regiment:ui_name()
-    --# assume self: LICHE_REGIMENT
-    return self._ui_name
 end
 
 --v method() --> string
@@ -1265,8 +1225,8 @@ function liche_manager:get_regiment_with_key(key)
 end
 
 ---- Create a new regiment using the regiment.new_regiment() constructor, and then save the resulting regiment in the LM
---v method(key: string, ui_name: string)
-function liche_manager:new_regiment(key, ui_name)
+--v method(key: string)
+function liche_manager:new_regiment(key)
     --# assume self: LICHE_MANAGER
 
     -- prevent overriding
@@ -1275,7 +1235,7 @@ function liche_manager:new_regiment(key, ui_name)
         self._regiments[key] = existing
     end
 
-    local new = regiment.new_regiment(key, ui_name)
+    local new = regiment.new_regiment(key)
     self._regiments[key] = new
 end
 
@@ -1481,15 +1441,14 @@ end
 --v method()
 function liche_manager:setup_regiments()
     --# assume self: LICHE_MANAGER
-    self:log("TEST 1")
-    self:new_regiment("AK_hobo_ror_doomed_legion", "The Doomed Legion")
-    self:new_regiment("AK_hobo_ror_caged", "The Caged")
-    self:new_regiment("AK_hobo_ror_storm", "Guardians of Medhe")
-    self:new_regiment("AK_hobo_ror_wight_knights", "Wight Knights")
-    self:new_regiment("AK_hobo_ror_jacsen", "Mikeal Jacsen")
-    self:new_regiment("AK_hobo_ror_beast", "Beast of Cailledh")
-    self:new_regiment("AK_hobo_ror_skulls", "Skulls of Geistenmund")
-    self:new_regiment("AK_hobo_ror_spider", "Terror of the Lichemaster")
+    self:new_regiment("AK_hobo_ror_doomed_legion")
+    self:new_regiment("AK_hobo_ror_caged")
+    self:new_regiment("AK_hobo_ror_storm")
+    self:new_regiment("AK_hobo_ror_wight_knights")
+    self:new_regiment("AK_hobo_ror_jacsen")
+    self:new_regiment("AK_hobo_ror_beast")
+    self:new_regiment("AK_hobo_ror_skulls")
+    self:new_regiment("AK_hobo_ror_spider")
 end
 
 -----------------------------------------

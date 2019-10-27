@@ -20,8 +20,7 @@ local function new_unit_card(key)
     local parchment = find_uicomponent(frame, "parchment")
 
     -- create the new UIC
-    parchment:CreateComponent(key.."_unit_card", "ui/templates/portrait_card")
-    local unit_card = find_uicomponent(parchment, key.."_unit_card")
+    local unit_card = UIComponent(parchment:CreateComponent(key.."_unit_card", "ui/templates/portrait_card"))
 
     -- hide the rank thingy
     find_uicomponent(unit_card, "rank"):SetVisible(false)
@@ -29,7 +28,9 @@ local function new_unit_card(key)
     --change the name text, and add the new unit card image
     local name = find_uicomponent(unit_card, "char_name", "name_tx")
     name:SetStateText(text)
+
     unit_card:SetImagePath("ui/units/icons/" .. key .. ".png")
+    
     core:add_listener(
         "LicheLegionCardOnClick",
         "ComponentLClickUp",
