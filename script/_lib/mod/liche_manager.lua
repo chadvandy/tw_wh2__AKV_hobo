@@ -395,7 +395,7 @@ function liche_manager:is_lord_unlocked(subtype)
     local lord_obj = self:get_lord_by_key(subtype)
 
     if is_nil(lord_obj) then
-        -- TODO errmsg
+        self:log("is_lord_unlocked() called, but no lord found with subtype ["..subtype.."].")
         return false
     end
 
@@ -871,7 +871,7 @@ function liche_manager:ruins_spawn_ror()
 
         if #rors == 0 then
             -- no RoR are left! We shouldn't have gotten here, but breaking to prevent an endless loop.
-            -- TODO error log
+            self:log("ruins_spawn_ror() called, but there are no more ror's remaining to unlock. Investigate - this should've been caught by calculate_effect().")
             break
         end
 
@@ -888,7 +888,7 @@ function liche_manager:ruins_spawn_ror()
     end
 
     if not ror then
-        -- TODO error log
+        self:log("ruisn_spawn_ror() called, but the loop never found an ror to unlock. Investigate!")
         return
     end
 
@@ -1496,7 +1496,6 @@ function liche_manager:get_lord_by_key(key)
     local lord = self._lords[key]
 
     if is_nil(lord) then
-        -- TODO errmsg
         return nil
     end
 
@@ -1533,7 +1532,7 @@ function liche_manager:can_recruit_lord(subtype)
     local lord = self:get_lord_by_key(subtype)
     
     if is_nil(lord) then
-        -- TODO errmsg
+        self:log("can_recruit_lord() called, but no lord found with subtype ["..subtype.."].")
         return false
     end
 
@@ -1630,7 +1629,7 @@ function liche_manager:unlock_lord(subtype)
     local lord_obj = self:get_lord_by_key(subtype)
 
     if is_nil(lord_obj) then
-        -- TODO errmsg
+        self:log("unlock_lord() called, but no lord found with subtype ["..subtype.."].")
         return
     end
 
