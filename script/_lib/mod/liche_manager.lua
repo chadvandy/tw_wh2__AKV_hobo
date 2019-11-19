@@ -1582,7 +1582,7 @@ function liche_manager:lord_pool_UI()
     -- grab the listbox (scroll bar) and make sure it exists
     local component = find_uicomponent(core:get_ui_root(), "character_panel", "general_selection_panel", "character_list_parent", "character_list", "listview", "list_clip", "list_box")
     if not component then
-        self:error("lordPoolUI() called, but the general candidate list is nonexistent!")
+        self:error("lord_pool_UI() called, but the general candidate list is nonexistent!")
         return
     end
 
