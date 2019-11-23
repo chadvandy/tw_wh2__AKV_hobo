@@ -131,6 +131,7 @@ ga_dwarf_2 = gb:get_army(gb:get_non_player_alliance_num(), 1, "dwarf_2")        
 ---- OBJECTIVES ----
 
 ga_kemmler:message_on_victory("player_wins")
+ga_kemmler:message_on_defeat("jacsen_dead")
 
 gb:set_objective_on_message("battle_started", "lichemaster_intro_battle_starting_objective");
 gb:complete_objective_on_message("first_army_killed", "lichemaster_intro_battle_starting_objective");
@@ -203,3 +204,4 @@ ga_jacsen:attack_on_message("help_me_jacsen", 30000);
 ga_jacsen:attack_on_message("help_me_jacsen", 40000);
 
 ga_jacsen:message_on_commander_death("jacsen_dead")
+ga_jacsen:message_on_defeat("jacsen_dead")
