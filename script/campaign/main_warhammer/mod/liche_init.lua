@@ -627,13 +627,26 @@ local function add_settlement_floating_icon(uic)
     if is_uicomponent(extant) then
         icon_kemm = extant
     else
-        local icon_port = find_uicomponent(parent, "icon_port")
-        icon_kemm = UIComponent(icon_port:CopyComponent("icon_kemm"))
+        local resource_icon = find_uicomponent(parent, "resource_icon")
+        icon_kemm = UIComponent(resource_icon:CopyComponent("icon_kemm"))
+    end
+
+    local valid = true
+    if lm:get_necropower() < 60 then
+        valid = false
+    end
+
+    local tt = "{{tr:kemmler_floating_settlement_tt_occupy_"
+    local image_path = "ui/kemmler/AK_hobo_occupy_"
+
+    if valid then tt = tt .. "yes}}" image_path = image_path .. "yes.png"
+    else tt = tt .. "no}}" image_path = image_path .. "no.png"
     end
 
     icon_kemm:SetVisible(true)
-    icon_kemm:SetImagePath("ui/kemmler/AK_hobo_barrow.png")
-    icon_kemm:SetTooltipText("Undead Stronghold||This region of historic importance can be occupied by Kemmler.", true)
+    icon_kemm:SetImagePath(image_path)
+    icon_kemm:SetInteractive(true)
+    icon_kemm:SetTooltipText(tt, true)
 end
 
 local function check_settlements_on_map()
@@ -650,7 +663,7 @@ local function check_settlements_on_map()
         if child_id:sub(1, 17) == "label_settlement:" then
             local settlement_string = child_id:gsub("label_settlement:", "")
             lm:log(settlement_string)
-            if settlement_string == "wh_main_forest_of_arden_gisoreux" or "wh_main_northern_grey_mountains_blackstone_post" then
+            if lm:is_landmark_region(settlement_string) then
                 lm:log("Adding floating icon")
                 add_settlement_floating_icon(child)
             end
@@ -667,6 +680,9 @@ function lichemaster_postbattle_setup()
 
     add_missions_and_unlock_requirements()
     kill_extra_recruitment()
+
+    -- check to see if Jacsen survived pre-battle
+    jacsen_are_you_ok()
 
 end
 
@@ -689,9 +705,6 @@ function liche_init_listeners()
         lm:setup_regiments()
         lm:setup_lords()
         lm:setup_hero_spawn_rank()
-
-        -- check to see if Jacsen survived pre-battle (done here to make sure it happens after the regiments above)
-        jacsen_are_you_ok()
         
         -- disable confederation betwixt Kemmy and Vampies
         cm:force_diplomacy(legion, "culture:wh_main_vmp_vampire_counts", "form confederation", false, false, true)

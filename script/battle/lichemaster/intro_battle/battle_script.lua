@@ -6,7 +6,9 @@ bm = battle_manager:new(empire_battle:new())
 local gc = generated_cutscene:new(true, true)
 local cam = bm:camera()
 
-core:svr_save_bool("JacsenSurvived", true)
+core:svr_save_bool("JacsenSurvived", false)
+
+jacsen_survived = true --: boolean
 
 --# assume end_deployment_phase: function()
 
@@ -79,8 +81,14 @@ gb:add_listener(
 gb:add_listener(
     "jacsen_dead",
     function()
-        core:svr_save_bool("JacsenSurvived", false)
+        jacsen_survived = false
     end
+)
+
+-- check if jacsen died if victory; default to false if defeat
+bm:register_results_callbacks(
+    function() core:svr_save_bool("JacsenSurvived", jacsen_survived) end,
+    function() core:svr_save_bool("JacsenSurvived", false) end
 )
 
 
