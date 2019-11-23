@@ -613,6 +613,51 @@ local function set_hunters_panel()
     )
 end
 
+--v function(uic: CA_UIC)
+local function add_settlement_floating_icon(uic)
+    local parent = find_uicomponent(uic, "list_parent", "icon_holder")
+    if not is_uicomponent(parent) then
+        -- TODO error log
+        return
+    end
+
+    local extant = find_uicomponent(parent, "icon_kemm")
+    local icon_kemm
+
+    if is_uicomponent(extant) then
+        icon_kemm = extant
+    else
+        local icon_port = find_uicomponent(parent, "icon_port")
+        icon_kemm = UIComponent(icon_port:CopyComponent("icon_kemm"))
+    end
+
+    icon_kemm:SetVisible(true)
+    icon_kemm:SetImagePath("ui/kemmler/AK_hobo_barrow.png")
+    icon_kemm:SetTooltipText("Undead Stronghold||This region of historic importance can be occupied by Kemmler.", true)
+end
+
+local function check_settlements_on_map()
+    local root = core:get_ui_root()
+    local parent = find_uicomponent(root, "3d_ui_parent")
+    if not is_uicomponent(parent) then
+        return
+    end
+
+    for i = 0, parent:ChildCount() -1 do
+        local child = UIComponent(parent:Find(i))
+        local child_id = child:Id()
+        lm:log(child_id)
+        if child_id:sub(1, 17) == "label_settlement:" then
+            local settlement_string = child_id:gsub("label_settlement:", "")
+            lm:log(settlement_string)
+            if settlement_string == "wh_main_forest_of_arden_gisoreux" or "wh_main_northern_grey_mountains_blackstone_post" then
+                lm:log("Adding floating icon")
+                add_settlement_floating_icon(child)
+            end
+        end
+    end
+end
+
 ----------------
 -- Listeners! --
 ----------------
@@ -1403,9 +1448,8 @@ function liche_init_listeners()
             "wh2_dlc11_vmp_ritual_bloodline_awaken_von_carstein_03"
         }--: vector<string>
 
-        local cqi = cm:get_faction(legion):command_queue_index()
         for i = 1, #killBloodlines do
-            cm:set_ritual_unlocked(cqi, killBloodlines[i], false)
+            cm:lock_ritual(cm:get_faction(legion), killBloodlines[i])
         end
     end)
     if not ok then LicheLog.error(tostring(err)) end
@@ -1426,6 +1470,10 @@ cm:add_first_tick_callback(
             kill_blood_kisses_and_tech()
             set_hunters_panel()
             add_pr_uic()
+
+            cm:repeat_callback(function()
+                check_settlements_on_map()
+            end, 0.1, "kemmler_check_map")
         else
             hide_kemmler_hunter_panel()
         end
