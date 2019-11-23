@@ -681,8 +681,10 @@ function lichemaster_postbattle_setup()
     add_missions_and_unlock_requirements()
     kill_extra_recruitment()
 
-    -- check to see if Jacsen survived pre-battle
-    jacsen_are_you_ok()
+    -- check to see if Jacsen survived pre-battle (delay to make sure the below stuff worked fine)
+    cm:callback(function()
+        jacsen_are_you_ok()
+    end, 5)
 
 end
 
@@ -1005,26 +1007,7 @@ function liche_init_listeners()
                 end                
             end,
             true
-        )
-
-        -- set up the RoR UI button and stuff.
-        -- char selected is needed for spawning the unit onto an army
-        core:add_listener(
-            "LicheRorUI",
-            "PanelOpenedCampaign",
-            function(context)
-                local cuim = cm:get_campaign_ui_manager()
-                return context.string == "units_panel" and cuim:is_char_selected_from_faction(legion) and cm:get_local_faction(true) == legion
-            end,
-            function(context)
-                local cuim = cm:get_campaign_ui_manager()
-                local selected = cuim:get_char_selected_cqi()
-
-
-            end,
-            true
-        )
-    
+        ) 
 
         -- char selected needed for a lot of mechanics, just tracks the last selected Legion character by the Legion
         core:add_listener(
@@ -1050,7 +1033,7 @@ function liche_init_listeners()
             true
         )
             
-        -- idk
+        -- lock the create army button if there's no available lords - prevents a glitch where you can recruit a locked general
         core:add_listener(
             "LicheHordePanel",
             "ComponentLClickUp",
@@ -1063,6 +1046,7 @@ function liche_init_listeners()
             true
         )
 
+        -- hides all the unavailable lords in the create army panel
         core:add_listener(
             "LicheGeneralUI2",
             "ComponentLClickUp",
@@ -1107,7 +1091,7 @@ function liche_init_listeners()
             true
         )
 
-        -- run once a turn, see if turnToSpawn is this turn. 
+        -- run once a turn, see if turn_to_spawn is this turn. 
         core:add_listener(
             "RespawnKemmy",
             "FactionTurnStart",
