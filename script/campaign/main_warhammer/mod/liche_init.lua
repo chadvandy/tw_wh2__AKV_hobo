@@ -613,40 +613,54 @@ local function set_hunters_panel()
     )
 end
 
---v function(uic: CA_UIC)
-local function add_settlement_floating_icon(uic)
+--v function(uic: CA_UIC, region_type: string, settlement_string: string)
+local function add_settlement_floating_icon(uic, region_type, settlement_string)
     local parent = find_uicomponent(uic, "list_parent", "icon_holder")
     if not is_uicomponent(parent) then
         -- TODO error log
         return
     end
 
-    local extant = find_uicomponent(parent, "icon_kemm")
-    local icon_kemm
+    local uic_key = ""
+    local uic
+
+    if region_type == "occupy" then
+        uic_key = "icon_kemm"
+    elseif region_type == "ruins" then
+        uic_key = "icon_defile"
+    end
+
+    local extant = find_uicomponent(parent, uic_key)
 
     if is_uicomponent(extant) then
-        icon_kemm = extant
+        uic = extant
     else
         local resource_icon = find_uicomponent(parent, "resource_icon")
-        icon_kemm = UIComponent(resource_icon:CopyComponent("icon_kemm"))
+        uic = UIComponent(resource_icon:CopyComponent(uic_key))
     end
 
     local valid = true
-    if lm:get_necropower() < 60 then
-        valid = false
+    if region_type == "occupy" then
+        if lm:get_necropower() < 60 then
+            valid = false
+        end
+    elseif region_type == "ruins" then
+        if lm._ruins[settlement_string].is_locked then
+            valid = false
+        end
     end
 
-    local tt = "{{tr:kemmler_floating_settlement_tt_occupy_"
-    local image_path = "ui/kemmler/AK_hobo_occupy_"
+    local tt = "{{tr:kemmler_floating_settlement_tt_"..region_type.."_"
+    local image_path = "ui/kemmler/AK_hobo_"..region_type.."_"
 
     if valid then tt = tt .. "yes}}" image_path = image_path .. "yes.png"
     else tt = tt .. "no}}" image_path = image_path .. "no.png"
     end
 
-    icon_kemm:SetVisible(true)
-    icon_kemm:SetImagePath(image_path)
-    icon_kemm:SetInteractive(true)
-    icon_kemm:SetTooltipText(tt, true)
+    uic:SetVisible(true)
+    uic:SetImagePath(image_path)
+    uic:SetInteractive(true)
+    uic:SetTooltipText(tt, true)
 end
 
 local function check_settlements_on_map()
@@ -664,8 +678,10 @@ local function check_settlements_on_map()
             local settlement_string = child_id:gsub("label_settlement:", "")
             lm:log(settlement_string)
             if lm:is_landmark_region(settlement_string) then
-                lm:log("Adding floating icon")
-                add_settlement_floating_icon(child)
+                add_settlement_floating_icon(child, "occupy", settlement_string)
+            end
+            if cm:get_region(settlement_string):is_abandoned() then
+                add_settlement_floating_icon(child, "ruins", settlement_string)
             end
         end
     end
