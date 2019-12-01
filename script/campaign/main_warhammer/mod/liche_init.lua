@@ -640,6 +640,8 @@ local function add_settlement_floating_icon(uic, region_type, settlement_string)
     end
 
     local valid = true
+    local tier = 0 --: number -- fuck you Kailua
+    
     if region_type == "occupy" then
         if lm:get_necropower() < 60 then
             valid = false
@@ -647,14 +649,23 @@ local function add_settlement_floating_icon(uic, region_type, settlement_string)
     elseif region_type == "ruins" then
         if lm._ruins[settlement_string].is_locked then
             valid = false
+        else
+            tier = lm:calculate_tier(settlement_string)
         end
     end
-
+    
     local tt = "{{tr:kemmler_floating_settlement_tt_"..region_type.."_"
     local image_path = "ui/kemmler/AK_hobo_"..region_type.."_"
 
-    if valid then tt = tt .. "yes}}" image_path = image_path .. "yes.png"
-    else tt = tt .. "no}}" image_path = image_path .. "no.png"
+    if not valid then
+        tt = tt .. "no}}"
+        image_path = image_path .. "no.png"
+    elseif valid and tier > 0 then
+        tt = tt .. tier .. "}}"
+        image_path = image_path .. tier .. ".png"
+    else
+        tt = tt .. "yes}}" 
+        image_path = image_path .. "yes.png"
     end
 
     uic:SetVisible(true)
