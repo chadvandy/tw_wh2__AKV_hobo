@@ -681,7 +681,7 @@ local function check_settlements_on_map()
                 add_settlement_floating_icon(child, "occupy", settlement_string)
             end
             if cm:get_region(settlement_string):is_abandoned() then
-                add_settlement_floating_icon(child, "ruins", settlement_string)
+                add_settlement_floating_icon(child, "ruin", settlement_string)
             end
         end
     end
