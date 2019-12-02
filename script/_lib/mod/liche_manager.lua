@@ -1572,7 +1572,7 @@ function liche_manager:lord_lock_UI(is_settlement)
     if not self:can_recruit_any_lord() then
         -- grey the button and give a tooltip for UX
         component:SetState("inactive")
-        component:SetTooltipText("[[col:red]]Cannot recruit a new army - no available lords![[/col]]", false)
+        component:SetTooltipText("{{tr:AK_hobo_cannot_recruit_lord}}", false)
         self:log("LORDS: Locking the 'create army' button because there are no available lords to recruit!")
     else
         component:SetState("active")
