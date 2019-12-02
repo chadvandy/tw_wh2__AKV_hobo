@@ -244,10 +244,8 @@ local function disable_tech_notification()
         end
 
         cm:callback(function()
-            if is_uicomponent(list) and list:Visible() then
-                settings_button:SimulateLClick()
-            end
-        end, 0.2)
+            core:get_ui_root():SimulateLClick()
+        end, 0.5)
     end, 0.5)
 end
 
