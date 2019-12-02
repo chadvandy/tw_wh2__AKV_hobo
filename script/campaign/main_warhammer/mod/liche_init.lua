@@ -624,6 +624,8 @@ local function add_settlement_floating_icon(uic, region_type, settlement_string)
         return
     end
 
+    local region_obj = cm:get_region(settlement_string)
+
     local uic_key = ""
     local uic
 
@@ -640,6 +642,10 @@ local function add_settlement_floating_icon(uic, region_type, settlement_string)
     else
         local resource_icon = find_uicomponent(parent, "resource_icon")
         uic = UIComponent(resource_icon:CopyComponent(uic_key))
+    end
+
+    if region_type == "occupy" then
+        -- check if there's a 
     end
 
     local valid = true
@@ -677,6 +683,47 @@ local function add_settlement_floating_icon(uic, region_type, settlement_string)
     uic:SetTooltipText(tt, true)
 end
 
+--v function(uic: CA_UIC, settlement_string: string)
+local function check_settlement_floating_icons(uic, settlement_string)
+    local parent = find_uicomponent(uic, "list_parent", "icon_holder")
+    if not is_uicomponent(parent) then
+        return
+    end
+
+    local region_obj = cm:get_region(settlement_string)
+
+    do
+        -- check ruins thing
+        local extant = find_uicomponent(parent, "icon_defile")
+
+        if is_uicomponent(extant) and extant:Visible() then
+            if not region_obj:is_abandoned() then
+                extant:SetVisible(false)
+            end
+        else
+            if region_obj:is_abandoned() then
+                add_settlement_floating_icon(uic, "ruins", settlement_string)
+            end
+        end
+    end
+    do
+        -- check landmark thing
+        local extant = find_uicomponent(parent, "icon_kemm")
+
+        if lm:is_landmark_region(settlement_string) then
+            if is_uicomponent(extant) and extant:Visible() then
+                if region_obj:owning_faction():name() == legion then
+                    extant:SetVisible(false)
+                end
+            else 
+                if region_obj:owning_faction():name() ~= legion then
+                    add_settlement_floating_icon(uic, "occupy", settlement_string)
+                end
+            end
+        end
+    end
+end
+
 local function check_settlements_on_map()
     local root = core:get_ui_root()
     local parent = find_uicomponent(root, "3d_ui_parent")
@@ -689,12 +736,14 @@ local function check_settlements_on_map()
         local child_id = child:Id()
         if child_id:sub(1, 17) == "label_settlement:" then
             local settlement_string = child_id:gsub("label_settlement:", "")
-            if lm:is_landmark_region(settlement_string) then
+
+            check_settlement_floating_icons(child, settlement_string)
+--[[            if lm:is_landmark_region(settlement_string) and not cm:get_region(settlement_string):owning_faction():name() == legion then
                 add_settlement_floating_icon(child, "occupy", settlement_string)
             end
             if cm:get_region(settlement_string):is_abandoned() then
                 add_settlement_floating_icon(child, "ruins", settlement_string)
-            end
+            end]]
         end
     end
 end
