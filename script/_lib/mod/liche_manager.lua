@@ -654,7 +654,7 @@ function liche_manager:calculate_tier(region_name)
     else
         tier = 3
     end
-    self:log("RUIN TRACKER: Ruin Tier calculated at ["..tier.."].")
+    --self:log("RUIN TRACKER: Ruin Tier calculated at ["..tier.."].")
     return tier
 end
 
@@ -1543,20 +1543,26 @@ end
 --v method() --> boolean
 function liche_manager:can_recruit_any_lord()
     --# assume self: LICHE_MANAGER
-    if not self:can_recruit_lord("AK_hobo_nameless") and not self:can_recruit_lord("AK_hobo_draesca") and not self:can_recruit_lord("AK_hobo_priestess") then
-        return false
-    else
+    if self:can_recruit_lord("AK_hobo_nameless") or self:can_recruit_lord("AK_hobo_draesca") or self:can_recruit_lord("AK_hobo_priestess") then
         return true
+    else
+        return false
     end
 end
 
 ---- Called if there are no available lords to recruit
---v method()
-function liche_manager:lord_lock_UI()
+--v method(is_settlement: boolean?)
+function liche_manager:lord_lock_UI(is_settlement)
     --# assume self: LICHE_MANAGER
 
+    local button_parent_key = "button_group_army_settled"
+
+    if is_settlement then
+        button_parent_key = "button_group_settlement"
+    end
+
     local component = find_uicomponent(core:get_ui_root(), "layout", "hud_center_docker", "hud_center",
-    "small_bar", "button_group_army_settled", "button_create_army")
+    "small_bar", button_parent_key, "button_create_army")
 
     if not component then
         self:error("lord_lock_UI() called, but the Create Army button is not existent!")
@@ -1626,6 +1632,8 @@ end
 function liche_manager:unlock_lord(subtype)
     --# assume self: LICHE_MANAGER
 
+    local ok, err = pcall(function()
+
     local lord_obj = self:get_lord_by_key(subtype)
 
     if is_nil(lord_obj) then
@@ -1649,10 +1657,12 @@ function liche_manager:unlock_lord(subtype)
         data.art_set_id
     )
 
-    lord_obj._can_recruit_lord = true
+    lord_obj._can_recruit = true
     lord_obj._is_unlocked = true
 
     self:log("LORDS: Unlocked lord with subtype ["..subtype.."].")
+
+    end) if not ok then self:error(err) end
         
 end
 

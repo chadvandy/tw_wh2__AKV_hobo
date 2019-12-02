@@ -243,9 +243,14 @@ local function disable_tech_notification()
             end
         end
 
-        cm:callback(function()
-            core:get_ui_root():SimulateLClick()
-        end, 0.5)
+        cm:repeat_callback(function()
+            if is_uicomponent(list) and list:Visible() then
+                settings_button:SimulateLClick()
+            else
+                cm:remove_callback("kill_that_notification_list")
+            end
+        end, 0.1, "kill_that_notification_list")
+        
     end, 0.5)
 end
 
@@ -682,10 +687,8 @@ local function check_settlements_on_map()
     for i = 0, parent:ChildCount() -1 do
         local child = UIComponent(parent:Find(i))
         local child_id = child:Id()
-        lm:log(child_id)
         if child_id:sub(1, 17) == "label_settlement:" then
             local settlement_string = child_id:gsub("label_settlement:", "")
-            lm:log(settlement_string)
             if lm:is_landmark_region(settlement_string) then
                 add_settlement_floating_icon(child, "occupy", settlement_string)
             end
@@ -881,34 +884,36 @@ function liche_init_listeners()
 
         -- following three are the unlock conditions to complete the unlock missions as well as actually spawn the lord
         if not lm:is_lord_unlocked("AK_hobo_nameless") then
+
             core:add_listener(
                 "LicheNamelessUnlock",
                 "BuildingCompleted",
                 function(context)
-                    return context:garrison_residence():region():owning_faction():name() == legion and context:building():name() == "wh_main_vmp_settlement_major_2" and context:garrison_residence():region():name() == "wh_main_northern_grey_mountains_blackstone_post"
+                    local region = context:garrison_residence():region()
+                    return region:owning_faction():name() == legion and region:name() == "wh_main_northern_grey_mountains_blackstone_post" and region:settlement():primary_slot():building():building_levels() >= 2
                 end,
                 function(context)
-                    if not lm:is_lord_unlocked("AK_hobo_nameless") then
-                        cm:complete_scripted_mission_objective("lichemaster_lord_nameless", "lichemaster_lord_nameless", true)
-                        lm:unlock_lord("AK_hobo_nameless")
-                    end
+                    cm:complete_scripted_mission_objective("lichemaster_lord_nameless", "lichemaster_lord_nameless", true)
+                    lm:unlock_lord("AK_hobo_nameless")
+
                     core:remove_listener("LicheNamelessUnlock2")
                 end,
                 false
             )
+
             core:add_listener(
                 "LicheNamelessUnlock2",
                 "GarrisonOccupiedEvent",
                 function(context)
                     local region = context:garrison_residence():region()
-                    return region:name() == "wh_main_northern_grey_mountains_blackstone_post" and context:character():faction():name() == legion and 
-                    (region:building_exists("wh_main_vmp_settlement_major_2") or region:building_exists("wh_main_vmp_settlement_major_3") or region:building_exists("wh_main_vmp_settlement_major_4") or region:building_exists("wh_main_vmp_settlement_major_5"))
+                    local settlement = region:settlement()
+                    return (region:name() == "wh_main_northern_grey_mountains_blackstone_post" and context:character():faction():name() == legion and 
+                    settlement:primary_slot():building():building_level() >= 2)
                 end,
                 function(context)
-                    if not lm:is_lord_unlocked("AK_hobo_nameless") then
-                        cm:complete_scripted_mission_objective("lichemaster_lord_nameless", "lichemaster_lord_nameless", true)
-                        lm:unlock_lord("AK_hobo_nameless")
-                    end
+                    cm:complete_scripted_mission_objective("lichemaster_lord_nameless", "lichemaster_lord_nameless", true)
+                    lm:unlock_lord("AK_hobo_nameless")
+
                     core:remove_listener("LicheNamelessUnlock")
                 end,
                 false
@@ -923,10 +928,8 @@ function liche_init_listeners()
                     return context.string == "6"
                 end,
                 function(context)
-                    if not lm:is_lord_unlocked("AK_hobo_priestess") then
-                        cm:complete_scripted_mission_objective("lichemaster_lord_priestess", "lichemaster_lord_priestess", true)
-                        lm:unlock_lord("AK_hobo_priestess")
-                    end
+                    cm:complete_scripted_mission_objective("lichemaster_lord_priestess", "lichemaster_lord_priestess", true)
+                    lm:unlock_lord("AK_hobo_priestess")
                 end,
                 false
             )
@@ -1053,6 +1056,9 @@ function liche_init_listeners()
                     end
                     
                     lm:ror_UI(char_cqi)
+
+                    -- in case there's a click from settlement to garrisoned lord
+                    lm:lord_lock_UI(false)
                 end, 0.1)
             end,
             true
@@ -1066,7 +1072,21 @@ function liche_init_listeners()
                 return context.string == "tab_horde_buildings" and cm:get_local_faction(true) == legion
             end,
             function(context)
-                lm:lord_lock_UI()
+                lm:lord_lock_UI(false)
+            end,
+            true
+        )
+
+        core:add_listener(
+            "LicheSettlementPanel",
+            "PanelOpenedCampaign",
+            function(context)
+                return context.string == "settlement_panel"
+            end,
+            function(context)
+                cm:callback(function()
+                    lm:lord_lock_UI(true)
+                end, 0.1)
             end,
             true
         )
