@@ -1332,7 +1332,7 @@ function liche_init_listeners()
                     lm:kill_wounded_kemmy()
                 end
             end,
-            false
+            true
         )
 
         -- spawns a new agent on specific skills being learned

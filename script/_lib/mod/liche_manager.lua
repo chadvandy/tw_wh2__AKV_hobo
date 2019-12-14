@@ -316,7 +316,7 @@ end
 --v method() --> boolean
 function liche_manager:is_respawn_pending()
     --# assume self: LICHE_MANAGER
-    return self._respawn_details.respawn_post_battle_pending
+    return not not self._respawn_details.respawn_post_battle_pending
 end
 
 --v method(enable: boolean)
@@ -1759,7 +1759,8 @@ function liche_manager:get_wounded_cqi()
 
     for i = 0, char_list:num_items() - 1 do
         local char = char_list:item_at(i)
-        if char:character_subtype("AK_hobo_kemmy_wounded") then
+        -- prevents returning any wounded wounded kemmys
+        if char:character_subtype("AK_hobo_kemmy_wounded") and char:has_military_force() and not char:is_wounded() and not char:is_politician() then
             return char:command_queue_index()
         end
     end
@@ -1859,6 +1860,7 @@ function liche_manager:kill_wounded_kemmy()
         return
     end
 
+    cm:set_character_immortality("character_cqi:"..cqi, false)
     cm:kill_character(cqi, true, false)
 
     -- reset the respawn details to default
