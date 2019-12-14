@@ -323,7 +323,7 @@ local function setup_kemmler()
 
     cm:transfer_region_to_faction("wh_main_northern_grey_mountains_blackstone_post", "wh2_dlc11_vmp_the_barrow_legion")
 
-    cm:kill_character(kemmlerCQI, true, true)
+    cm:kill_character_and_commanded_unit("character_cqi:"..kemmlerCQI, true, true)
     
     cm:callback(function()
         local kemmy_cqi = lm:get_real_cqi()

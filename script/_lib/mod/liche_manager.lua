@@ -746,7 +746,7 @@ function liche_manager:kill_colonel()
     for i = 0, char_list:num_items() - 1 do
         local char = char_list:item_at(i)
         if char:character_type("colonel") and not char:has_garrison_residence() and not char:is_politician() then
-            cm:kill_character(char:command_queue_index(), true, true)
+            cm:kill_character_and_commanded_unit("character_cqi:"..char:command_queue_index(), true, true)
         end
     end
 end
@@ -1861,7 +1861,10 @@ function liche_manager:kill_wounded_kemmy()
     end
 
     cm:set_character_immortality("character_cqi:"..cqi, false)
-    cm:kill_character(cqi, true, false)
+    cm:kill_character_and_commanded_unit("character_cqi:"..cqi, true, false)
+    cm:callback(function()
+        cm:kill_character_and_commanded_unit("character_cqi:"..cqi, true, false)
+    end, 0.1)
 
     -- reset the respawn details to default
     self:set_respawn_pending(false)
@@ -1871,7 +1874,7 @@ function liche_manager:kill_wounded_kemmy()
     cm:callback(function() 
         cm:disable_event_feed_events(false, "wh_event_category_character", "", "") 
         self:refresh_upkeep_penalty()
-    end, 2)
+    end, 3)
 end
 
 ---- Called to establish the countdown until the wounded kemmy is killed and real kemmy is revived!
@@ -1967,9 +1970,11 @@ function liche_manager:spawn_wounded_kemmy(kem_cqi, og_unit_list)
         function(cqi)
             cm:callback(function()
                 -- teleport off-screen!
-                cm:teleport_to("character_cqi:"..cqi, 1, 1, false)
+                cm:teleport_to("character_cqi:"..cqi, 2, 2, false) -- TODO doesn't work???
                 local obj = cm:get_character_by_cqi(cqi)
                 self:log("WOUNDED KEMMY: Wounded Kem at ("..obj:logical_position_x()..", "..obj:logical_position_y()..").")
+
+                cm:set_character_immortality("character_cqi:"..cqi, false)
 
                 -- rebable the event for trespassing n stuff
                 cm:disable_event_feed_events(false, "wh_event_category_diplomacy", "", "")

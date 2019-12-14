@@ -1130,7 +1130,7 @@ function liche_init_listeners()
             "LicheSettlementPanel",
             "PanelOpenedCampaign",
             function(context)
-                return context.string == "settlement_panel"
+                return context.string == "settlement_panel" and cm:get_local_faction(true) == legion
             end,
             function(context)
                 cm:callback(function()
