@@ -814,7 +814,7 @@ function liche_init_listeners()
             "LicheMaxLivesLost",
             "PooledResourceEffectChangedEvent",
             function(context)
-                return context:resource():key() == "lichemaster_max_remaining_lives" and context:faction():is_human()
+                return context:resource():key() == "lichemaster_max_remaining_lives" and context:faction():is_human() and context:faction():pooled_resource("lichemaster_max_remaining_lives"):value() <= 0
             end,
             function(context)
                 local event_string_base = "event_feed_strings_text_AK_hobo_zero_max_lives_"

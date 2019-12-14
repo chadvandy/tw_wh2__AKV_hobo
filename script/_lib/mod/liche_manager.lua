@@ -1376,17 +1376,29 @@ function liche_manager:ror_UI(cqi)
     --v function(button: CA_UIC)
     local function check_validity(button)
         local char_obj = cm:get_character_by_cqi(cqi)
+        if not char_obj then
+            cm:remove_callback("kill_that_ror_button")
+            return
+        end
+
         local mf_obj = char_obj:military_force()
+        if not mf_obj then
+            cm:remove_callback("kill_that_ror_button")
+            return
+        end
+
         if mf_obj:unit_list():num_items() == 20 then
             -- no room
             apply_validity("no_room", button)
             return
         end
+
         local faction_obj = char_obj:faction()
         if faction_obj:pooled_resource("necropower"):value() < 5 then
             apply_validity("low_np", button)
             return
         end
+
         apply_validity("valid", button)
     end
 
@@ -1416,7 +1428,7 @@ function liche_manager:ror_UI(cqi)
     cm:repeat_callback(function()
         local ror_button = find_uicomponent(core:get_ui_root(), "layout", "hud_center_docker", "hud_center", "small_bar", "button_group_army", "button_renown")
 
-        if is_uicomponent(ror_button) and is_uicomponent(button) then
+        if is_uicomponent(ror_button) and is_uicomponent(button) and button:Visible() then
             ror_button:SetVisible(false)
             check_validity(button)
         else
@@ -1897,6 +1909,8 @@ function liche_manager:respawn_kemmy(turn)
 
     local x, y, region_key = self:get_wounded_kemmy_coords()
 
+    cm:remove_effect_bundle_from_characters_force("AK_hobo_wounded_kemmy", wounded_kemmy_cqi)
+
     cm:teleport_to("character_cqi:"..wounded_kemmy_cqi, x, y, false)
 
     local event_string_base = "event_feed_strings_text_AK_hobo_wounded_"
@@ -1954,12 +1968,14 @@ function liche_manager:spawn_wounded_kemmy(kem_cqi, og_unit_list)
 
     cm:disable_event_feed_events(true, "wh_event_category_diplomacy", "", "")
 
+    cm:take_shroud_snapshot()
+
     cm:create_force_with_general(
         self._faction_key,
         unit_list,
         kem_region,
-        spawn_x,
-        spawn_y,
+        1,
+        1,
         "general",
         "AK_hobo_kemmy_wounded",
         "names_name_2147345320",
@@ -1968,17 +1984,24 @@ function liche_manager:spawn_wounded_kemmy(kem_cqi, og_unit_list)
         "",
         false,
         function(cqi)
+            local obj = cm:get_character_by_cqi(cqi)
+
+            cm:apply_effect_bundle_to_characters_force("AK_hobo_wounded_kemmy", cqi, -1, false)
+
+            -- teleport off-screen!
+            cm:restore_shroud_from_snapshot()
+
             cm:callback(function()
-                -- teleport off-screen!
-                cm:teleport_to("character_cqi:"..cqi, 2, 2, false) -- TODO doesn't work???
-                local obj = cm:get_character_by_cqi(cqi)
+
                 self:log("WOUNDED KEMMY: Wounded Kem at ("..obj:logical_position_x()..", "..obj:logical_position_y()..").")
 
                 cm:set_character_immortality("character_cqi:"..cqi, false)
 
                 -- rebable the event for trespassing n stuff
-                cm:disable_event_feed_events(false, "wh_event_category_diplomacy", "", "")
-            end, 1)
+                cm:callback(function()
+                    cm:disable_event_feed_events(false, "wh_event_category_diplomacy", "", "")
+                end, 0.2)
+            end, 0.1)
         end
     )
 end
