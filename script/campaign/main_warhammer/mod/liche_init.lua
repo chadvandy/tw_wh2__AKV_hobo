@@ -974,7 +974,7 @@ function liche_init_listeners()
                 "LichePriestessUnlock",
                 "LichemasterEventRuinDefiled",
                 function(context)
-                    return context.string == "6"
+                    return context.number >= 6
                 end,
                 function(context)
                     cm:complete_scripted_mission_objective("lichemaster_lord_priestess", "lichemaster_lord_priestess", true)

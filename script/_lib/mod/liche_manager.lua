@@ -1149,7 +1149,7 @@ function liche_manager:defile_ruin(ruin)
     
     -- tracker for the Priestess unlock condition
     self._num_ruins_defiled = self._num_ruins_defiled + 1
-    core:trigger_event("LichemasterEventRuinDefiled", tostring(self._num_ruins_defiled))
+    core:trigger_event("LichemasterEventRuinDefiled", self._num_ruins_defiled)
 end
 
 -----------------------------------------
