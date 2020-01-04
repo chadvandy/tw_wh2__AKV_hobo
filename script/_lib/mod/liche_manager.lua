@@ -7,20 +7,7 @@ local LOG = require("script/lichemanager/helpers/log") --# assume LOG: LICHE_LOG
 
 local names = require("script/lichemanager/tables/legion_names")
 
-local liche_manager = {} --# assume liche_manager: LICHE_MANAGER
-
------------------------------------------
---------------- CREATION ----------------
------------------------------------------
-
---v function() --> LICHE_MANAGER
-function liche_manager.init()
-    --# assume self: LICHE_MANAGER
-    local self = {}
-    setmetatable(self, {__index = liche_manager})
-    --# assume self: LICHE_MANAGER
-    return self
-end
+liche_manager = {} --# assume liche_manager: LICHE_MANAGER
 
 -----------------------------------------
 ----------------- LOGS! -----------------
@@ -2008,20 +1995,16 @@ end
 
 -- make sure it's global! Also, initialize the logfile.
 
-local lm = liche_manager.init()
+liche_manager:log_init()
 
-lm:log_init()
-
-lm:load_module("log", "helpers")
-lm:load_module("utility", "helpers")
-lm:load_module("ror", "modules")
-lm:load_module("ruins", "modules")
-
-_G.lichemanager = lm
+liche_manager:load_module("log", "helpers")
+liche_manager:load_module("utility", "helpers")
+liche_manager:load_module("ror", "modules")
+liche_manager:load_module("ruins", "modules")
 
 --v function() --> LICHE_MANAGER
 function get_lichemanager()
-    return _G.lichemanager
+    return liche_manager
 end
 
 _G.get_lichemanager = get_lichemanager
