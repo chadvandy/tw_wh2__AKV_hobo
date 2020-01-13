@@ -780,19 +780,24 @@ function liche_init_listeners()
             end
         end
 
-        -- set up data-end objects for tracking LL progress and LoU progress
-        lm:setup_regiments()
-        lm:setup_lords()
-        lm:setup_hero_spawn_rank()
+        -- only runs on first load
+        if not cm:get_saved_value("liche_init") then
+            -- set up data-end objects for tracking LL progress and LoU progress
+            lm:setup_regiments()
+            lm:setup_lords()
+            lm:setup_hero_spawn_rank()
         
-        -- disable confederation betwixt Kemmy and Vampies
-        cm:force_diplomacy(legion, "culture:wh_main_vmp_vampire_counts", "form confederation", false, false, true)
+            -- disable confederation betwixt Kemmy and Vampies
+            cm:force_diplomacy(legion, "culture:wh_main_vmp_vampire_counts", "form confederation", false, false, true)
 
-        -- remove units from the Raise Dead pool
-        kill_extra_recruitment()
+            -- remove units from the Raise Dead pool
+            kill_extra_recruitment()
 
-        -- remove unwanted tech
-        kill_technologies()
+            -- remove unwanted tech
+            kill_technologies()
+
+            cm:set_saved_value("liche_init", true)
+        end
 
         -- every Kemmler turn, check NP. 
         -- If it's over 80, and lives hasn't been increased for 20 turns, then +1 lives
