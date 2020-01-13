@@ -1680,9 +1680,19 @@ function liche_manager:apply_attrition()
     for i = 0, char_list:num_items() - 1 do
         local char = char_list:item_at(i)
         if not char:character_subtype("vmp_heinrich_kemmler") and not char:character_subtype("AK_hobo_kemmy_wounded") and char:has_military_force() and char:faction():name() == "wh2_dlc11_vmp_the_barrow_legion" then
-            if char:region():name() ~= kemmy:region():name() then
-                self:log("NECROMANTIC POWER: Applying the low-necromantic-power attrition to character with surname ["..char:get_surname().."] in region ["..char:region():name().."] for one turn.")
-                cm:apply_effect_bundle_to_characters_force("lichemaster_distance_attrition", char:command_queue_index(), 1, false)
+            if not char:region():is_null_interface() and not kemmy:region():is_null_interface() then
+                if char:region():name() ~= kemmy:region():name() then
+                    self:log("NECROMANTIC POWER: Applying the low-necromantic-power attrition to character with surname ["..char:get_surname().."] in region ["..char:region():name().."] for one turn.")
+                    cm:apply_effect_bundle_to_characters_force("lichemaster_distance_attrition", char:command_queue_index(), 1, false)
+                end
+            else
+                local x, y = char:logical_position_x(), char:logical_position_y()
+                local k_x, k_y = kemmy:logical_position_x(), kemmy:logical_position_y()
+
+                if distance_squared(x, y, k_x, k_y) > 2500 then
+                    self:log("NECROMANTIC POWER: Applying the low-necromantic-power attrition to character with surname ["..char:get_surname().."] at distance_squared ["..distance_squared(x, y, k_x, k_y).."] from Kemmler, for one turn.")
+                    cm:apply_effect_bundle_to_characters_force("lichemaster_distance_attrition", char:command_queue_index(), 1, false)
+                end
             end
         end
     end
