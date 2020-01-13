@@ -939,7 +939,7 @@ function liche_init_listeners()
                 "BuildingCompleted",
                 function(context)
                     local region = context:garrison_residence():region()
-                    return region:owning_faction():name() == legion and region:name() == "wh_main_northern_grey_mountains_blackstone_post" and region:settlement():primary_slot():building():building_levels() >= 2
+                    return region:owning_faction():name() == legion and region:name() == "wh_main_northern_grey_mountains_blackstone_post" and region:settlement():primary_slot():building():building_level() >= 2
                 end,
                 function(context)
                     cm:complete_scripted_mission_objective("lichemaster_lord_nameless", "lichemaster_lord_nameless", true)
