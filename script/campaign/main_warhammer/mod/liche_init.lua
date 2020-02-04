@@ -1319,6 +1319,24 @@ function liche_init_listeners()
             true
         )
 
+        -- needed for Wounded Kemmler to die if it's just a "Continue Siege" battle above
+        core:add_listener(
+            "WoundedKemmyContinueSiege",
+            "BattleCompletedCameraMove",
+            function()
+                return cm:pending_battle_cache_faction_is_involved(legion) and lm:is_respawn_pending()
+            end,
+            function()
+                local pb = cm:model():pending_battle()
+
+                if not pb:has_been_fought() then
+                    lm:log("WOUNDED KEMMY: Kemmler is only sieging. Axing wounded kemmy.")
+                    lm:kill_wounded_kemmy()
+                end
+            end,
+            true
+        )
+
         -- check if, after the battle, Kemmler is wounded - if not, kill the fake version of Kemmler. If he is, begin the respawn mechanic
         core:add_listener(
             "WoundedKemmyBattleCompleted",

@@ -275,7 +275,7 @@ function liche_manager:refresh_upkeep_penalty()
 	for i = 0, mf_list:num_items() - 1 do
 		local current_mf = mf_list:item_at(i)
 		
-		if not current_mf:is_armed_citizenry() and current_mf:has_general() then
+		if not current_mf:is_armed_citizenry() and current_mf:has_general() and not current_mf:general_character():character_subtype_key("AK_hobo_kemmy_wounded") then
 			table.insert(army_list, current_mf)
 		end
 	end
@@ -1851,29 +1851,24 @@ end
 function liche_manager:kill_wounded_kemmy()
     --# assume self: LICHE_MANAGER
     self:log("WOUNDED KEMMY: Killing wounded Kemmy.")
-    local cqi = self:get_wounded_cqi()
-    local char = cm:get_character_by_cqi(cqi)
 
     -- hide killed
     cm:disable_event_feed_events(true, "wh_event_category_character", "", "")
 
-    if not char then
-        --# assume cqi: number
-        self:error("WOUNDED KEMMY: Kill Wounded Kemmy failed, char with CQI ["..cqi.."] unfound. Investigate!")
-        return
-    end
+    -- Kill ALL wounded kemmies in the faction
+    local char_list = cm:get_faction(self._faction_key):character_list()
+    for i = 0, char_list:num_items() - 1 do
+        local char = char_list:item_at(i)
+        local cqi = char:command_queue_index()
 
-    if not char:character_subtype("AK_hobo_kemmy_wounded") then
-        --# assume cqi: number
-        self:error("WOUNDED KEMMY: Kill Wounded Kemmy failed, char with CQI ["..cqi.."] does not have the correct subtype. Investigate!")
-        return
+        if char:character_subtype("AK_hobo_kemmy_wounded") then
+            cm:set_character_immortality("character_cqi:"..cqi, false)
+            cm:kill_character_and_commanded_unit("character_cqi:"..cqi, true, false)
+            cm:callback(function()
+                cm:kill_character_and_commanded_unit("character_cqi:"..cqi, true, false)
+            end, 0.1)
+        end
     end
-
-    cm:set_character_immortality("character_cqi:"..cqi, false)
-    cm:kill_character_and_commanded_unit("character_cqi:"..cqi, true, false)
-    cm:callback(function()
-        cm:kill_character_and_commanded_unit("character_cqi:"..cqi, true, false)
-    end, 0.1)
 
     -- reset the respawn details to default
     self:set_respawn_pending(false)
@@ -1948,6 +1943,20 @@ end
 function liche_manager:spawn_wounded_kemmy(kem_cqi, og_unit_list)
     --# assume self: LICHE_MANAGER
 
+    local difficulty = cm:model():combined_difficulty_level();
+	
+	local effect_bundle = "wh_main_bundle_force_additional_army_upkeep_easy";				-- easy
+	
+	if difficulty == 0 then
+		effect_bundle = "wh_main_bundle_force_additional_army_upkeep_normal";				-- normal
+	elseif difficulty == -1 then
+		effect_bundle = "wh_main_bundle_force_additional_army_upkeep_hard";					-- hard
+	elseif difficulty == -2 then
+		effect_bundle = "wh_main_bundle_force_additional_army_upkeep_very_hard";			-- very hard
+	elseif difficulty == -3 then
+		effect_bundle = "wh_main_bundle_force_additional_army_upkeep_legendary";			-- legendary
+	end;
+
     local unit_list = self:wounded_kemmy_unit_list()
 
     local kem_x, kem_y, kem_region
@@ -1994,8 +2003,12 @@ function liche_manager:spawn_wounded_kemmy(kem_cqi, og_unit_list)
 
                 cm:set_character_immortality("character_cqi:"..cqi, false)
 
-                -- rebable the event for trespassing n stuff
+
                 cm:callback(function()
+                    -- prevent Wounded Kemmy from counting towards the upkeep penalty
+                    cm:remove_effect_bundle_from_characters_force(effect_bundle, cqi)
+
+                    -- rebable the event for trespassing n stuff
                     cm:disable_event_feed_events(false, "wh_event_category_diplomacy", "", "")
                 end, 0.2)
             end, 0.1)
