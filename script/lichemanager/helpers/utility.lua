@@ -1,4 +1,4 @@
-local LOG = require("script/lichemaster/log")
+local LOG = require("script/lichemanager/helpers/log")
 
 --v function(root: CA_UIC) --> CA_UIC
 local function create_dummy(root)

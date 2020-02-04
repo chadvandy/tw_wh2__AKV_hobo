@@ -7,7 +7,7 @@
 
 -- refernces some stuff that will be used ALL over
 
-local lm = _G._LICHEMANAGER
+local lm = get_lichemanager()
 local legion = lm:get_faction_key()
 
 local UTILITY = lm:get_module_by_name("utility")

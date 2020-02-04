@@ -91,4 +91,5 @@ local function set(turns, is_locked, button_number)
 
 end
 
-return { set = set }
+local retval = { set = set } --: RUINSUI
+return retval

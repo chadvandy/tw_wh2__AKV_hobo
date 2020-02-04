@@ -1,6 +1,9 @@
-local LOG = require("script/lichemaster/log") --# assume LOG: LICHE_LOG
+if __game_mode ~= __lib_type_campaign then
+    -- disabled, only for campaign!
+    return
+end
 
-local names = require("script/lichemaster/tables/legionNames")
+local LOG = require("script/lichemanager/helpers/log") --# assume LOG: LICHE_LOG
 
 local names = require("script/lichemanager/tables/legion_names")
 
@@ -20,55 +23,9 @@ function liche_manager:error(text)
     LOG.error(tostring(text))
 end
 
------------------------------------------
---------------- CREATION ----------------
------------------------------------------
-
---v function() --> LICHE_MANAGER
-function liche_manager.init()
-    --# assume self: LICHE_MANAGER
-    local self = {}
-    setmetatable(self, {__index = liche_manager})
-    --# assume self: LICHE_MANAGER
-    --self._UI = UI
-    self._LOG = LOG
-    self._UTILITY = require("script/lichemaster/ui/utility")
-
-    --[[ REGIMENTS ]]
-    self._regiments = {}
-    self._selected_legion = "" --: string
-    
-    -- [[ LORDS ]]
-    self._can_recruit_lord = {
-        ["AK_hobo_draesca"] = false,
-        ["AK_hobo_priestess"] = false,
-        ["AK_hobo_nameless"] = false
-    }
-    self._is_draesca_unlocked = false
-    self._is_priestess_unlocked = false
-    self._is_nameless_unlocked = false
-
-    --[[ RUINS ]]
-    self._ruins = {}
-    self._num_ruins_defiled = 0 --: number
-    self._num_razed_settlements = 0 --: number
-    self._defile_debug = ""
-
-    --[[ MINOR INFOS ]]
-    self._hero_spawn_rank_increase = 0 --: number
-    self._turn_to_spawn = 0 --: number
-    self._currentPower = 0
-
-    --[[ WOUNDED KEMMY DEETS ]]
-    self._last_turn_lives_changed = 0 --: number
-    self._remaining_max_lives = 0 --: number
-    self._unit_list = "" --: string
-
-    -- create the log file and beginning text
-    self._LOG.init()
-
-    _G._LICHEMANAGER = self
-    return self
+--v method()
+function liche_manager:log_init()
+    LOG.init()
 end
 
 -----------------------------------------
@@ -1128,7 +1085,7 @@ function liche_manager:ruinsUI(region, button_number)
     local turns = self:calculate_turns_ruined(region)
     local is_locked = self._ruins[region].is_locked
 
-    local RUINSUI = require("script/lichemaster/ui/ruins")
+    local RUINSUI = self._RUINSUI
     if not button_number then
         RUINSUI.set(turns, is_locked)
     else
@@ -1371,7 +1328,7 @@ function liche_manager:ror_UI(cqi)
     end
 
     -- the actual functions to create the UI panel are in this subfile
-    local create_panel = require("script/lichemaster/ui/ror")
+    local ROR = self._RORUI
 
     --v function(valid: string, button: CA_UIC)
     local function apply_validity(valid, button)
@@ -2073,14 +2030,7 @@ function get_lichemanager()
     return liche_manager
 end
 
--- needed for some of the external files, since these apparently don't exist in the global env?
-_G.UIComponent = UIComponent
-_G.find_uicomponent = find_uicomponent
-_G.print_all_uicomponent_children = print_all_uicomponent_children
-_G.is_uicomponent = is_uicomponent
-_G.out = out
-_G.core = core
-_G.output_uicomponent = output_uicomponent
+_G.get_lichemanager = get_lichemanager
 
 -- save details 
 cm:add_saving_game_callback(
