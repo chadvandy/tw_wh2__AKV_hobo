@@ -9,9 +9,9 @@
 
 local lm = _G._LICHEMANAGER
 local legion = lm:get_faction_key()
-local UTILITY = lm._UTILITY
 
-local LicheLog = require("script/lichemaster/log") --# assume LicheLog: LICHE_LOG
+local UTILITY = lm:get_module_by_name("utility")
+local LicheLog = lm:get_module_by_name("log")
 
 
 ----------------------
@@ -122,6 +122,9 @@ local function check_np_effects()
     end
 end
 
+-- checks current max lives - if 0, trigger a single event
+
+
 -- triggered on campaign load and on per turn
 -- disables unnecessary UIC's
 local function kill_blood_kisses_and_tech()
@@ -207,19 +210,48 @@ local function add_missions_and_unlock_requirements()
     priestess_mission:trigger()
 end
 
--- during VC turn, make blood kisses/lines visible.
-local function return_blood_kisses()
-    local bloodKiss = find_uicomponent(core:get_ui_root(), "layout", "resources_bar", "topbar_list_parent", "canopic_jars_holder")
-    bloodKiss:SetVisible(true)
+-- uggo resolution to the tech notification shit
+local function disable_tech_notification()
+    --# assume disable_tech_notification: function()
 
-    local bloodlines = find_uicomponent(core:get_ui_root(), "layout", "faction_buttons_docker", "button_group_management", "button_bloodlines")
-    bloodlines:SetVisible(true)
-end
+    local docker = find_uicomponent(core:get_ui_root(), "layout", "faction_buttons_docker", "end_turn_docker")
+    if not is_uicomponent(docker) then
+        cm:callback(function() 
+            disable_tech_notification()
+        end, 0.1)
+        return
+    end
 
--- after Kemmler's turn, make these other technologies visible. Necessary for other players
-local function return_tech()
-    local tech = find_uicomponent(core:get_ui_root(), "layout", "faction_buttons_docker", "button_group_management", "button_technology")
-    tech:SetVisible(true)
+    local settings_button = find_uicomponent(docker, "notification_frame", "button_notification_settings")
+
+    if not is_uicomponent(settings_button) then
+        cm:callback(function() 
+            disable_tech_notification()
+        end, 0.1)
+        return
+    end
+
+    settings_button:SimulateLClick()
+
+    cm:callback(function()
+        local list = find_uicomponent(docker, "notification_settings_list")
+
+        local checkbox = find_uicomponent(list, "2", "checkbox_toggle")
+        if is_uicomponent(checkbox) then
+            if checkbox:CurrentState() == "selected" then
+                checkbox:SimulateLClick()
+            end
+        end
+
+        cm:repeat_callback(function()
+            if is_uicomponent(list) and list:Visible() then
+                settings_button:SimulateLClick()
+            else
+                cm:remove_callback("kill_that_notification_list")
+            end
+        end, 0.1, "kill_that_notification_list")
+        
+    end, 0.5)
 end
 
 -- functionality for the NP icon on the topbar
@@ -269,7 +301,7 @@ local function add_pr_uic()
         end
     end
 
-    if cm:whose_turn_is_it() == legion then
+    if cm:get_local_faction(true) == legion then
         create_uic()
         check_value()
     end
@@ -405,7 +437,7 @@ local function add_pr_uic()
         pooled_resource_key.."_value_changed",
         "PooledResourceEffectChangedEvent",
         function(context)
-            return context:faction():name() == legion and context:resource():key() == pooled_resource_key and context:faction():is_human() and cm:whose_turn_is_it() == legion
+            return context:faction():name() == legion and context:resource():key() == pooled_resource_key and context:faction():is_human() and cm:get_local_faction(true) == legion
         end,
         function(context)
             check_value()
@@ -437,6 +469,24 @@ local function add_pr_uic()
         end,
         true
     )
+end
+
+local function jacsen_are_you_ok()
+    if core:svr_load_bool("JacsenSurvived") == true then
+        local lm = get_lichemanager()
+
+        -- prevent Jacsen from being recruited elsewise
+        lm:set_regiment_status("AK_hobo_ror_jacsen", "STASIS")
+    
+        cm:add_turn_countdown_event(
+            legion,
+            9,
+            "LichemanagerUnlockRoR",
+            "AK_hobo_ror_jacsen"
+        )
+
+        cm:trigger_incident(legion, "jacsen_unlocked_early", true)
+    end
 end
 
 local function hide_kemmler_hunter_panel()
@@ -518,6 +568,11 @@ local function set_hunters_panel()
             local title = find_uicomponent(panel, "header_frame", "dy_faction") 
             title:SetStateText("{{tr:kemmler_hunter_panel_title}}")
 
+            -- hide the character name component and replace it, hopefully?
+            local dy_character_name = find_uicomponent(panel, "main", "characters_holder", "dy_character_name")
+            dy_character_name:CopyComponent("dy_character_name_copy")
+            dy_character_name:PropagatePriority(1)
+
             -- set up the scene to be on Nameless, instead of on Van Hel
             local click = find_uicomponent(char_list, "AK_hobo_nameless") 
             if click then 
@@ -536,12 +591,6 @@ local function set_hunters_panel()
 
             priestess:SetImagePath("ui/kemmler/AK_hobo_priestess_mini.png")
             priestess:SetTooltipText("{{tr:AK_hobo_priestess_mini}}", true)
-
-            -- hide the character name component and replace it, hopefully?
-            local dy_character_name = find_uicomponent(panel, "main", "characters_holder", "dy_character_name")
-            dy_character_name:CopyComponent("dy_character_name_copy")
-            dy_character_name:PropagatePriority(1)
-            --dy_character_name:SetVisible(false)
 
             -- hide the vanilla Hunters
             hide_vanilla_bois()
@@ -567,6 +616,138 @@ local function set_hunters_panel()
     )
 end
 
+--v function(uic: CA_UIC, region_type: string, settlement_string: string)
+local function add_settlement_floating_icon(uic, region_type, settlement_string)
+    local parent = find_uicomponent(uic, "list_parent", "icon_holder")
+    if not is_uicomponent(parent) then
+        -- TODO error log
+        return
+    end
+
+    local region_obj = cm:get_region(settlement_string)
+
+    local uic_key = ""
+    local uic
+
+    if region_type == "occupy" then
+        uic_key = "icon_kemm"
+    elseif region_type == "ruins" then
+        uic_key = "icon_defile"
+    end
+
+    local extant = find_uicomponent(parent, uic_key)
+
+    if is_uicomponent(extant) then
+        uic = extant
+    else
+        local resource_icon = find_uicomponent(parent, "resource_icon")
+        uic = UIComponent(resource_icon:CopyComponent(uic_key))
+    end
+
+    if region_type == "occupy" then
+        -- check if there's a 
+    end
+
+    local valid = true
+    local tier = 0 --: number -- fuck you Kailua
+    
+    if region_type == "occupy" then
+        if lm:get_necropower() < 60 then
+            valid = false
+        end
+    elseif region_type == "ruins" then
+        if lm._ruins[settlement_string].is_locked then
+            valid = false
+        else
+            tier = lm:calculate_tier(settlement_string)
+        end
+    end
+    
+    local tt = "{{tr:kemmler_floating_settlement_tt_"..region_type.."_"
+    local image_path = "ui/kemmler/AK_hobo_"..region_type.."_"
+
+    if not valid then
+        tt = tt .. "no}}"
+        image_path = image_path .. "no.png"
+    elseif valid and tier > 0 then
+        tt = tt .. tier .. "}}"
+        image_path = image_path .. tier .. ".png"
+    else
+        tt = tt .. "yes}}" 
+        image_path = image_path .. "yes.png"
+    end
+
+    uic:SetVisible(true)
+    uic:SetImagePath(image_path)
+    uic:SetInteractive(true)
+    uic:SetTooltipText(tt, true)
+end
+
+--v function(uic: CA_UIC, settlement_string: string)
+local function check_settlement_floating_icons(uic, settlement_string)
+    local parent = find_uicomponent(uic, "list_parent", "icon_holder")
+    if not is_uicomponent(parent) then
+        return
+    end
+
+    local region_obj = cm:get_region(settlement_string)
+
+    do
+        -- check ruins thing
+        local extant = find_uicomponent(parent, "icon_defile")
+
+        if is_uicomponent(extant) and extant:Visible() then
+            if not region_obj:is_abandoned() then
+                extant:SetVisible(false)
+            end
+        else
+            if region_obj:is_abandoned() then
+                add_settlement_floating_icon(uic, "ruins", settlement_string)
+            end
+        end
+    end
+    do
+        -- check landmark thing
+        local extant = find_uicomponent(parent, "icon_kemm")
+
+        if lm:is_landmark_region(settlement_string) then
+            if is_uicomponent(extant) and extant:Visible() then
+                if region_obj:owning_faction():name() == legion then
+                    extant:SetVisible(false)
+                end
+            else 
+                if region_obj:owning_faction():name() ~= legion then
+                    add_settlement_floating_icon(uic, "occupy", settlement_string)
+                end
+            end
+        end
+    end
+end
+
+local function check_settlements_on_map()
+    local root = core:get_ui_root()
+    local parent = find_uicomponent(root, "3d_ui_parent")
+    if not is_uicomponent(parent) then
+        return
+    end
+
+    for i = 0, parent:ChildCount() -1 do
+        local child = UIComponent(parent:Find(i))
+        local child_id = child:Id()
+        if child_id:sub(1, 17) == "label_settlement:" then
+            local settlement_string = child_id:gsub("label_settlement:", "")
+
+            check_settlement_floating_icons(child, settlement_string)
+--[[            if lm:is_landmark_region(settlement_string) and not cm:get_region(settlement_string):owning_faction():name() == legion then
+                add_settlement_floating_icon(child, "occupy", settlement_string)
+            end
+            if cm:get_region(settlement_string):is_abandoned() then
+                add_settlement_floating_icon(child, "ruins", settlement_string)
+            end]]
+        end
+    end
+end
+
 ----------------
 -- Listeners! --
 ----------------
@@ -577,13 +758,18 @@ function lichemaster_postbattle_setup()
     add_missions_and_unlock_requirements()
     kill_extra_recruitment()
 
+    -- check to see if Jacsen survived pre-battle (delay to make sure the below stuff worked fine)
+    cm:callback(function()
+        jacsen_are_you_ok()
+    end, 5)
+
 end
 
 -- run every game creation or game load
 function liche_init_listeners()
     local ok, err = pcall(function()
         -- read through the entirety of the current region list on script load
-        -- needed for every script load, as the ruins list isn't saved
+        -- done on every script load, the ruins are saved but doing this will catch any mistakes or changes
         do
             local region_list = cm:model():world():region_manager():region_list()
             for i = 0, region_list:num_items() - 1 do
@@ -594,18 +780,24 @@ function liche_init_listeners()
             end
         end
 
-        -- TODO this can be done better and somewhere else, but this will do for now
-        -- set up the regiments!
-        lm:setup_regiments()
+        -- only runs on first load
+        if not cm:get_saved_value("liche_init") then
+            -- set up data-end objects for tracking LL progress and LoU progress
+            lm:setup_regiments()
+            lm:setup_lords()
+            lm:setup_hero_spawn_rank()
         
-        -- disable confederation betwixt Kemmy and Vampies
-        cm:force_diplomacy(legion, "culture:wh_main_vmp_vampire_counts", "form confederation", false, false, true)
+            -- disable confederation betwixt Kemmy and Vampies
+            cm:force_diplomacy(legion, "culture:wh_main_vmp_vampire_counts", "form confederation", false, false, true)
 
-        -- remove units from the Raise Dead pool
-        kill_extra_recruitment()
+            -- remove units from the Raise Dead pool
+            kill_extra_recruitment()
 
-        -- remove unwanted tech
-        kill_technologies()
+            -- remove unwanted tech
+            kill_technologies()
+
+            cm:set_saved_value("liche_init", true)
+        end
 
         -- every Kemmler turn, check NP. 
         -- If it's over 80, and lives hasn't been increased for 20 turns, then +1 lives
@@ -620,6 +812,28 @@ function liche_init_listeners()
                 check_np_effects()
             end,
             true
+        )
+
+        -- read Max Lives change; if it hits 0, trigger an event
+        core:add_listener(
+            "LicheMaxLivesLost",
+            "PooledResourceEffectChangedEvent",
+            function(context)
+                return context:resource():key() == "lichemaster_max_remaining_lives" and context:faction():is_human() and context:faction():pooled_resource("lichemaster_max_remaining_lives"):value() <= 0
+            end,
+            function(context)
+                local event_string_base = "event_feed_strings_text_AK_hobo_zero_max_lives_"
+
+                cm:show_message_event(
+                    context:faction():name(),
+                    event_string_base .. "primary_detail",
+                    event_string_base .. "secondary_detail",
+                    event_string_base .. "flavour_text",
+                    true,
+                    131
+                )
+            end,
+            false
         )
 
         -- set ruins whenever a settlement is razed
@@ -667,28 +881,7 @@ function liche_init_listeners()
             end,
             function(context)
                 local char = context:character()
-                local char_cqi = char:command_queue_index()
-                local char_str = cm:char_lookup_str(char_cqi)
-
-                local subtype = context:character():character_subtype_key()
-
-                --local num_existing = lm:get_num_legendary_lords()
-                local xp_to_apply = 0
-
-                local turn = cm:model():turn_number()
-
-                if turn >= 150 then
-                    xp_to_apply = 15
-                elseif turn >= 100 then
-                    xp_to_apply = 10
-                elseif turn >= 50 then
-                    xp_to_apply = 5
-                end
-
-                if xp_to_apply > 0 then
-                    cm:add_agent_experience(char_str, xp_to_apply, true)
-                end
-                lm:add_ancillaries_to_lord(char)
+                lm:legendary_lord_spawned(char)
             end,
             true
         )
@@ -709,7 +902,7 @@ function liche_init_listeners()
                 local type = context:character_type_key()
                 local subtype = context:character_subtype_key()
 
-                if lm:get_hero_spawn_rank_increase() == 5 then
+                if lm:get_hero_spawn_rank() == 5 then
                     cm:add_agent_experience(char_str, 5, true)
                 end
             end,
@@ -745,34 +938,36 @@ function liche_init_listeners()
 
         -- following three are the unlock conditions to complete the unlock missions as well as actually spawn the lord
         if not lm:is_lord_unlocked("AK_hobo_nameless") then
+
             core:add_listener(
                 "LicheNamelessUnlock",
                 "BuildingCompleted",
                 function(context)
-                    return context:garrison_residence():region():owning_faction():name() == legion and context:building():name() == "wh_main_vmp_settlement_major_2" and context:garrison_residence():region():name() == "wh_main_northern_grey_mountains_blackstone_post"
+                    local region = context:garrison_residence():region()
+                    return region:owning_faction():name() == legion and region:name() == "wh_main_northern_grey_mountains_blackstone_post" and region:settlement():primary_slot():building():building_level() >= 2
                 end,
                 function(context)
-                    if not lm:is_lord_unlocked("AK_hobo_nameless") then
-                        cm:complete_scripted_mission_objective("lichemaster_lord_nameless", "lichemaster_lord_nameless", true)
-                        lm:unlock_lord("AK_hobo_nameless")
-                    end
+                    cm:complete_scripted_mission_objective("lichemaster_lord_nameless", "lichemaster_lord_nameless", true)
+                    lm:unlock_lord("AK_hobo_nameless")
+
                     core:remove_listener("LicheNamelessUnlock2")
                 end,
                 false
             )
+
             core:add_listener(
                 "LicheNamelessUnlock2",
                 "GarrisonOccupiedEvent",
                 function(context)
                     local region = context:garrison_residence():region()
-                    return region:name() == "wh_main_northern_grey_mountains_blackstone_post" and context:character():faction():name() == legion and 
-                    (region:building_exists("wh_main_vmp_settlement_major_2") or region:building_exists("wh_main_vmp_settlement_major_3") or region:building_exists("wh_main_vmp_settlement_major_4") or region:building_exists("wh_main_vmp_settlement_major_5"))
+                    local settlement = region:settlement()
+                    return (region:name() == "wh_main_northern_grey_mountains_blackstone_post" and context:character():faction():name() == legion and 
+                    settlement:primary_slot():building():building_level() >= 2)
                 end,
                 function(context)
-                    if not lm:is_lord_unlocked("AK_hobo_nameless") then
-                        cm:complete_scripted_mission_objective("lichemaster_lord_nameless", "lichemaster_lord_nameless", true)
-                        lm:unlock_lord("AK_hobo_nameless")
-                    end
+                    cm:complete_scripted_mission_objective("lichemaster_lord_nameless", "lichemaster_lord_nameless", true)
+                    lm:unlock_lord("AK_hobo_nameless")
+
                     core:remove_listener("LicheNamelessUnlock")
                 end,
                 false
@@ -784,13 +979,11 @@ function liche_init_listeners()
                 "LichePriestessUnlock",
                 "LichemasterEventRuinDefiled",
                 function(context)
-                    return context.string == "6"
+                    return context.number >= 6
                 end,
                 function(context)
-                    if not lm:is_lord_unlocked("AK_hobo_priestess") then
-                        cm:complete_scripted_mission_objective("lichemaster_lord_priestess", "lichemaster_lord_priestess", true)
-                        lm:unlock_lord("AK_hobo_priestess")
-                    end
+                    cm:complete_scripted_mission_objective("lichemaster_lord_priestess", "lichemaster_lord_priestess", true)
+                    lm:unlock_lord("AK_hobo_priestess")
                 end,
                 false
             )
@@ -814,6 +1007,17 @@ function liche_init_listeners()
                 true
             )
         end
+
+        core:add_listener(
+            "LichemanagerUnlockRoR",
+            "LichemanagerUnlockRoR",
+            true,
+            function(context)
+                cm:trigger_incident(legion, "barrow_"..context.string, true)
+                lm:set_regiment_status(context.string, "AVAILABLE")
+            end,
+            true
+        )
         
         -- complicated lil' bugger
         -- sets up the Ruins UI, the new button and the turn tracker, on the Settlement Captured screen, if it's a ruin
@@ -885,46 +1089,7 @@ function liche_init_listeners()
                 end                
             end,
             true
-        )
-
-        -- set up the RoR UI button and stuff.
-        -- char selected is needed for spawning the unit onto an army
-        core:add_listener(
-            "LicheRorUI",
-            "PanelOpenedCampaign",
-            function(context)
-                local cuim = cm:get_campaign_ui_manager()
-                return context.string == "units_panel" and cuim:is_char_selected_from_faction(legion) and cm:get_local_faction(true) == legion
-            end,
-            function(context)
-                local cuim = cm:get_campaign_ui_manager()
-                local selected = cuim:get_char_selected_cqi()
-                lm:ror_UI(selected)
-
-                -- repeat callback to make sure the ror button stays invisible
-                cm:repeat_callback(function()
-                    local ror_button = find_uicomponent(core:get_ui_root(), "layout", "hud_center_docker", "hud_center", "small_bar", "button_group_army", "button_renown")
-                    if is_uicomponent(ror_button) then
-                        ror_button:SetVisible(false)
-                    end
-                end, 0.1, "kill_that_ror_button")
-
-                -- once the panel is closed, stop forcing the ror button invisible every 0.1s
-                core:add_listener(
-                    "LicheRorUIKiller",
-                    "PanelClosedCampaign",
-                    function(context)
-                        return context.string == "units_panel"
-                    end,
-                    function(context)
-                        cm:remove_callback("kill_that_ror_button")
-                    end,
-                    false
-                )
-            end,
-            true
-        )
-    
+        ) 
 
         -- char selected needed for a lot of mechanics, just tracks the last selected Legion character by the Legion
         core:add_listener(
@@ -934,12 +1099,26 @@ function liche_init_listeners()
                 return context:character():faction():name() == legion and cm:get_local_faction(true) == legion
             end,
             function(context)
-                lm:set_character_selected_cqi(context:character():cqi())
+                local char_obj = context:character()
+                local char_cqi = char_obj:command_queue_index()
+                lm:set_character_selected_cqi(char_cqi)
+
+                cm:callback(function()
+                    if not char_obj:has_military_force() then
+                        -- not general, don't go on
+                        return
+                    end
+                    
+                    lm:ror_UI(char_cqi)
+
+                    -- in case there's a click from settlement to garrisoned lord
+                    lm:lord_lock_UI(false)
+                end, 0.1)
             end,
             true
         )
             
-        -- idk
+        -- lock the create army button if there's no available lords - prevents a glitch where you can recruit a locked general
         core:add_listener(
             "LicheHordePanel",
             "ComponentLClickUp",
@@ -947,16 +1126,31 @@ function liche_init_listeners()
                 return context.string == "tab_horde_buildings" and cm:get_local_faction(true) == legion
             end,
             function(context)
-                lm:lord_lock_UI()
+                lm:lord_lock_UI(false)
             end,
             true
         )
 
         core:add_listener(
+            "LicheSettlementPanel",
+            "PanelOpenedCampaign",
+            function(context)
+                return context.string == "settlement_panel" and cm:get_local_faction(true) == legion
+            end,
+            function(context)
+                cm:callback(function()
+                    lm:lord_lock_UI(true)
+                end, 0.1)
+            end,
+            true
+        )
+
+        -- hides all the unavailable lords in the create army panel
+        core:add_listener(
             "LicheGeneralUI2",
             "ComponentLClickUp",
             function(context)
-                return context.string == "button_create_army" and cm:whose_turn_is_it() == legion
+                return context.string == "button_create_army" and cm:get_local_faction(true) == legion
             end,
             function(context)
                 cm:callback(function()
@@ -965,20 +1159,6 @@ function liche_init_listeners()
             end,
             true
         )
-            
-        -- why don't you work?
-        -- TODO make this work
-        --[[core:add_listener(
-            "RemoveNotificationForTech",
-            "ScriptEventPlayerFactionTurnStart",
-            function(context)
-                return context:faction():name() == legion
-            end,
-            function(context)
-                
-            end,
-            true
-        )]]
 
         -- listens for the custom occupy option being pressed
         core:add_listener(
@@ -1010,7 +1190,7 @@ function liche_init_listeners()
             true
         )
 
-        -- run once a turn, see if turnToSpawn is this turn. 
+        -- run once a turn, see if turn_to_spawn is this turn. 
         core:add_listener(
             "RespawnKemmy",
             "FactionTurnStart",
@@ -1026,13 +1206,16 @@ function liche_init_listeners()
 
                 -- grab the CQI and objects needed to go on
                 local wounded_kemmy_cqi = lm:get_wounded_cqi()
+                local wounded_kemmy_obj = cm:get_character_by_cqi(wounded_kemmy_cqi)
                 local kemmy_cqi = lm:get_real_cqi()
-                local woundedKemmy = cm:get_character_by_cqi(wounded_kemmy_cqi)
     
-                local spawnX, spawnY, spawnRegion = lm:wounded_kemmy_coords()
-                if spawnRegion == "" then
+                local spawn_x, spawn_y, spawn_region = lm:get_wounded_kemmy_position()
+                if spawn_x == -1 then
                     lm:error("Spawn Wounded Kemmy but the coordinates returned were -1, -1 - investigate.")
+                    return
                 end
+
+                spawn_x, spawn_y = cm:find_valid_spawn_location_for_character_from_position(legion, spawn_x, spawn_y, true)
 
                 local unit_list = lm:get_unit_list()
     
@@ -1041,19 +1224,17 @@ function liche_init_listeners()
                     cm:char_lookup_str(kemmy_cqi),
                     legion, 
                     unit_list,
-                    spawnRegion,
-                    spawnX,
-                    spawnY,
+                    spawn_region,
+                    spawn_x,
+                    spawn_y,
                     function(cqi)
                         -- blah
                     end
                 )
-                lm:log("WOUNDED KEMMY: Kemmler respawned in region ["..spawnRegion.."] at location ("..spawnX..", "..spawnY.."). Enjoy.")
+                lm:log("WOUNDED KEMMY: Kemmler respawned in region ["..spawn_region.."] at location ("..spawn_x..", "..spawn_y.."). Enjoy.")
                 
-                -- axe the wounded version
+                -- axe the wounded version and revert all the respawn details
                 lm:kill_wounded_kemmy()
-    
-                lm:set_turn_to_spawn(0)
             end,
             true
         )
@@ -1064,16 +1245,15 @@ function liche_init_listeners()
             "LicheKemmyWoundedOffscreen",
             "PendingBattle",
             function(context)
-                if context:pending_battle():has_attacker() and context:pending_battle():has_defender() then
-                    local attacker_faction = context:pending_battle():attacker():faction():name()
-                    local defender_faction = context:pending_battle():defender():faction():name()
+                local pb = context:pending_battle()
+                if pb:has_attacker() and pb:has_defender() then
+                    local attacker_faction = pb:attacker():faction():name()
+                    local defender_faction = pb:defender():faction():name()
                     return (attacker_faction == legion or defender_faction == legion) and lm:can_revive()
                 end
                 return false
             end,
             function(context)
-                lm:log("WOUNDED KEMMY: Kemmler is in a battle and has enough stuff to revive. Spawning Wounded Kemmy off-screen.")
-
                 local kemmy --: CA_CHAR
                 local pb = context:pending_battle()
 
@@ -1086,16 +1266,13 @@ function liche_init_listeners()
                 -- try to find if Kemmler is in the battle
                 if attacker:character_subtype("vmp_heinrich_kemmler") then
                     kemmy = attacker
-                    position = "attacker"
                 elseif defender:character_subtype("vmp_heinrich_kemmler") then
                     kemmy = defender
-                    position = "defender"
                 else
                     for i = 0, secondary_attackers:num_items() - 1 do
                         local secondary_attacker = secondary_attackers:item_at(i)
                         if secondary_attacker:character_subtype("vmp_heinrich_kemmler") then
                             kemmy = secondary_attacker
-                            position = "secondary_attacker_"..i
                             break
                         end
                     end
@@ -1103,7 +1280,6 @@ function liche_init_listeners()
                         local secondary_defender = secondary_defenders:item_at(i)
                         if secondary_defender:character_subtype("vmp_heinrich_kemmler") then
                             kemmy = secondary_defender
-                            position = "secondary_defender_"..i
                             break
                         end
                     end
@@ -1114,16 +1290,18 @@ function liche_init_listeners()
                     return
                 end
 
+                lm:log("WOUNDED KEMMY: Kemmler is in a battle and has enough stuff to revive. Spawning Wounded Kemmy off-screen.")
+
                 local x, y = kemmy:logical_position_x(), kemmy:logical_position_y()
 
-                local kem_unit_list --: string
+                local kem_unit_list = "" --: string
                 local unit_list = kemmy:military_force():unit_list()
                 for i = 0, unit_list:num_items() -1 do
                     local unit = unit_list:item_at(i)
                     local unit_key = unit:unit_key()
                     if unit_key:find("_cha_") then
                         -- ignore characters
-                    elseif i == 0 then
+                    elseif kem_unit_list == "" then
                         -- create the beginning of the unit key string
                         kem_unit_list = unit_key .. ","
                     elseif i == unit_list:num_items() -1 then
@@ -1135,28 +1313,47 @@ function liche_init_listeners()
                     end
                 end
 
-                -- the last two parameters aren't even used anymore, but it's easier to just keep them in
-                -- spawn the wounded version of kemmy offscreen, and use the (x,y) arguments passed here to spawn Kemmler there later on
-                lm:spawn_wounded_kemmy(x, y, kemmy:command_queue_index(), position)
-                lm:log("WOUNDED KEMMY: Wounded Kemmy spawned at ("..x..", "..y..").")
+                -- spawn the wounded version of kemmy offscreen
+                lm:spawn_wounded_kemmy(kemmy:command_queue_index(), kem_unit_list)
+            end,
+            true
+        )
 
-                -- check if, after the battle, Kemmler is wounded - if not, kill the fake version of Kemmler. If he is, begin the respawn mechanic
-                core:add_listener(
-                    "WoundedKemmyBattleCompleted",
-                    "BattleCompleted",
-                    true,
-                    function(context)
-                        local liche = cm:get_faction("wh2_dlc11_vmp_the_barrow_legion")
-                        if liche:faction_leader():is_wounded() then
-                            lm:log("WOUNDED KEMMY: Kemmler was wounded in the battle. Beginning the respawn process!")
-                            lm:respawn_kemmy(cm:model():turn_number(), kem_unit_list)
-                        else
-                            lm:log("WOUNDED KEMMY: Kemmler survived the battle. Axing wounded kemmy.")
-                            lm:kill_wounded_kemmy()
-                        end
-                    end,
-                    false
-                )
+        -- needed for Wounded Kemmler to die if it's just a "Continue Siege" battle above
+        core:add_listener(
+            "WoundedKemmyContinueSiege",
+            "BattleCompletedCameraMove",
+            function()
+                return cm:pending_battle_cache_faction_is_involved(legion) and lm:is_respawn_pending()
+            end,
+            function()
+                local pb = cm:model():pending_battle()
+
+                if not pb:has_been_fought() then
+                    lm:log("WOUNDED KEMMY: Kemmler is only sieging. Axing wounded kemmy.")
+                    lm:kill_wounded_kemmy()
+                end
+            end,
+            true
+        )
+
+        -- check if, after the battle, Kemmler is wounded - if not, kill the fake version of Kemmler. If he is, begin the respawn mechanic
+        core:add_listener(
+            "WoundedKemmyBattleCompleted",
+            "BattleCompleted",
+            function(context)
+                -- should only be true through spawn_wounded_kemmy()
+                return lm:is_respawn_pending()
+            end,
+            function(context)
+                local liche = cm:get_faction(legion)
+                if liche:faction_leader():is_wounded() then
+                    lm:log("WOUNDED KEMMY: Kemmler was wounded in the battle. Beginning the respawn process!")
+                    lm:respawn_kemmy(cm:model():turn_number())
+                else
+                    lm:log("WOUNDED KEMMY: Kemmler survived the battle. Axing wounded kemmy.")
+                    lm:kill_wounded_kemmy()
+                end
             end,
             true
         )
@@ -1189,11 +1386,11 @@ function liche_init_listeners()
                     art_set = subtype.."_"..chance
                 end
 
-                -- grab random names from the legionNames.lua file
-                local chance1 = cm:random_number(#lm._forenames, 1)
-                local chance2 = cm:random_number(#lm._family_names, 1)
-                local forename = lm._forenames[chance1]
-                local family_name = lm._family_names[chance2]
+                -- grab random names from the legion_names.lua file
+                local forenames, family_names = lm:get_names()
+
+                local forename = forenames[cm:random_number(#forenames, 1)]
+                local family_name = family_names[cm:random_number(#family_names, 1)]
 
                 -- spawn the new druid/barrow king to the pool with the deets above
                 cm:spawn_character_to_pool(
@@ -1259,6 +1456,94 @@ function liche_init_listeners()
             true
         )
 
+        -- re-unlock RoR if they die/are disbanded
+        core:add_listener(
+            "LichemasterRorDisbanded",
+            "UnitDisbanded",
+            function(context)
+                return context:unit():faction():name() == legion and lm:is_regiment_key(context:unit():unit_key())
+            end,
+            function(context)
+                lm:set_regiment_status(context:unit():unit_key(), "AVAILABLE")
+            end,
+            true
+        )
+
+        core:add_listener(
+            "LichemasterRorDestroyed",
+            "BattleCompleted",
+            function(context)
+                return cm:pending_battle_cache_faction_is_involved(legion)
+            end,
+            function(context)
+                lm:post_battle_regiment_status_check()
+            end,
+            true
+        )
+
+        -- MP Compat listeners
+        core:add_listener(
+            "LichemasterLegionOfUndeathSpawn",
+            "UITriggerScriptEvent",
+            function(context)
+                return context:trigger():starts_with("lichemanager_ror|")
+            end,
+            function(context)
+                local str = context:trigger()
+                local char_cqi = context:faction_cqi()
+                local regiment_key = string.gsub(str, "lichemanager_ror|", "")
+
+                -- make sure that regiment object exists
+                local regiment_obj = lm:get_regiment_with_key(regiment_key)
+
+                -- lock the object, to prevent more than one existing
+                regiment_obj:set_status("RECRUITED")
+
+                -- add the unit and charge the -5 NP
+                cm:grant_unit_to_character("character_cqi:"..char_cqi, regiment_key)
+                cm:faction_add_pooled_resource(legion, "necropower", "necropower_ror", -5)
+
+                lm:log("LEGIONS OF UNDEATH: Spawning Legion with key ["..regiment_key.."] for character with CQI ["..char_cqi.."].")
+            end,
+            true
+        )
+
+        core:add_listener(
+            "LichemasterDefileBarrowTrigger",
+            "UITriggerScriptEvent",
+            function(context)
+                return context:trigger():starts_with("lm_db|")
+            end,
+            function(context)
+                local str = context:trigger()
+                local char_cqi = context:faction_cqi()
+                local effect = string.gsub(str, "lm_db|", "")
+
+                -- tell both clients which character to apply this all to!
+                lm:set_character_selected_cqi(char_cqi)
+
+                --if effect == "effectBundle" then
+                    --self:ruinsEffectBundle()
+                if effect == "spawnAgent" then
+                    lm:ruins_spawn_agent()
+                elseif effect == "spawnRoR" then
+                    lm:ruins_spawn_ror()
+                elseif effect == "enemy" then
+                    lm:ruins_spawn_enemy()
+                elseif effect == "item" then
+                    lm:ruins_spawn_item()
+                end
+
+                --self:force_replen()
+                if effect ~= "enemy" then
+                    lm:revive_barrow_units()
+                end
+                
+                lm:apply_defile_xp()
+            end,
+            true
+        )
+
         local killBloodlines = {
             "wh2_dlc11_vmp_ritual_bloodline_awaken_blood_dragon_01",
             "wh2_dlc11_vmp_ritual_bloodline_awaken_blood_dragon_02",
@@ -1277,9 +1562,8 @@ function liche_init_listeners()
             "wh2_dlc11_vmp_ritual_bloodline_awaken_von_carstein_03"
         }--: vector<string>
 
-        local cqi = cm:get_faction(legion):command_queue_index()
         for i = 1, #killBloodlines do
-            cm:set_ritual_unlocked(cqi, killBloodlines[i], false)
+            cm:lock_ritual(cm:get_faction(legion), killBloodlines[i])
         end
     end)
     if not ok then LicheLog.error(tostring(err)) end
@@ -1287,22 +1571,25 @@ end
 
 cm:add_first_tick_callback(
     function()
-        -- check if Kemmler is the local player
         -- all the stuff that has to be done on Liche turnstart will also be done here, for loading games
 
         liche_init_listeners()
+        check_np_effects()
 
         -- UI stuff
         if cm:get_local_faction(true) == legion then
             CampaignUI.ClearSelection()
             
+            disable_tech_notification()
             kill_blood_kisses_and_tech()
             set_hunters_panel()
             add_pr_uic()
+
+            cm:repeat_callback(function()
+                check_settlements_on_map()
+            end, 0.1, "kemmler_check_map")
         else
             hide_kemmler_hunter_panel()
         end
-
-        check_np_effects()
     end
 )

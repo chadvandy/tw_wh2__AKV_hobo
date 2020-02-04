@@ -479,7 +479,6 @@ function unit_card_obj:create_land_unit_card_for_frontend(parent)
     local unit_cat = self._manager._ui_unit_groupings[self._unit_category]
     unit_cat_uic:SetImagePath("ui/common ui/unit_category_icons/" .. unit_cat["icon"] .. ".png")
 
-    -- TODO confirm this is the same regardless of resolution
     -- resize for the frontend size (50, 110)
     uic:Resize(50, 110)
 
@@ -982,7 +981,7 @@ function unit_card_obj:create_stat_unit_card_for_frontend()
 
         uic:SetCanResizeWidth(true)
         uic:SetCanResizeHeight(true)
-        uic:Resize(28, 28) -- EW MAGIC NUMBER TODO FIX MAGIC NUMBER
+        uic:Resize(28, 28) 
         uic:SetCanResizeWidth(false)
         uic:SetCanResizeHeight(false)  
 
@@ -1029,7 +1028,7 @@ function unit_card_obj:create_stat_unit_card_for_frontend()
 
         attribute_uic:SetCanResizeWidth(true)
         attribute_uic:SetCanResizeHeight(true)
-        attribute_uic:Resize(28, 28) -- EW MAGIC NUMBER TODO FIX MAGIC NUMBER
+        attribute_uic:Resize(28, 28)
         attribute_uic:SetCanResizeWidth(false)
         attribute_uic:SetCanResizeHeight(false)  
 
@@ -1050,7 +1049,7 @@ function unit_card_obj:create_stat_unit_card_for_frontend()
 
         ability_uic:SetCanResizeWidth(true)
         ability_uic:SetCanResizeHeight(true)
-        ability_uic:Resize(28, 28) -- EW MAGIC NUMBER TODO FIX MAGIC NUMBER
+        ability_uic:Resize(28, 28) 
         ability_uic:SetCanResizeWidth(false)
         ability_uic:SetCanResizeHeight(false)        
 
@@ -1290,8 +1289,6 @@ end
 --v method(width: number, height: number)
 function unit_land_card:set_bounds(width, height)
     --# assume self: VANDY_ULC
-
-    --TODO error debugging
 
     self._width = width
     self._height = height

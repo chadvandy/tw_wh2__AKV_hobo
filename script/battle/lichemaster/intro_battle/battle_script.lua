@@ -6,6 +6,10 @@ bm = battle_manager:new(empire_battle:new())
 local gc = generated_cutscene:new(true, true)
 local cam = bm:camera()
 
+core:svr_save_bool("JacsenSurvived", false)
+
+jacsen_survived = true --: boolean
+
 --# assume end_deployment_phase: function()
 
 gb = generated_battle:new(
@@ -63,7 +67,7 @@ bm:register_phase_change_callback(
 
 
 
-gb.sm:add_listener(
+gb:add_listener(
     "battle_started",
     function()
         --bm:camera():fade(true, 1)
@@ -72,6 +76,19 @@ gb.sm:add_listener(
             uic_reinforcements_parent:SetVisible(false);
         end
     end
+)
+
+gb:add_listener(
+    "jacsen_dead",
+    function()
+        jacsen_survived = false
+    end
+)
+
+-- check if jacsen died if victory; default to false if defeat
+bm:register_results_callbacks(
+    function() core:svr_save_bool("JacsenSurvived", jacsen_survived) end,
+    function() core:svr_save_bool("JacsenSurvived", false) end
 )
 
 
@@ -120,9 +137,9 @@ ga_dwarf_1 = gb:get_army(gb:get_non_player_alliance_num(), 1, "dwarf_1")        
 ga_dwarf_2 = gb:get_army(gb:get_non_player_alliance_num(), 1, "dwarf_2")                -- ENEMY REINFORCEMENTS
 
 ---- OBJECTIVES ----
--- TODO customize this properly
 
 ga_kemmler:message_on_victory("player_wins")
+ga_kemmler:message_on_defeat("jacsen_dead")
 
 gb:set_objective_on_message("battle_started", "lichemaster_intro_battle_starting_objective");
 gb:complete_objective_on_message("first_army_killed", "lichemaster_intro_battle_starting_objective");
@@ -194,3 +211,5 @@ ga_jacsen:attack_on_message("help_me_jacsen", 20000);
 ga_jacsen:attack_on_message("help_me_jacsen", 30000);
 ga_jacsen:attack_on_message("help_me_jacsen", 40000);
 
+ga_jacsen:message_on_commander_death("jacsen_dead")
+ga_jacsen:message_on_defeat("jacsen_dead")

@@ -1,5 +1,8 @@
-local lm = _G._LICHEMANAGER
-local UTILITY = lm._UTILITY
+--# assume lichemanager: LICHE_MANAGER
+
+local lm = lichemanager
+
+local UTILITY = lm:get_module_by_name("utility") --# assume UTILITY: LICHE_UTILITY
 
 --v function(key: string)
 local function new_unit_card(key)
@@ -17,8 +20,7 @@ local function new_unit_card(key)
     local parchment = find_uicomponent(frame, "parchment")
 
     -- create the new UIC
-    parchment:CreateComponent(key.."_unit_card", "ui/templates/portrait_card")
-    local unit_card = find_uicomponent(parchment, key.."_unit_card")
+    local unit_card = UIComponent(parchment:CreateComponent(key.."_unit_card", "ui/templates/portrait_card"))
 
     -- hide the rank thingy
     find_uicomponent(unit_card, "rank"):SetVisible(false)
@@ -26,7 +28,9 @@ local function new_unit_card(key)
     --change the name text, and add the new unit card image
     local name = find_uicomponent(unit_card, "char_name", "name_tx")
     name:SetStateText(text)
+
     unit_card:SetImagePath("ui/units/icons/" .. key .. ".png")
+    
     core:add_listener(
         "LicheLegionCardOnClick",
         "ComponentLClickUp",
@@ -40,7 +44,7 @@ local function new_unit_card(key)
             if not ok then lm:error(err) end
         end,
         true
-    )
+    ) 
 end
     
 local function position_and_resize_components()
@@ -286,7 +290,7 @@ local function initialize_widget_text_box_components()
 
         middle_text:MoveTo(column1, row1)
         bottom_text:MoveTo(column1, row2)
-    end
+    end    
 
     core:add_listener(
         "LichemasterLegionSelectedLeftBox",
@@ -318,7 +322,7 @@ local function initialize_widget_main_box_components()
     local spawn_button_text = UIComponent(spawn_button:Find("button_txt"))
 
     spawn_button:SetState("inactive")
-    spawn_button:SetTooltipText("{{tr:kemmler_lou_spawn_button_tt}}", true)
+    spawn_button:SetTooltipText("{{tr:kemmler_lou_spawn_button_tt_unselected}}", true)
     spawn_button_text:SetStateText("{{tr:kemmler_lou_spawn_button_default_text}}")
 
     widget_main_box:CreateComponent("np_cost_icon", "ui/kemmler/custom_image")
@@ -367,7 +371,7 @@ local function initialize_widget_main_box_components()
         if state == "active" then
             spawn_button_uic:SetState("active")
             spawn_button_text:SetStateText("{{tr:kemmler_lou_spawn_button_default_text}}")
-            spawn_button_uic:SetTooltipText("Spawn selected Legion", true)
+            spawn_button_uic:SetTooltipText("{{tr:kemmler_lou_spawn_button_tt_valid}}", true)
             core:add_listener(
                 "LichemasterSpawnLegion",
                 "ComponentLClickUp",
@@ -375,15 +379,15 @@ local function initialize_widget_main_box_components()
                     return context.string == "lichemaster_spawn_button"
                 end,
                 function(context)
-                    local selected_cqi = lm._characterSelected
-                    local key = lm._selected_legion
+                    local selected_cqi = lm:get_character_selected_cqi()
+                    local key = lm:get_selected_legion()
                     if key == "" then
                         return
                     end
                     if not selected_cqi or not key then
                         lm:error("Tried to spawn an RoR, but no selected CQI or selected legion was found. Cancelling the input.")
                     else
-                        if lm:is_regiment_unlocked(key) then
+                        if lm:get_regiment_status(key) == "AVAILABLE" then
                             lm:spawn_ror_for_character(selected_cqi, key)
                             local spawn_button_uic = find_uicomponent(core:get_ui_root(), "legions_of_undeath", "parchment", "widget_main_box", "lichemaster_spawn_button")
                             if not spawn_button_uic then
@@ -404,6 +408,10 @@ local function initialize_widget_main_box_components()
         elseif state == "broke" then
             spawn_button_uic:SetState("inactive")
             spawn_button_uic:SetTooltipText("{{tr:kemmler_lou_spawn_button_tt_broke}}", true)
+            core:remove_listener("LichemasterSpawnLegion")
+        elseif state == "recruited" then
+            spawn_button_uic:SetState("inactive")
+            spawn_button_uic:SetTooltipText("{{tr:kemmler_lou_spawn_button_tt_recruited}}", true)
             core:remove_listener("LichemasterSpawnLegion")
         end
     end
@@ -439,10 +447,13 @@ local function initialize_widget_main_box_components()
                 lm:error("LichemasterLegionSelected triggered, but the text returned blank?!?")
             else
                 set_selected_text(loc_text)
-                if lm:is_regiment_unlocked(context.string) and lm:get_necropower() >= 5 then
+
+                if lm:get_regiment_status(context.string) == "AVAILABLE" and lm:get_necropower() >= 5 then
                     set_button_state("active")
-                elseif lm:is_regiment_unlocked(context.string) and not (lm:get_necropower() >= 5) then
+                elseif lm:get_regiment_status(context.string) == "AVAILABLE" and not (lm:get_necropower() >= 5) then
                     set_button_state("broke")
+                elseif lm:get_regiment_status(context.string) == "RECRUITED" then
+                    set_button_state("recruited")
                 else
                     set_button_state("inactive")
                 end
@@ -493,6 +504,13 @@ local function populate_panel()
     initialize_widget_text_box_components()
 end
 
+local function kill_existing_listeners()
+    core:remove_listener("LichemasterLegionSelected")
+    core:remove_listener("LichemasterSpawnLegion")
+    core:remove_listener("LichemasterLegionSelectedLeftBox")
+    core:remove_listener("LicheLegionCardOnClick")       
+end
+
 local function create_panel()
     local ui_panel_name = "legions_of_undeath"
     local root = core:get_ui_root()
@@ -505,11 +523,10 @@ local function create_panel()
         return
     end
 
-    -- refresh the UI; some bugginess right now with editing an already-existing panel, so I destroy it and remake it. I'd like to fix that.
-    -- TODO fix that
     local existing_frame = find_uicomponent(root, ui_panel_name)
-    if not not existing_frame then
-        UTILITY.remove_component(existing_frame)
+    if is_uicomponent(existing_frame) then
+        existing_frame:SetVisible(true)
+        return
     end
 
     -- create the panel UIC
@@ -533,7 +550,6 @@ local function create_panel()
     local parchment = find_uicomponent(panel, "parchment")
 
     -- assure that the parchment is properly oriented within the panel
-    -- TODO figure out why da heck it's bugging out like it is
     local fX, fY = panel:Position()
     local fW, fH = panel:Bounds()
 
@@ -562,14 +578,16 @@ local function create_panel()
         end,
         function(context)
             local layout = find_uicomponent(core:get_ui_root(), "layout")
-            if not not layout then
+            if is_uicomponent(layout) then
                 -- make the regular UI stuff visible
                 layout:SetVisible(true)
             end
-            -- destroy the panel, since setting it visible and unvisible currently does some funky stuff
-            UTILITY.remove_component(panel)
+            
+            if is_uicomponent(panel) then
+                panel:SetVisible(false)
+            end
         end,
-        false
+        true
     )
 
     -- set the close button's image and center it on the bottom of the panel
@@ -585,4 +603,6 @@ local function create_panel()
     populate_panel()
 end
 
-return create_panel
+local retval = { create_panel = create_panel } --: RORUI
+
+return retval

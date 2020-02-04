@@ -2,15 +2,9 @@ local LOG = require("script/lichemaster/log") --# assume LOG: LICHE_LOG
 
 local names = require("script/lichemaster/tables/legionNames")
 
---[[
-local liche_manager = {
-    _lives = 0,
-    _currentPower = 0,
-    _ruins = {},
-    _faction_key = "wh2_dlc11_vmp_the_barrow_legion"
-} --# assume liche_manager: LICHE_MANAGER]]
+local names = require("script/lichemanager/tables/legion_names")
 
-local liche_manager = {} --# assume liche_manager: LICHE_MANAGER
+liche_manager = {} --# assume liche_manager: LICHE_MANAGER
 
 -----------------------------------------
 ----------------- LOGS! -----------------
@@ -83,11 +77,30 @@ end
 
 liche_manager._faction_key = "wh2_dlc11_vmp_the_barrow_legion"
 
---liche_manager._regionNames = require("script/lichemaster/tables/regionNames")
-liche_manager._units = require("script/lichemaster/tables/units")
+liche_manager._barrow_units = require("script/lichemanager/tables/barrow_units")
 
-liche_manager._forenames = names[1]
-liche_manager._family_names = names[2]
+liche_manager._names = {names[1], names[2]}
+
+--[[ REGIMENTS ]]
+liche_manager._regiments = {}
+liche_manager._selected_legion = ""
+
+-- [[ LORDS ]]
+liche_manager._lords = {}
+
+--[[ RUINS ]]
+liche_manager._ruins = {}
+liche_manager._num_ruins_defiled = 0
+liche_manager._num_razed_settlements = 0
+liche_manager._defile_debug = ""
+
+--[[ WOUNDED KEMMY DEETS ]]
+liche_manager._last_turn_lives_changed = 0
+liche_manager._respawn_details = {
+    respawn_post_battle_pending = false,
+    turn_to_spawn = 0,
+    unit_list = ""
+} --: LICHE_SPAWN_DETAILS
 
 ------------------------------------
 ------------- DEBUGGING ------------
@@ -123,6 +136,84 @@ function liche_manager:reset_defile_debug()
 end
 
 -------------------------------------
+-------------- MODULES --------------
+-------------------------------------
+--- Eternal modules loaded and saved within the liche_manager
+
+--v method(module_name: string, folder: string)
+function liche_manager:load_module(module_name, folder)
+    --# assume self: LICHE_MANAGER
+    if package.loaded[module_name] then
+        return 
+    end
+
+    local path = "script/lichemanager/"..folder.."/"
+    local file = loadfile(path .. module_name .. ".lua")
+
+    if not file then
+        self:error("Attempted to load module with name ["..module_name.."], but none was found in the path!")
+        return
+    else
+        self:log("Loading module with name [" .. module_name .. ".lua]")
+
+        local global_env = core:get_env()
+        local attach_env = {}
+        setmetatable(attach_env, {__index = global_env})
+
+        -- pass valuable stuff to the modules
+        attach_env.lichemanager = self
+        attach_env.core = core
+
+        setfenv(file, attach_env)
+        --# assume file: function(string)
+        local lua_module = file(module_name)
+        package.loaded[module_name] = lua_module or true
+
+        self:log("[" .. module_name .. ".lua] loaded successfully!")
+
+        if module_name == "ruins" then
+            self._RUINSUI = lua_module
+        end
+
+        if module_name == "ror" then
+            self._RORUI = lua_module
+        end
+        
+        if module_name == "log" then
+            self._LOG = lua_module
+        end
+
+        if module_name == "utility" then
+            self._UTILITY = lua_module
+        end
+
+        return
+    end
+
+    local ok, err = pcall(function() require(module_name) end)
+
+    self:error("Tried to load module with name [" .. module_name .. ".lua], failed on runtime. Error below:")
+    self:error(err)
+end
+
+--v method(file_name: string) --> WHATEVER
+function liche_manager:get_module_by_name(file_name)
+    --# assume self: LICHE_MANAGER
+
+    if file_name == "ruins" then
+        return self._RUINSUI
+    elseif file_name == "log" then
+        return self._LOG
+    elseif file_name == "utility" then
+        return self._UTILITY
+    elseif file_name == "ror" then
+        return self._RORUI
+    end
+
+    return nil
+end
+
+-------------------------------------
 -------------- HELPERS --------------
 -------------------------------------
 
@@ -130,34 +221,188 @@ end
 ---- Functions that make life easier later on
 ----
 
+--v method(unit_key: string) --> boolean
+function liche_manager:does_regiment_exist_in_faction(unit_key)
+    --# assume self: LICHE_MANAGER
+    local faction_obj = cm:get_faction(self._faction_key)
+
+    local char_list = faction_obj:character_list()
+    for i = 0, char_list:num_items() - 1 do
+        local char_obj = char_list:item_at(i)
+        if char_obj:has_military_force() then
+            local mf_obj = char_obj:military_force()
+            local unit_list = mf_obj:unit_list()
+            if unit_list:has_unit(unit_key) then
+                -- written ugly to override the error checking
+                self._regiments[unit_key]._status = "RECRUITED"
+                return true
+            end
+        end
+    end
+
+    return false
+end
+
+--v method()
+function liche_manager:post_battle_regiment_status_check()
+    --# assume self: LICHE_MANAGER
+
+    local regiments = self:get_regiments_with_status("RECRUITED")
+    if #regiments == 0 then
+        -- no regiments recruited!
+        return
+    end
+    for i = 1, #regiments do
+        local regiment = regiments[i]
+        if not self:does_regiment_exist_in_faction(regiment._key) then
+            self:set_regiment_status(regiment._key, "AVAILABLE")
+        end
+    end
+end
+
+--v method() --> boolean
+function liche_manager:does_faction_have_unspawned_regiments()
+    --# assume self: LICHE_MANAGER
+
+    for key, regiments in pairs(self._regiments) do
+        if not self:does_regiment_exist_in_faction(key) then
+            return true
+        end
+    end
+
+    -- all regiments are spawned!
+    return false
+end
+
+--v method(unit_key: string) --> boolean
+function liche_manager:is_regiment_key(unit_key)
+    --# assume self: LICHE_MANAGER
+
+    local regiments = {
+        AK_hobo_ror_doomed_legion = true,
+        AK_hobo_ror_caged = true,
+        AK_hobo_ror_storm = true,
+        AK_hobo_ror_wight_knights = true,
+        AK_hobo_ror_jacsen = true,
+        AK_hobo_ror_beast = true,
+        AK_hobo_ror_skulls = true,
+        AK_hobo_ror_spider = true
+    } --: map<string, boolean>
+
+    return not not regiments[unit_key]
+end
+
+--v method()
+function liche_manager:refresh_upkeep_penalty()
+    --# assume self: LICHE_MANAGER
+    local faction = cm:get_faction(self._faction_key)
+
+	local difficulty = cm:model():combined_difficulty_level()
+	
+	local effect_bundle = "wh_main_bundle_force_additional_army_upkeep_easy"			-- easy
+	
+	if difficulty == 0 then
+		effect_bundle = "wh_main_bundle_force_additional_army_upkeep_normal"			-- normal
+	elseif difficulty == -1 then
+		effect_bundle = "wh_main_bundle_force_additional_army_upkeep_hard"				-- hard
+	elseif difficulty == -2 then
+		effect_bundle = "wh_main_bundle_force_additional_army_upkeep_very_hard"			-- very hard
+	elseif difficulty == -3 then
+		effect_bundle = "wh_main_bundle_force_additional_army_upkeep_legendary"		-- legendary
+	end
+	
+	local mf_list = faction:military_force_list()
+	local army_list = {} --: vector<CA_MILITARY_FORCE>
+	
+	-- clone the military force list, excluding any garrisons and black arks
+	for i = 0, mf_list:num_items() - 1 do
+		local current_mf = mf_list:item_at(i)
+		
+		if not current_mf:is_armed_citizenry() and current_mf:has_general() and not current_mf:general_character():character_subtype_key("AK_hobo_kemmy_wounded") then
+			table.insert(army_list, current_mf)
+		end
+	end
+	
+	-- if there is more than one army, apply the effect bundle to the second army onwards
+	if #army_list > 1 then
+		for i = 2, #army_list do
+			local current_mf = army_list[i]
+			
+			if not current_mf:has_effect_bundle(effect_bundle) then
+				cm:apply_effect_bundle_to_characters_force(effect_bundle, army_list[i]:general_character():cqi(), 0, true)
+            end
+		end
+    end
+    
+    -- jostle this shit to make the income UI refresh?
+    if #army_list == 1 then
+        cm:apply_effect_bundle_to_characters_force("AK_hobo_tunnel", army_list[1]:general_character():cqi(), 0, true)
+        cm:callback(function()
+            cm:remove_effect_bundle_from_characters_force("AK_hobo_tunnel", army_list[1]:general_character():cqi())
+        end, 0.1)
+    end
+end
+
+--v method() --> boolean
+function liche_manager:is_respawn_pending()
+    --# assume self: LICHE_MANAGER
+    return not not self._respawn_details.respawn_post_battle_pending
+end
+
+--v method(enable: boolean)
+function liche_manager:set_respawn_pending(enable)
+    --# assume self: LICHE_MANAGER
+    self._respawn_details.respawn_post_battle_pending = not not enable
+end
+
+--v method(unit_list: string)
+function liche_manager:set_unit_list(unit_list)
+    --# assume self: LICHE_MANAGER
+    self._respawn_details.unit_list = unit_list
+end
+
 --v method() --> string
 function liche_manager:get_unit_list()
     --# assume self: LICHE_MANAGER
-    return self._unit_list
+    return self._respawn_details.unit_list
 end
 
 --v method() --> number
 function liche_manager:get_turn_to_spawn()
     --# assume self: LICHE_MANAGER
-    return self._turn_to_spawn
+    return self._respawn_details.turn_to_spawn
 end
 
 --v method(turn: number)
 function liche_manager:set_turn_to_spawn(turn)
     --# assume self: LICHE_MANAGER
-    self._turn_to_spawn = turn
+    self._respawn_details.turn_to_spawn = turn
 end
 
 --v method() --> CA_CQI
 function liche_manager:get_character_selected_cqi()
     --# assume self: LICHE_MANAGER
-    return self._characterSelected
+    return self._character_selected
 end
 
 --v method(cqi: CA_CQI)
 function liche_manager:set_character_selected_cqi(cqi)
     --# assume self: LICHE_MANAGER
-    self._characterSelected = cqi
+    self._character_selected = cqi
+end
+
+---- Internal function from the UI
+--v method(key: string)
+function liche_manager:set_selected_legion(key)
+    --# assume self: LICHE_MANAGER
+    self._selected_legion = key
+    core:trigger_event("LichemasterLegionSelected", key)
+end
+
+--v method() --> string
+function liche_manager:get_selected_legion()
+    --# assume self: LICHE_MANAGER
+    return self._selected_legion
 end
 
 --v method() --> string
@@ -166,18 +411,25 @@ function liche_manager:get_faction_key()
     return self._faction_key
 end
 
+--v method() --> (vector<string>, vector<string>)
+function liche_manager:get_names()
+    --# assume self: LICHE_MANAGER
+    return self._names[1], self._names[2]
+end
+
 ---- Check if lord is still locked
 --v method(subtype: string) --> boolean
 function liche_manager:is_lord_unlocked(subtype)
     --# assume self: LICHE_MANAGER
-    if subtype == "AK_hobo_nameless" then
-        return self._is_nameless_unlocked
-    elseif subtype == "AK_hobo_draesca" then
-        return self._is_draesca_unlocked
-    elseif subtype == "AK_hobo_priestess" then
-        return self._is_priestess_unlocked
+
+    local lord_obj = self:get_lord_by_key(subtype)
+
+    if is_nil(lord_obj) then
+        self:log("is_lord_unlocked() called, but no lord found with subtype ["..subtype.."].")
+        return false
     end
-    return false
+
+    return not not lord_obj._is_unlocked
 end
 
 ---- Quick shorthand for checking subtypes of generals
@@ -231,17 +483,76 @@ function liche_manager:get_necropower()
     return pr:value()
 end
 
+
+--- Checks if Kemmy has the hero spawn rank bundle; if not, give it over!
+--v method()
+function liche_manager:setup_hero_spawn_rank()
+    --# assume self: LICHE_MANAGER
+
+    local faction_key = self:get_faction_key()
+    local faction_obj = cm:get_faction(faction_key)
+    local bundle_key = "AK_hobo_hero_spawn_rank"
+
+    -- check needed to prevent applying the bundle after it's already been edited via scropty bits
+    if not faction_obj:has_effect_bundle(bundle_key) then
+        cm:apply_effect_bundle(bundle_key, faction_key, -1)
+    end
+end
+
 ---- Internal value that determines the rank that heroes spawn at
 --v method() --> number
-function liche_manager:get_hero_spawn_rank_increase()
+function liche_manager:get_hero_spawn_rank()
     --# assume self: LICHE_MANAGER
-    return self._hero_spawn_rank_increase
+
+    local faction_key = self:get_faction_key()
+    local faction_obj = cm:get_faction(faction_key)
+    local bundle_key = "AK_hobo_hero_spawn_rank"
+
+    local bundle_list = faction_obj:effect_bundles()
+    for i = 0, bundle_list:num_items() - 1 do
+        local bundle = bundle_list:item_at(i)
+        if bundle:key() == bundle_key then
+            local effect_list = bundle:effects()
+
+            -- shouild only be one effect!
+            local effect = bundle:effects():item_at(0)
+            if effect:key() == bundle_key then
+                return effect:value()
+            end
+        end
+    end
+    return 0
 end
 
 --v method(increase: number)
 function liche_manager:increase_hero_spawn_rank(increase)
     --# assume self: LICHE_MANAGER
-    self._hero_spawn_rank_increase = self._hero_spawn_rank_increase + increase
+
+    local faction_key = self:get_faction_key()
+    local faction_obj = cm:get_faction(faction_key)
+    local bundle_key = "AK_hobo_hero_spawn_rank"
+
+    local bundle_list = faction_obj:effect_bundles()
+    for i = 0, bundle_list:num_items() - 1 do
+        local bundle = bundle_list:item_at(i)
+        if bundle:key() == bundle_key then
+            local effect_list = bundle:effects()
+            local effect_val = 0 --: number
+
+            -- shouild only be one effect!
+            local effect = bundle:effects():item_at(0)
+            if effect:key() == bundle_key then
+                effect_val = effect:value()
+            end
+
+            local custom_eb = bundle:clone_and_create_custom_effect_bundle(cm:model())
+            local custom_effect = custom_eb:effects():item_at(0)
+            if custom_effect:key() == bundle_key then
+                custom_eb:set_effect_value(custom_effect, effect_val + increase)
+                cm:apply_custom_effect_bundle_to_faction(custom_eb, faction_obj)
+            end
+        end
+    end
 end
 
 --v method()
@@ -256,17 +567,39 @@ function liche_manager:get_num_razed_settlements()
     return self._num_razed_settlements
 end
 
--- TODO make this easier to edit, read subtypes.lua fam
----- Apply ancillaries to LL's upon spawn
+--- Setup for XP and ancillaries when an LL is spawned
 --v method(char: CA_CHAR)
-function liche_manager:add_ancillaries_to_lord(char)
+function liche_manager:legendary_lord_spawned(char)
     --# assume self: LICHE_MANAGER
-    local subtype = char:character_subtype_key()
-    if subtype == "AK_hobo_draesca" then
-        cm:force_add_ancillary(char, "AK_hobo_draesca_helmet", true, true)
-    elseif subtype == "AK_hobo_priestess" then
-        cm:force_add_ancillary(char, "AK_hobo_priestess_trickster", true, true)
-        cm:force_add_ancillary(char, "AK_hobo_priestess_charms", true, true)
+    local subtype_key = char:character_subtype_key()
+
+    local char_cqi = char:command_queue_index()
+    local char_str = cm:char_lookup_str(char_cqi)
+
+    --local num_existing = lm:get_num_legendary_lords()
+    local xp_to_apply = 0
+
+    local turn = cm:model():turn_number()
+
+    if turn >= 150 then
+        xp_to_apply = 15
+    elseif turn >= 100 then
+        xp_to_apply = 10
+    elseif turn >= 50 then
+        xp_to_apply = 5
+    end
+
+    if xp_to_apply > 0 then
+        cm:add_agent_experience(char_str, xp_to_apply, true)
+    end
+
+    local lord_obj = self:get_lord_by_key(subtype_key)
+    local data = lord_obj:get_data()
+
+    if #data.ancillaries > 0 then
+        for i = 1, #data.ancillaries do
+            cm:force_add_ancillary(char, data.ancillaries[i], true, true)
+        end
     end
 end
 
@@ -289,6 +622,7 @@ function liche_manager:is_landmark_region(region_name)
     if landmarks[region_name] then
         return true
     end
+
     return false
 end
 
@@ -307,28 +641,11 @@ function liche_manager:can_occupy_region(region_name)
     return false
 end
 
--- TODO this list should be outsourced to a secondary Lua file, for Cataph's sake
 ---- Simple and quick check to see if a unit is in the Barrow unit set.
 --v method(unit_key: string) --> boolean
 function liche_manager:is_unit_barrow(unit_key)
-    local barrow_units = {
-        ["AK_hobo_barrow_guardians"] = true,
-        ["AK_hobo_barrow_guardians_dual"] = true,
-        ["AK_hobo_barrow_guardians_halb"] = true,
-        ["AK_hobo_simulacra"] = true,
-        ["AK_hobo_embalmed"] = true,
-        ["AK_hobo_glooms"] = true,
-        ["AK_hobo_ghost"] = true,
-        ["AK_hobo_stalker"] = true,
-        ["AK_hobo_ror_caged"] = true,
-        ["AK_hobo_ror_storm"] = true,
-        ["AK_hobo_ror_beast"] = true,
-        ["AK_hobo_ror_skulls"] = true,
-        ["CTT_hobo_glooms"] = true
-    }--:map<string, boolean>
-
-    return not not barrow_units[unit_key]
-
+    --# assume self: LICHE_MANAGER
+    return not not self._barrow_units[unit_key]
 end
 
 -----------------------------------------
@@ -367,11 +684,10 @@ function liche_manager:calculate_tier(region_name)
     else
         tier = 3
     end
-    self:log("RUIN TRACKER: Ruin Tier calculated at ["..tier.."].")
+    --self:log("RUIN TRACKER: Ruin Tier calculated at ["..tier.."].")
     return tier
 end
 
--- TODO make these less fucked up
 ---- Grab the effect, based on the tier of the ruin and some randomized chances
 --v method(ruin: string) --> string
 function liche_manager:calculate_effect(ruin)
@@ -460,7 +776,7 @@ function liche_manager:kill_colonel()
     for i = 0, char_list:num_items() - 1 do
         local char = char_list:item_at(i)
         if char:character_type("colonel") and not char:has_garrison_residence() and not char:is_politician() then
-            cm:kill_character(char:command_queue_index(), true, true)
+            cm:kill_character_and_commanded_unit("character_cqi:"..char:command_queue_index(), true, true)
         end
     end
 end
@@ -511,28 +827,6 @@ function liche_manager:revive_barrow_units(cqi)
     self:log("DEFILE BARROW: Revived Barrow units for character with CQI ["..cqi.."] and killed that cruel Colonel.")
 end
 
-
--- TODO maybe variable turn number? defaulting to 5 for now
--- TODO decide if I want to do this. Disabled for now.
----- Unattached method, just exists if I want to use it later
---v method()
-function liche_manager:ruins_effect_bundle()
-    --# assume self: LICHE_MANAGER
-    local cqi = self:get_character_selected_cqi()
-    if not cqi then
-        self:error("ruins_effect_bundle() called, but no character selected is found!")
-    end
-
-    local bundles = {
-        -- build the effect bundles!
-    } --: vector < string >
-
-    local chance = cm:random_number(#bundles, 1)
-    local bundle = bundles[chance]
-
-    cm:apply_effect_bundle_to_characters_force(bundle, cqi, 5, false)
-end
-
 ---- random shot between spawning a Druid or Barrow King
 --v method()
 function liche_manager:ruins_spawn_agent()
@@ -568,8 +862,9 @@ function liche_manager:ruins_spawn_agent()
     art_set = agent .. "_0" .. chance3
 
     -- grab name keys from the integrated Lua file with a huge list of name
-    local forename = self._forenames[cm:random_number(#self._forenames, 1)]
-    local family_name = self._family_names[cm:random_number(#self._family_names, 1)]
+    local forenames, family_names = self:get_names()
+    local forename = forenames[cm:random_number(#forenames, 1)]
+    local family_name = family_names[cm:random_number(#family_names, 1)]
 
     -- spawn the agent to the pool
     cm:spawn_character_to_pool(
@@ -595,14 +890,39 @@ end
 function liche_manager:ruins_spawn_ror()
     --# assume self: LICHE_MANAGER
 
-    -- list of rors that haven't been unlocked yet
-    local rors = self:get_locked_regiments()
+    local valid = false
+    local ror
 
-    -- pick between a random one!
-    local chance = cm:random_number(#rors, 1)
-    local ror = rors[chance]
+    -- prevent spawning a regiment that is already spawned on the map
+    while not valid do
 
-    self:set_regiment_unlocked(ror._key)
+        -- list of rors that haven't been unlocked yet
+        local rors = self:get_regiments_with_status("LOCKED")
+
+        if #rors == 0 then
+            -- no RoR are left! We shouldn't have gotten here, but breaking to prevent an endless loop.
+            self:log("ruins_spawn_ror() called, but there are no more ror's remaining to unlock. Investigate - this should've been caught by calculate_effect().")
+            break
+        end
+
+        -- pick between a random one!
+        local chance = cm:random_number(#rors, 1)
+        local test_ror = rors[chance]
+        
+        if not self:does_regiment_exist_in_faction(test_ror._key) then
+            ror = test_ror
+            break
+        else
+            -- above does_regiment_exist() call moves regiments from "LOCKED" to "RECRUITED" for error checking
+        end
+    end
+
+    if not ror then
+        self:log("ruisn_spawn_ror() called, but the loop never found an ror to unlock. Investigate!")
+        return
+    end
+
+    self:set_regiment_status(ror._key, "AVAILABLE")
     cm:trigger_incident(self._faction_key, "barrow_"..ror._key, true)
     self:log("DEFILE BARROWS: Legion of Undeath with key ["..ror._key.."] unlocked")
 end
@@ -785,27 +1105,20 @@ function liche_manager:apply_effect(ruin)
         effect = self._defile_debug
     end
 
-    --if effect == "effectBundle" then
-        --self:ruinsEffectBundle()
-    if effect == "spawnAgent" then
-        self:ruins_spawn_agent()
-    elseif effect == "spawnRoR" then
-        self:ruins_spawn_ror()
-    elseif effect == "enemy" then
-        self:ruins_spawn_enemy()
-    elseif effect == "item" then
-        self:ruins_spawn_item()
+    -- prevent double-spawn of RoR's
+    if effect == "spawnRoR" and not self:does_faction_have_unspawned_regiments() then
+        local ran = cm:random_number(2)
+        if ran == 2 then 
+            effect = "spawnAgent" 
+        else 
+            effect = "item" 
+        end
     end
 
-    --self:force_replen()
-    if effect ~= "enemy" then
-        self:revive_barrow_units()
-    end
-    
-    self:apply_defile_xp()
+    CampaignUI.TriggerCampaignScriptEvent(self:get_character_selected_cqi(), "lm_db|"..effect)
+
 end
 
--- TODO save the character's id better
 ---- to be called whenever a settlement_captured panel is opened by Kemmler for a ruined faction
 --v method(region: string, button_number: string?)
 function liche_manager:ruinsUI(region, button_number)
@@ -813,13 +1126,13 @@ function liche_manager:ruinsUI(region, button_number)
 
     local panel = find_uicomponent(core:get_ui_root(), "settlement_captured")
     local turns = self:calculate_turns_ruined(region)
-    local isLocked = self._ruins[region].isLocked
+    local is_locked = self._ruins[region].is_locked
 
     local RUINSUI = require("script/lichemaster/ui/ruins")
     if not button_number then
-        RUINSUI.set(turns, isLocked)
+        RUINSUI.set(turns, is_locked)
     else
-        RUINSUI.set(turns, isLocked, button_number)
+        RUINSUI.set(turns, is_locked, button_number)
     end
 end
 
@@ -835,9 +1148,15 @@ function liche_manager:set_ruin(ruin)
         return
     end
 
+    -- make sure the ruin isn't already set (ie. via save game!)
+    if not is_nil(self._ruins[ruin]) then
+        -- do nuffin'
+        return
+    end
+
     -- save the current turn number, used when the ruin is defiled
     local turn = cm:model():turn_number()
-    self._ruins[ruin] = {turn = turn, isLocked = false}
+    self._ruins[ruin] = {turn = turn, is_locked = false}
 
     self:log("RUIN TRACKER: Setting ruin for region ["..ruin.."] on turn number ["..tostring(turn).."]")
 end
@@ -869,11 +1188,11 @@ function liche_manager:defile_ruin(ruin)
     self:apply_effect(ruin)
 
     -- prevent this ruin from being defiled again
-    self._ruins[ruin].isLocked = true
+    self._ruins[ruin].is_locked = true
     
     -- tracker for the Priestess unlock condition
     self._num_ruins_defiled = self._num_ruins_defiled + 1
-    core:trigger_event("LichemasterEventRuinDefiled", tostring(self._num_ruins_defiled))
+    core:trigger_event("LichemasterEventRuinDefiled", self._num_ruins_defiled)
 end
 
 -----------------------------------------
@@ -883,10 +1202,9 @@ end
 ---- regiment object which saves basic data about the different legions of undeath
 local regiment = {} --# assume regiment: LICHE_REGIMENT
 
--- TODO make this work for non-English
 ---- instantiate a new regiment
---v function(key: string, ui_name: string) --> LICHE_REGIMENT
-function regiment.new_regiment(key, ui_name)
+--v function(key: string) --> LICHE_REGIMENT
+function regiment.new_regiment(key)
     local self = {}
 
     -- give the object the same metatable as the regiment prototype
@@ -896,28 +1214,10 @@ function regiment.new_regiment(key, ui_name)
 
     -- basic initiation data
     self._key = key
-    self._ui_name = ui_name
 
-    -- used to track status later on
-    self._is_recruited = false
-    self._is_unlocked = false
+    -- used to track status later on, can either be LOCKED, AVAILABLE, or RECRUITED
+    self._status = "LOCKED"
 
-    -- text from an internal file, determines some UI stuff in the Legions of Undeath panel
-    local TEXTS = liche_manager._units[1]
-    local texts
-    for k, v in pairs(TEXTS) do
-        if k == key then
-            texts = v
-        end
-    end
-
-    if not texts then
-        texts = {"", "", ""}
-    end
-
-    self._t1 = texts[1]
-    self._t2 = texts[2]
-    self._t3 = texts[3]
     return self
 end
 
@@ -928,34 +1228,16 @@ function regiment:key()
     return self._key
 end
 
----- Getter for the 'ui_name'
 --v method() --> string
-function regiment:ui_name()
+function regiment:get_status()
     --# assume self: LICHE_REGIMENT
-    return self._ui_name
+    return self._status
 end
 
----- Getter for unlocked status
---v method() --> bool
-function regiment:is_unlocked()
+--v method(status: string) 
+function regiment:set_status(status)
     --# assume self: LICHE_REGIMENT
-    return not not self._is_unlocked
-end
-
----- Setter for unlocked status - true to unlock, false to lock
---v method(enable: boolean)
-function regiment:set_unlocked(enable)
-    --# assume self: LICHE_REGIMENT
-    self._is_unlocked = not not enable
-end
-
----- Create a new regiment using the regiment.new_regiment() constructor, and then save the resulting regiment in the LM
---v method(key: string, ui_name: string)
-function liche_manager:new_regiment(key, ui_name)
-    --# assume self: LICHE_MANAGER
-
-    local new = regiment.new_regiment(key, ui_name)
-    self._regiments[key] = new
+    self._status = status
 end
 
 --- Grab a regiment by a key
@@ -972,97 +1254,100 @@ function liche_manager:get_regiment_with_key(key)
     return get
 end
 
---- Grab all regiments that are unlocked
---v method() --> vector<LICHE_REGIMENT>
-function liche_manager:get_unlocked_regiments()
+---- Create a new regiment using the regiment.new_regiment() constructor, and then save the resulting regiment in the LM
+--v method(key: string)
+function liche_manager:new_regiment(key)
     --# assume self: LICHE_MANAGER
 
-    local regiments = self._regiments
-
-    local get = {}
-    for k, v in pairs(regiments) do
-        if v._is_unlocked == true then
-            table.insert(get, v)
-        end
+    -- prevent overriding
+    local existing = self:get_regiment_with_key(key)
+    if tostring(existing) == "LICHE_REGIMENT" then
+        self._regiments[key] = existing
     end
 
-    return get
+    local new = regiment.new_regiment(key)
+    self._regiments[key] = new
 end
 
---- Grab all regiments that are locked
---v method() --> vector<LICHE_REGIMENT>
-function liche_manager:get_locked_regiments()
+---- On load-game, grab the existing regiments from the save file and turn them into the Lua object here
+--v method(key: string, o: table)
+function liche_manager:instantiate_existing_regiment(key, o)
     --# assume self: LICHE_MANAGER
 
-    local regiments = self._regiments
+    setmetatable(o, {__index = regiment})
 
-    local get = {}
-    for k, v in pairs(regiments) do
-        if v._is_unlocked == false then
-            table.insert(get, v)
-        end
-    end
-
-    return get 
-end
-
----- Grab all regiments that are already recruited
---v method() --> vector<LICHE_REGIMENT>
-function liche_manager:get_recruited_regiments()
-    --# assume self: LICHE_MANAGER
-
-    local regiments = self._regiments
-
-    local get = {}
-    for k, v in pairs(regiments) do
-        if v._is_recruited == true then
-            table.insert(get, v)
-        end
-    end
-
-    return get 
+    --# assume o: LICHE_REGIMENT
+    self._regiments[key] = o
 end
 
 ---- Wrapper to read the unlock status of a regiment
---v method(key: string) --> bool
-function liche_manager:is_regiment_unlocked(key)
+--v method(key: string) --> string
+function liche_manager:get_regiment_status(key)
     --# assume self: LICHE_MANAGER
 
     local regiment_obj = self:get_regiment_with_key(key)
     if is_nil(regiment_obj) then
-        self:error("is_regiment_unlocked() called but there's no saved regiment with the key ["..key.."]")
+        self:error("get_regiment_status() called but there's no saved regiment with the key ["..key.."], returning 'NULL'")
+        return "NULL"
+    end
+
+    return regiment_obj:get_status()
+end
+
+--v method(key: string, status: string)
+function liche_manager:set_regiment_status(key, status)
+    --# assume self: LICHE_MANAGER
+
+    local options = {LOCKED = true, AVAILABLE = true, RECRUITED = true, STASIS = true} --: map<string, bool>
+    if not options[status] then
+        self:error("set_regiment_status() called, but '"..status.."' is not a valid option!")
+        return
+    end
+
+    local regiment_obj = self:get_regiment_with_key(key)
+    if is_nil(regiment_obj) then
+        self:error("set_regiment_status() called but there's no saved regiment with the key ["..key.."], aborting!")
+        return
+    end
+
+    local current_status = regiment_obj:get_status()
+
+    if current_status == "LOCKED" and status == "RECRUITED" then
+        self:error("set_regiment_status() called, attempted to transfer regiment ["..key.."] from LOCKED to RECRUITED, aborting!")
+        return
+    elseif current_status == "AVAILABLE" or current_status == "RECRUITED" and status == "LOCKED" then
+        self:error("set_regiment_status() called, attempted to transfer regiment ["..key.."] from "..current_status.." to LOCKED, aborting!")
+        return
+    end
+
+    regiment_obj:set_status(status)
+end
+
+--v method(status: string) --> vector<LICHE_REGIMENT>
+function liche_manager:get_regiments_with_status(status)
+    --# assume self: LICHE_MANAGER
+
+    local retval = {}
+
+    for key, regiment in pairs(self._regiments) do
+        if regiment:get_status() == status then
+            table.insert(retval, regiment)
+        end
+    end
+
+    return retval
+end
+
+--v method(unit_key: string) --> boolean
+function liche_manager:is_unit_key_a_regiment(unit_key)
+    --# assume self: LICHE_MANAGER
+
+    local regiment_obj = self:get_regiment_with_key(unit_key)
+    if is_nil(regiment_obj) then
         return false
     end
 
-    return regiment_obj:is_unlocked()
-end
-
----- Wrapper to unlock a regiment by the key
---v method(key: string)
-function liche_manager:set_regiment_unlocked(key)
-    --# assume self: LICHE_MANAGER
-
-    local regiment_obj = self:get_regiment_with_key(key)
-    if is_nil(regiment_obj) then
-        self:error("set_regiment_unlocked() called but there's no saved regiment with the key ["..key.."]")
-        return
-    end
-
-    regiment_obj:set_unlocked(true)
-end
-
----- Wrapper to lock a regiment by the key
---v method(key: string)
-function liche_manager:set_regiment_locked(key)
-    --# assume self: LICHE_MANAGER
-
-    local regiment_obj = self:get_regiment_with_key(key)
-    if is_nil(regiment_obj) then
-        self:error("set_regiment_locked() called but there's no saved regiment with the key ["..key.."]")
-        return
-    end
-
-    regiment_obj:set_unlocked(false)
+    return true
 end
 
 ---- Spawn specific unit for the current 'character_selected' characted
@@ -1071,29 +1356,7 @@ function liche_manager:spawn_ror_for_character(selectedCQI, key)
     --# assume self: LICHE_MANAGER
     --# assume selectedCQI: number
 
-    -- make sure that regiment object exists
-    local regiment_obj = self:get_regiment_with_key(key)
-    if is_nil(regiment_obj) then
-        self:error("spawn_ror_for_character() called but there's no saved regiment with the key ["..key.."]")
-        return
-    end
-
-    -- lock the object, to prevent more than one existing
-    regiment_obj:set_unlocked(false)
-
-    -- add the unit and charge the -5 NP
-    cm:grant_unit_to_character("character_cqi:"..selectedCQI, key)
-    cm:faction_add_pooled_resource(self._faction_key, "necropower", "necropower_ror", -5)
-
-    self:log("LEGIONS OF UNDEATH: Spawning Legion with key ["..key.."] for character with CQI ["..selectedCQI.."].")
-end
-
----- Internal function from the UI
---v method(key: string)
-function liche_manager:set_selected_legion(key)
-    --# assume self: LICHE_MANAGER
-    self._selected_legion = key
-    core:trigger_event("LichemasterLegionSelected", key)
+    CampaignUI.TriggerCampaignScriptEvent(selectedCQI, "lichemanager_ror|"..key)
 end
 
 ---- Big function that sets the UI and stuff, called when a LM character is selected by Kemmler player
@@ -1110,23 +1373,77 @@ function liche_manager:ror_UI(cqi)
     -- the actual functions to create the UI panel are in this subfile
     local create_panel = require("script/lichemaster/ui/ror")
 
+    --v function(valid: string, button: CA_UIC)
+    local function apply_validity(valid, button)
+        local tt_tr = "{{tr:kemmler_lou_button_tt_"
+        local tr_close = "}}"
+        if valid == "valid" then
+            button:SetState("active")
+            button:SetTooltipText(tt_tr .. valid .. tr_close, true)
+
+            -- when the new button is pressed, create the panel!
+            core:add_listener(
+                "LicheRorButtonPressed",
+                "ComponentLClickUp",
+                function(context)
+                    return context.string == "LicheRorButton"
+                end,
+                function(context)
+                    local ok, err = pcall(function()
+                        ROR.create_panel()
+                    end)
+                    if not ok then self:error(err) end
+                end,
+                true
+            )
+        else
+            button:SetState("inactive")
+            button:SetTooltipText(tt_tr .. valid .. tr_close, true)
+            core:remove_listener("LicheRorButtonPressed")
+        end
+    end
+
+    --v function(button: CA_UIC)
+    local function check_validity(button)
+        local char_obj = cm:get_character_by_cqi(cqi)
+        if not char_obj then
+            cm:remove_callback("kill_that_ror_button")
+            return
+        end
+
+        local mf_obj = char_obj:military_force()
+        if not mf_obj then
+            cm:remove_callback("kill_that_ror_button")
+            return
+        end
+
+        if mf_obj:unit_list():num_items() == 20 then
+            -- no room
+            apply_validity("no_room", button)
+            return
+        end
+
+        local faction_obj = char_obj:faction()
+        if faction_obj:pooled_resource("necropower"):value() < 5 then
+            apply_validity("low_np", button)
+            return
+        end
+
+        apply_validity("valid", button)
+    end
+
     -- see if the button was already created
     local parent = find_uicomponent(core:get_ui_root(), "layout", "hud_center_docker", "hud_center", "small_bar", "button_group_army")
-    local test = find_uicomponent(parent, "LicheRorButton")
-    if not test then
-        -- create the button!
-        parent:CreateComponent("LicheRorButton", "ui/templates/square_medium_button")
-        local button = find_uicomponent(parent, "LicheRorButton")
-        button:SetImagePath("ui/skins/default/icon_renown.png")
+    if not is_uicomponent(parent) then
+        -- parent not found? aborting
+        return
+    end
+    local button = find_uicomponent(parent, "LicheRorButton")
 
-        -- hide and prevent the use of the vanilla RoR button
-        local ror = find_uicomponent(parent, "button_renown")
-        if is_uicomponent(ror) then
-            button:MoveTo(ror:Position())
-            ror:SetDisabled(true)
-            ror:SetVisible(false)
-            ror:SetInteractive(false)
-        end
+    if not is_uicomponent(button) then
+        -- create the button!
+        button = UIComponent(parent:CreateComponent("LicheRorButton", "ui/templates/square_medium_button"))
+        button:SetImagePath("ui/skins/default/icon_renown.png")
 
         -- swap positions of raise dead and the new button
         local raise_dead = find_uicomponent(parent, "button_mercenaries")
@@ -1135,45 +1452,45 @@ function liche_manager:ror_UI(cqi)
 
         raise_dead:MoveTo(x2, y2)
         button:MoveTo(x1, y1)
-
-        button:SetTooltipText("Raise Legions of Undeath||Bolster the ranks with ancient warriors.", true)
-
-        -- when the new button is pressed, create the panel!
-        core:add_listener(
-            "LicheRorButtonPressed",
-            "ComponentLClickUp",
-            function(context)
-                return context.string == "LicheRorButton"
-            end,
-            function(context)
-                local ok, err = pcall(function()
-                    create_panel()
-                end)
-                if not ok then self:error(err) end
-            end,
-            true
-        )
-    else
-        -- if the button already exists, hide the vanilla RoR button and call it a day
-        local ror = find_uicomponent(parent, "button_renown")
-        if is_uicomponent(ror) then
-            ror:SetVisible(false)
-        end
     end
 
+    -- repeat callback to make sure the ror button stays invisible, and to continually check if the LoU button is valid
+    cm:repeat_callback(function()
+        local ror_button = find_uicomponent(core:get_ui_root(), "layout", "hud_center_docker", "hud_center", "small_bar", "button_group_army", "button_renown")
+
+        if is_uicomponent(ror_button) and is_uicomponent(button) and button:Visible() then
+            ror_button:SetVisible(false)
+            check_validity(button)
+        else
+            cm:remove_callback("kill_that_ror_button")
+        end
+    end, 0.1, "kill_that_ror_button")
+
+    -- once the panel is closed, stop forcing the ror button invisible every 0.1s
+    core:add_listener(
+        "LicheRorUIKiller",
+        "PanelClosedCampaign",
+        function(context)
+            return context.string == "units_panel"
+        end,
+        function(context)
+            cm:remove_callback("kill_that_ror_button")
+        end,
+        false
+    )
 end
 
 --v method()
 function liche_manager:setup_regiments()
     --# assume self: LICHE_MANAGER
-    self:new_regiment("AK_hobo_ror_doomed_legion", "The Doomed Legion")
-    self:new_regiment("AK_hobo_ror_caged", "The Caged")
-    self:new_regiment("AK_hobo_ror_storm", "Guardians of Medhe")
-    self:new_regiment("AK_hobo_ror_wight_knights", "Wight Knights")
-    self:new_regiment("AK_hobo_ror_jacsen", "Mikeal Jacsen")
-    self:new_regiment("AK_hobo_ror_beast", "Beast of Cailledh")
-    self:new_regiment("AK_hobo_ror_skulls", "Skulls of Geistenmund")
-    self:new_regiment("AK_hobo_ror_spider", "Terror of the Lichemaster")
+    self:new_regiment("AK_hobo_ror_doomed_legion")
+    self:new_regiment("AK_hobo_ror_caged")
+    self:new_regiment("AK_hobo_ror_storm")
+    self:new_regiment("AK_hobo_ror_wight_knights")
+    self:new_regiment("AK_hobo_ror_jacsen")
+    self:new_regiment("AK_hobo_ror_beast")
+    self:new_regiment("AK_hobo_ror_skulls")
+    self:new_regiment("AK_hobo_ror_spider")
 end
 
 -----------------------------------------
@@ -1192,37 +1509,102 @@ local liche_lord = {} --# assume liche_lord: LICHE_LORD
     - 
 ]]
 
---v function(subtype_key: string, artset_key: string, unlock_condition: function)
-function liche_lord.new(subtype_key, artset_key, unlock_condition)
-    
+--v function(subtype_key: string, data: LICHE_SUBTYPE) --> LICHE_LORD
+function liche_lord.new(subtype_key, data)
+    local o = {}
+    setmetatable(o, {__index = liche_lord})
 
+    --# assume o: LICHE_LORD
+    o.key = subtype_key
+    o.data = data
+
+    o._can_recruit = false
+    o._is_unlocked = false
+
+    return o
+end
+
+--v method() --> LICHE_SUBTYPE
+function liche_lord:get_data()
+    --# assume self: LICHE_LORD
+
+    return self.data
+end
+
+--v method(key: string) --> LICHE_LORD
+function liche_manager:get_lord_by_key(key)
+    --# assume self: LICHE_MANAGER
+
+    local lord = self._lords[key]
+
+    if is_nil(lord) then
+        return nil
+    end
+
+    return lord
+end
+
+--v method(key: string, obj: table)
+function liche_manager:instantiate_existing_lord(key, obj)
+    --# assume self: LICHE_MANAGER
+
+    setmetatable(obj, {__index = liche_lord})
+    --# assume obj: LICHE_LORD
+
+    self._lords[key] = obj
+end
+
+--v method()
+function liche_manager:setup_lords()
+    --# assume self: LICHE_MANAGER
+
+    local subtypes = require("script/lichemanager/tables/subtypes")
+
+    for key, data in pairs(subtypes) do
+        local lord = liche_lord.new(key, data)
+        self._lords[key] = lord
+    end
 end
 
 ---- Self-explanatory getter
 --v method(subtype: string) --> boolean
 function liche_manager:can_recruit_lord(subtype)
     --# assume self: LICHE_MANAGER
-    return not not self._can_recruit_lord[subtype]
+
+    local lord = self:get_lord_by_key(subtype)
+    
+    if is_nil(lord) then
+        self:log("can_recruit_lord() called, but no lord found with subtype ["..subtype.."].")
+        return false
+    end
+
+    return not not lord._can_recruit
 end
 
 --- Self-explanatory getter x2
 --v method() --> boolean
 function liche_manager:can_recruit_any_lord()
     --# assume self: LICHE_MANAGER
-    if not self:can_recruit_lord("AK_hobo_nameless") and not self:can_recruit_lord("AK_hobo_draesca") and not self:can_recruit_lord("AK_hobo_priestess") then
-        return false
-    else
+    if self:can_recruit_lord("AK_hobo_nameless") or self:can_recruit_lord("AK_hobo_draesca") or self:can_recruit_lord("AK_hobo_priestess") then
         return true
+    else
+        return false
     end
 end
 
 ---- Called if there are no available lords to recruit
---v method()
-function liche_manager:lord_lock_UI()
+--v method(is_settlement: boolean?)
+function liche_manager:lord_lock_UI(is_settlement)
     --# assume self: LICHE_MANAGER
 
+    local button_parent_key = "button_group_army_settled"
+
+    if is_settlement then
+        button_parent_key = "button_group_settlement"
+    end
+
     local component = find_uicomponent(core:get_ui_root(), "layout", "hud_center_docker", "hud_center",
-    "small_bar", "button_group_army_settled", "button_create_army")
+    "small_bar", button_parent_key, "button_create_army")
 
     if not component then
         self:error("lord_lock_UI() called, but the Create Army button is not existent!")
@@ -1230,15 +1612,14 @@ function liche_manager:lord_lock_UI()
     end
 
     if not self:can_recruit_any_lord() then
-    -- grey the button and give a tooltip for UX
+        -- grey the button and give a tooltip for UX
         component:SetState("inactive")
-        component:SetTooltipText("[[col:red]]Cannot recruit a new army - no available lords![[/col]]", false)
+        component:SetTooltipText("{{tr:AK_hobo_cannot_recruit_lord}}", false)
         self:log("LORDS: Locking the 'create army' button because there are no available lords to recruit!")
     else
         component:SetState("active")
         self:log("LORDS: Unlocking the 'create army' button!")
     end
-
 end
 
 ---- Runs through the pool of lords, when that panel opens up, and hides any lord that isn't one of the legendary lords
@@ -1249,26 +1630,38 @@ function liche_manager:lord_pool_UI()
     -- grab the listbox (scroll bar) and make sure it exists
     local component = find_uicomponent(core:get_ui_root(), "character_panel", "general_selection_panel", "character_list_parent", "character_list", "listview", "list_clip", "list_box")
     if not component then
-        self:error("lordPoolUI() called, but the general candidate list is nonexistent!")
+        self:error("lord_pool_UI() called, but the general candidate list is nonexistent!")
         return
     end
 
     local selected = false
+
     -- loop through all the UIC's found underneath the listbox
     for i = 0, 20 do
         local agent = find_uicomponent(component, "general_candidate_"..i.."_")
 
         -- stop loop if there is not UIC with that name
         if not agent then break end
+        
         -- check the on-screen text
-        -- TODO make this work for non-English
         local subtype = find_uicomponent(agent, "dy_subtype"):GetStateText()
-        if subtype ~= "Legendary Evil" and subtype ~= "Legendary Druid" and subtype ~= "Legendary Wight King" and subtype ~= "Legendary Lord"  then
+
+        -- grab the localised strings for each LL (for the sake of non-English!)
+        local checks = {
+            [effect.get_localised_string("agent_subtypes_onscreen_name_override_AK_hobo_draesca")] = true,
+            [effect.get_localised_string("agent_subtypes_onscreen_name_override_AK_hobo_priestess")] = true,
+            [effect.get_localised_string("agent_subtypes_onscreen_name_override_AK_hobo_nameless")] = true,
+            [effect.get_localised_string("agent_subtypes_onscreen_name_override_vmp_heinrich_kemmler")] = true
+        } --: map<string, bool>
+
+        -- if the state text isn't the same as one of the four above, hide it
+        if not checks[subtype] then
             agent:SetVisible(false)
         else
             if not selected then
                 -- select the top legendary lord, to prevent it from defaulting to a vanilla Vamp Lord
                 agent:SimulateLClick()
+                selected = true
             end
         end
     end
@@ -1281,35 +1674,38 @@ end
 function liche_manager:unlock_lord(subtype)
     --# assume self: LICHE_MANAGER
 
-    local subtypes = require("script/lichemaster/tables/subtypes")
-    for key, table in pairs(subtypes) do
-        if subtype == key then
-            cm:spawn_character_to_pool(
-                self._faction_key,
-                table.forename,
-                table.family_name,
-                table.clan_name,
-                table.other_name,
-                table.age,
-                table.is_male,
-                table.agent_type,
-                table.agent_subtype,
-                table.is_immortal,
-                table.art_set_id
-            )
-            self._can_recruit_lord[subtype] = true
+    local ok, err = pcall(function()
 
-            if key == "AK_hobo_nameless" then
-                self._is_nameless_unlocked = true
-            elseif key == "AK_hobo_draesca" then
-                self._is_draesca_unlocked = true
-            elseif key == "AK_hobo_priestess" then
-                self._is_priestess_unlocked = true
-            end
+    local lord_obj = self:get_lord_by_key(subtype)
 
-            self:log("LORDS: Unlocked lord with subtype ["..subtype.."].")
-        end
+    if is_nil(lord_obj) then
+        self:log("unlock_lord() called, but no lord found with subtype ["..subtype.."].")
+        return
     end
+
+    local data = lord_obj.data
+
+    cm:spawn_character_to_pool(
+        self._faction_key,
+        data.forename,
+        data.family_name,
+        data.clan_name,
+        data.other_name,
+        data.age,
+        data.is_male,
+        data.agent_type,
+        data.agent_subtype,
+        data.is_immortal,
+        data.art_set_id
+    )
+
+    lord_obj._can_recruit = true
+    lord_obj._is_unlocked = true
+
+    self:log("LORDS: Unlocked lord with subtype ["..subtype.."].")
+
+    end) if not ok then self:error(err) end
+        
 end
 
 -----------------------------------------
@@ -1327,9 +1723,19 @@ function liche_manager:apply_attrition()
     for i = 0, char_list:num_items() - 1 do
         local char = char_list:item_at(i)
         if not char:character_subtype("vmp_heinrich_kemmler") and not char:character_subtype("AK_hobo_kemmy_wounded") and char:has_military_force() and char:faction():name() == "wh2_dlc11_vmp_the_barrow_legion" then
-            if char:region():name() ~= kemmy:region():name() then
-                self:log("NECROMANTIC POWER: Applying the low-necromantic-power attrition to character with surname ["..char:get_surname().."] in region ["..char:region():name().."] for one turn.")
-                cm:apply_effect_bundle_to_characters_force("lichemaster_distance_attrition", char:command_queue_index(), 1, false)
+            if not char:region():is_null_interface() and not kemmy:region():is_null_interface() then
+                if char:region():name() ~= kemmy:region():name() then
+                    self:log("NECROMANTIC POWER: Applying the low-necromantic-power attrition to character with surname ["..char:get_surname().."] in region ["..char:region():name().."] for one turn.")
+                    cm:apply_effect_bundle_to_characters_force("lichemaster_distance_attrition", char:command_queue_index(), 1, false)
+                end
+            else
+                local x, y = char:logical_position_x(), char:logical_position_y()
+                local k_x, k_y = kemmy:logical_position_x(), kemmy:logical_position_y()
+
+                if distance_squared(x, y, k_x, k_y) > 2500 then
+                    self:log("NECROMANTIC POWER: Applying the low-necromantic-power attrition to character with surname ["..char:get_surname().."] at distance_squared ["..distance_squared(x, y, k_x, k_y).."] from Kemmler, for one turn.")
+                    cm:apply_effect_bundle_to_characters_force("lichemaster_distance_attrition", char:command_queue_index(), 1, false)
+                end
             end
         end
     end
@@ -1351,8 +1757,8 @@ end
 --v method() --> number
 function liche_manager:get_max_lives()
     --# assume self: LICHE_MANAGER
-    local remaining = self._remaining_max_lives
-    return remaining
+    local faction = cm:get_faction(self._faction_key)
+    return faction:pooled_resource("lichemaster_max_remaining_lives"):value()
 end
 
 ---- Check if the player can revive
@@ -1388,14 +1794,12 @@ function liche_manager:add_life()
     end
 end
 
----- Remove one of the lives!
+---- Remove one of the lives & one Max Remaining Life
 --v method()
 function liche_manager:spend_life()
     --# assume self: LICHE_MANAGER
     cm:faction_add_pooled_resource(self._faction_key, "lichemaster_lives", "bribes", -1)
-
-    -- subtract 1 from the remaining max lives
-    self._remaining_max_lives = self._remaining_max_lives - 1
+    cm:faction_add_pooled_resource(self._faction_key, "lichemaster_max_remaining_lives", "lichemaster_max_remaining_lives", -1)
 end
 
 ---- run through the character list of the faction and return the CQI of Wounded Kemmy
@@ -1407,14 +1811,14 @@ function liche_manager:get_wounded_cqi()
 
     for i = 0, char_list:num_items() - 1 do
         local char = char_list:item_at(i)
-        if char:character_subtype("AK_hobo_kemmy_wounded") then
+        -- prevents returning any wounded wounded kemmys
+        if char:character_subtype("AK_hobo_kemmy_wounded") and char:has_military_force() and not char:is_wounded() and not char:is_politician() then
             return char:command_queue_index()
         end
     end
 
-    local cqi = 0
     self:error("WOUNDED KEMMY: Get Wounded CQI called, none found? Returning 0.")
-    return cqi
+    return 0
 end
 
 ---- run through the character list and get the CQI of the actual Kemmy character
@@ -1431,14 +1835,13 @@ function liche_manager:get_real_cqi()
         end
     end
 
-    local cqi = 0
     self:error("WOUNDED KEMMY: Get Real CQI called, none found? Returning 0.")
-    return cqi
+    return 0
 end
 
 ---- select one of a few spots for the Wounded Kemmy army to spawn
-function liche_manager:wounded_kemmy_coords() --> (number, number, string)
-    local regionNames = {
+function liche_manager:get_wounded_kemmy_coords() --> (number, number, string)
+    local region_names = {
         "wh2_main_albion_albion",
         "wh_main_tilea_miragliano",
         "wh_main_western_border_princes_myrmidens",
@@ -1454,14 +1857,14 @@ function liche_manager:wounded_kemmy_coords() --> (number, number, string)
         ["wh_main_the_wasteland_marienburg"] = {420, 434, 453, 462}
     }--: map<string, vector<number>>
 
-    local region = regionNames[cm:random_number(#regionNames, 1)]
-    local regionCoords = regions[region]
+    local region = region_names[cm:random_number(#region_names, 1)]
+    local region_coords = regions[region]
 
     local valid = false
 
     while not valid do
-        local x = cm:random_number(regionCoords[2], regionCoords[1])
-        local y = cm:random_number(regionCoords[4], regionCoords[3])
+        local x = cm:random_number(region_coords[2], region_coords[1])
+        local y = cm:random_number(region_coords[4], region_coords[3])
 
         if is_valid_spawn_point(x, y) then
             valid = true
@@ -1472,44 +1875,93 @@ function liche_manager:wounded_kemmy_coords() --> (number, number, string)
     return -1, -1, ""
 end
 
+--v method() --> (number, number, string)
+function liche_manager:get_wounded_kemmy_position()
+    --# assume self: LICHE_MANAGER
+
+    local wounded_kemmy_cqi = self:get_wounded_cqi()
+    local wounded_kemmy_obj = cm:get_character_by_cqi(wounded_kemmy_cqi)
+
+    if wounded_kemmy_obj:is_null_interface() then
+        return -1, -1, ""
+    end
+
+    return wounded_kemmy_obj:logical_position_x(), wounded_kemmy_obj:logical_position_y(), wounded_kemmy_obj:region():name()
+end
+
 ---- Called to kill Wounded Kemmy if the battle ends and Kemmler is still alive.
 --v method()
 function liche_manager:kill_wounded_kemmy()
     --# assume self: LICHE_MANAGER
-    self:log("WOUNDED KEMMLER: Killing wounded Kemmy.")
-    local cqi = self:get_wounded_cqi()
-    local char = cm:get_character_by_cqi(cqi)
-    cm:disable_event_feed_events(true, "", "", "character_dies_in_action")
-    if not char then
-        --# assume cqi: number
-        self:error("WOUNDED KEMMLER: Kill Wounded Kemmy failed, char with CQI ["..cqi.."] unfound. Investigate!")
-        return
+    self:log("WOUNDED KEMMY: Killing wounded Kemmy.")
+
+    -- hide killed
+    cm:disable_event_feed_events(true, "wh_event_category_character", "", "")
+
+    -- Kill ALL wounded kemmies in the faction
+    local char_list = cm:get_faction(self._faction_key):character_list()
+    for i = 0, char_list:num_items() - 1 do
+        local char = char_list:item_at(i)
+        local cqi = char:command_queue_index()
+
+        if char:character_subtype("AK_hobo_kemmy_wounded") then
+            cm:set_character_immortality("character_cqi:"..cqi, false)
+            cm:kill_character_and_commanded_unit("character_cqi:"..cqi, true, false)
+            cm:callback(function()
+                cm:kill_character_and_commanded_unit("character_cqi:"..cqi, true, false)
+            end, 0.1)
+        end
     end
-    if not char:character_subtype("AK_hobo_kemmy_wounded") then
-        --# assume cqi: number
-        self:error("WOUNDED KEMMLER: Kill Wounded Kemmy failed, char with CQI ["..cqi.."] does not have the correct subtype. Investigate!")
-        return
-    end
-    cm:kill_character(cqi, true, false)
-    cm:callback(function() cm:disable_event_feed_events(false, "", "", "character_dies_in_action") end, 1)
+
+    -- reset the respawn details to default
+    self:set_respawn_pending(false)
+    self:set_unit_list("")
+    self:set_turn_to_spawn(0)
+    
+    cm:callback(function() 
+        cm:disable_event_feed_events(false, "wh_event_category_character", "", "") 
+        self:refresh_upkeep_penalty()
+    end, 3)
 end
 
--- TODO test that this works between saves
 ---- Called to establish the countdown until the wounded kemmy is killed and real kemmy is revived!
 ---- Wounded Kemmy is spawned elsewhere, this method simply costs the life and tracks the 
---v method(turn: number, unit_list: string)
-function liche_manager:respawn_kemmy(turn, unit_list)
+--v method(turn: number)
+function liche_manager:respawn_kemmy(turn)
     --# assume self: LICHE_MANAGER
-    self._turn_to_spawn = turn + 5
+
+    self:set_turn_to_spawn(turn + 5)
+    self:set_respawn_pending(false)
 
     self:log("WOUNDED KEMMY: Kemmler wounded on turn ["..turn.."], and will be revived on turn ["..(turn + 5).."].")
-    self:log("WOUNDED KEMMY: Removing the stored life.")
 
+    self:log("WOUNDED KEMMY: Removing the stored life.")
     self:spend_life()
 
-    local kemmy_cqi = self:get_real_cqi()
+    -- teleport Wounded Kemmy onto the map, and then trigger an event displaying their location
+    local wounded_kemmy_cqi = self:get_wounded_cqi()
+    local wounded_kemmy_obj = cm:get_character_by_cqi(wounded_kemmy_cqi)
 
-    self._unit_list = unit_list
+    local x, y, region_key = self:get_wounded_kemmy_coords()
+
+    cm:remove_effect_bundle_from_characters_force("AK_hobo_wounded_kemmy", wounded_kemmy_cqi)
+
+    cm:teleport_to("character_cqi:"..wounded_kemmy_cqi, x, y, false)
+
+    local event_string_base = "event_feed_strings_text_AK_hobo_wounded_"
+
+    cm:show_message_event_located(
+        self._faction_key,
+        event_string_base .. "primary_detail",
+        event_string_base .. "secondary_detail",
+        event_string_base .. "flavour_text",
+        x,
+        y,
+        true,
+        130
+    )
+
+    self:log("WOUNDED KEMMY: Wounded Kemmler spawned at ("..x..","..y.."), in ["..region_key.."].")
 end
 
 ---- Build a basic army for the Wounded Kemmy temporary spawn
@@ -1530,23 +1982,49 @@ function liche_manager:wounded_kemmy_unit_list()
 end
 
 ---- Spawn Wounded Kemmy off-screen when Kemmler is in a pending battle and has at least one life.
---v method(x: number, y: number, kem_cqi: CA_CQI, position: string)
-function liche_manager:spawn_wounded_kemmy(x, y, kem_cqi, position)
+--v method(kem_cqi: CA_CQI, og_unit_list: string)
+function liche_manager:spawn_wounded_kemmy(kem_cqi, og_unit_list)
     --# assume self: LICHE_MANAGER
+
+    local difficulty = cm:model():combined_difficulty_level();
+	
+	local effect_bundle = "wh_main_bundle_force_additional_army_upkeep_easy";				-- easy
+	
+	if difficulty == 0 then
+		effect_bundle = "wh_main_bundle_force_additional_army_upkeep_normal";				-- normal
+	elseif difficulty == -1 then
+		effect_bundle = "wh_main_bundle_force_additional_army_upkeep_hard";					-- hard
+	elseif difficulty == -2 then
+		effect_bundle = "wh_main_bundle_force_additional_army_upkeep_very_hard";			-- very hard
+	elseif difficulty == -3 then
+		effect_bundle = "wh_main_bundle_force_additional_army_upkeep_legendary";			-- legendary
+	end;
 
     local unit_list = self:wounded_kemmy_unit_list()
 
-    local spawnX, spawnY, spawnRegion = self:wounded_kemmy_coords()
-    if spawnRegion == "" then
-        self:error("WOUNDED KEMMY: Spawn Wounded Kemmy called but the coordinates returned were -1, -1. Investigate!")
-    end
+    local kem_x, kem_y, kem_region
+    local kem_obj = cm:get_character_by_cqi(kem_cqi)
+
+    kem_x = kem_obj:logical_position_x()
+    kem_y = kem_obj:logical_position_y()
+    kem_region = kem_obj:region():name()
+
+    spawn_x, spawn_y = cm:find_valid_spawn_location_for_character_from_position(self._faction_key, kem_x, kem_y, true, 7)
+
+    -- setup details for the game to save 
+    self:set_unit_list(og_unit_list)
+    self:set_respawn_pending(true)
+
+    cm:disable_event_feed_events(true, "wh_event_category_diplomacy", "", "")
+
+    cm:take_shroud_snapshot()
 
     cm:create_force_with_general(
         self._faction_key,
         unit_list,
-        spawnRegion,
-        spawnX,
-        spawnY,
+        kem_region,
+        1,
+        1,
         "general",
         "AK_hobo_kemmy_wounded",
         "names_name_2147345320",
@@ -1555,14 +2033,45 @@ function liche_manager:spawn_wounded_kemmy(x, y, kem_cqi, position)
         "",
         false,
         function(cqi)
-            -- for later? idk
+            local obj = cm:get_character_by_cqi(cqi)
+
+            cm:apply_effect_bundle_to_characters_force("AK_hobo_wounded_kemmy", cqi, -1, false)
+
+            -- teleport off-screen!
+            cm:restore_shroud_from_snapshot()
+
+            cm:callback(function()
+
+                self:log("WOUNDED KEMMY: Wounded Kem at ("..obj:logical_position_x()..", "..obj:logical_position_y()..").")
+
+                cm:set_character_immortality("character_cqi:"..cqi, false)
+
+
+                cm:callback(function()
+                    -- prevent Wounded Kemmy from counting towards the upkeep penalty
+                    cm:remove_effect_bundle_from_characters_force(effect_bundle, cqi)
+
+                    -- rebable the event for trespassing n stuff
+                    cm:disable_event_feed_events(false, "wh_event_category_diplomacy", "", "")
+                end, 0.2)
+            end, 0.1)
         end
     )
-
 end
 
--- initialize the actual manager, now that everything is loaded
-liche_manager.init()
+-- make sure it's global! Also, initialize the logfile.
+
+liche_manager:log_init()
+
+liche_manager:load_module("log", "helpers")
+liche_manager:load_module("utility", "helpers")
+liche_manager:load_module("ror", "modules")
+liche_manager:load_module("ruins", "modules")
+
+--v function() --> LICHE_MANAGER
+function get_lichemanager()
+    return liche_manager
+end
 
 -- needed for some of the external files, since these apparently don't exist in the global env?
 _G.UIComponent = UIComponent
@@ -1576,16 +2085,14 @@ _G.output_uicomponent = output_uicomponent
 -- save details 
 cm:add_saving_game_callback(
     function(context)
-        cm:save_named_value("lichemaster_can_recruit_lord_table", _G._LICHEMANAGER._can_recruit_lord, context)
-        cm:save_named_value("lichemaster_hero_spawn_rank_increase", _G._LICHEMANAGER._hero_spawn_rank_increase, context)
-        cm:save_named_value("lichemaster_turn_to_spawn", _G._LICHEMANAGER._turn_to_spawn, context)
-        cm:save_named_value("lichemaster_unit_list", _G._LICHEMANAGER._unit_list, context)
-        cm:save_named_value("lichemaster_num_ruins_defiled", _G._LICHEMANAGER._num_ruins_defiled, context)
-        cm:save_named_value("lichemaster_num_razed_settlements", _G._LICHEMANAGER._num_razed_settlements, context)
-        cm:save_named_value("lichemaster_remaining_max_lives", _G._LICHEMANAGER._remaining_max_lives, context)
-        cm:save_named_value("lichemaster_is_draesca_unlocked", _G._LICHEMANAGER._is_draesca_unlocked, context)
-        cm:save_named_value("lichemaster_is_nameless_unlocked", _G._LICHEMANAGER._is_nameless_unlocked, context)
-        cm:save_named_value("lichemaster_is_priestess_unlocked", _G._LICHEMANAGER._is_priestess_unlocked, context)
+        cm:save_named_value("lichemaster_last_turn_lives_changed", liche_manager._last_turn_lives_changed, context)
+        cm:save_named_value("lichemaster_num_ruins_defiled", liche_manager._num_ruins_defiled, context)
+        cm:save_named_value("lichemaster_num_razed_settlements", liche_manager._num_razed_settlements, context)
+
+        cm:save_named_value("lichemaster_respawn_details", liche_manager._respawn_details, context)
+        cm:save_named_value("lichemaster_ruins", liche_manager._ruins, context)
+        cm:save_named_value("lichemaster_regiments", liche_manager._regiments, context)
+        cm:save_named_value("lichemaster_lords", liche_manager._lords, context)
     end
 )
 
@@ -1593,16 +2100,24 @@ cm:add_saving_game_callback(
 cm:add_loading_game_callback(
     function(context)
         if not cm:is_new_game() then
-            _G._LICHEMANAGER._can_recruit_lord = cm:load_named_value("lichemaster_can_recruit_lord_table", {}, context)
-            _G._LICHEMANAGER._turn_to_spawn = cm:load_named_value("lichemaster_turn_to_spawn", 0, context)
-            _G._LICHEMANAGER._unit_list = cm:load_named_value("lichemaster_unit_list", "", context)
-            _G._LICHEMANAGER._num_ruins_defiled = cm:load_named_value("lichemaster_num_ruins_defiled", 0, context)
-            _G._LICHEMANAGER._num_razed_settlements = cm:load_named_value("lichemaster_num_razed_settlements", 0, context)
-            _G._LICHEMANAGER._hero_spawn_rank_increase = cm:load_named_value("lichemaster_hero_spawn_rank_increase", 0, context)
-            _G._LICHEMANAGER._remaining_max_lives = cm:load_named_value("lichemaster_remaining_max_lives", 3, context)
-            _G._LICHEMANAGER._is_draesca_unlocked = cm:load_named_value("lichemaster_is_draesca_unlocked", false, context)
-            _G._LICHEMANAGER._is_nameless_unlocked = cm:load_named_value("lichemaster_is_nameless_unlocked", false, context)
-            _G._LICHEMANAGER._is_priestess_unlocked = cm:load_named_value("lichemaster_is_priestess_unlocked", false, context)
+            liche_manager._last_turn_lives_changed = cm:load_named_value("lichemaster_last_turn_lives_changed", 0, context)
+            liche_manager._num_ruins_defiled = cm:load_named_value("lichemaster_num_ruins_defiled", 0, context)
+            liche_manager._num_razed_settlements = cm:load_named_value("lichemaster_num_razed_settlements", 0, context)
+
+            liche_manager._respawn_details = cm:load_named_value("lichemaster_respawn_details", {}, context)
+            liche_manager._ruins = cm:load_named_value("lichemaster_ruins", {}, context)
+            liche_manager._regiments = cm:load_named_value("lichemaster_regiments", {}, context)
+            liche_manager._lords = cm:load_named_value("lichemaster_lords", {}, context)
+
+            for key, regiment in pairs(liche_manager._regiments) do
+                --# assume regiment: table
+                liche_manager:instantiate_existing_regiment(key, regiment)
+            end
+
+            for key, lord in pairs(liche_manager._lords) do
+                --# assume lord: table
+                liche_manager:instantiate_existing_lord(key, lord)
+            end
         end
     end
 )

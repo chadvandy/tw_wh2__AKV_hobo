@@ -161,9 +161,3 @@ function trigger_in_vampires_raising_dead_advice()
 		}
 	)
 end;
-
---[[
-	TODO
-		- replace the vanilla Chapter Objectives - capturing settlements? pah.
-		- go through and disable antiquated advice
-]]

@@ -173,6 +173,11 @@
 					<unit_capabilities>
 					</unit_capabilities>
 					<unit_experience level="0"/>
+				<general>
+					<name>666777900</name>
+					<star_rating level = "0"/>
+					<portrait>ui/portraits/portholes/no_culture/AK_hobo_ror_jacsen.png</portrait>
+				</general>
 				</unit>
 
 				<unit script_name="jacsen">
@@ -183,11 +188,6 @@
 					<unit_capabilities>
 					</unit_capabilities>
 					<unit_experience level="0"/>
-				<general>
-					<name>666777900</name>
-					<star_rating level = "0"/>
-					<portrait>ui/portraits/portholes/no_culture/AK_hobo_ror_jacsen.png</portrait>
-				</general>
 				</unit>
 				<unit script_name="jacsen">
 					<unit_type type="AK_hobo_barrow_guardians"/>
