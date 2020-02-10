@@ -1097,6 +1097,8 @@ function liche_init_listeners()
             "CharacterSelected",
             function(context)
                 return context:character():faction():name() == legion and cm:get_local_faction(true) == legion
+                -- required to prevent the Wounded Kemmy spawn from interrupting the internal tracking
+                and not lm:is_respawn_pending()
             end,
             function(context)
                 local char_obj = context:character()

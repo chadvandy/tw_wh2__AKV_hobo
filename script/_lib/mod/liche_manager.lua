@@ -2003,7 +2003,6 @@ function liche_manager:spawn_wounded_kemmy(kem_cqi, og_unit_list)
 
                 cm:set_character_immortality("character_cqi:"..cqi, false)
 
-
                 cm:callback(function()
                     -- prevent Wounded Kemmy from counting towards the upkeep penalty
                     cm:remove_effect_bundle_from_characters_force(effect_bundle, cqi)
