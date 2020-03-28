@@ -22,6 +22,10 @@ local LicheLog = lm:get_module_by_name("log")
 local function calculate_post_battle_np()
     -- get kemmler's CQI to check if he was in the battle
     local cqi = lm:get_real_cqi()
+    
+    if cqi == 0 then
+        return 0
+    end
 
     -- player variable is used to define which side the player was on, defense or offense
     local player --: string
