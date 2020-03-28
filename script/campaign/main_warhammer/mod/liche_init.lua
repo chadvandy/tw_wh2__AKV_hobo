@@ -1023,89 +1023,156 @@ function liche_init_listeners()
             true
         )
         
-        -- complicated lil' bugger
-        -- sets up the Ruins UI, the new button and the turn tracker, on the Settlement Captured screen, if it's a ruin
-        -- disables unwanted Occupation Options
         core:add_listener(
-            "LicheSettlementCapturedPanel",
-            "PanelOpenedCampaign",
+            "LicheBattleCompletedOccupyUI",
+            "ScriptEventPlayerWinsSettlementAttackBattle",
             function(context)
-                return context.string == "settlement_captured" and cm:get_local_faction(true) == legion
+                lm:log("TESTING 0000000")
+                local pb = context:pending_battle()
+                lm:log(cm:pending_battle_cache_faction_is_involved(legion))
+                lm:log(cm:get_local_faction(true) == legion)
+                lm:log(pb:seige_battle())
+                lm:log(pb:has_attacker())
+                lm:log(pb:attacker():faction():name() == legion)
+                return cm:pending_battle_cache_faction_is_involved(legion) and cm:get_local_faction(true) == legion and pb:seige_battle() and pb:has_attacker() and pb:attacker():faction():name() == legion --and pb:has_defender() -- Requires an actual garrisoned army, unnecessary
             end,
             function(context)
-                local root = core:get_ui_root()
-
-                local panel = find_uicomponent(core:get_ui_root(), "settlement_captured")
-                --local name = find_uicomponent(panel, "header_docker", "panel_subtitle", "settlement_name"):GetStateText()
-
-                local character_cqi = lm:get_character_in_battle_cqi()
-                if character_cqi == 0 then
-                    lm:error("LicheSettlementCapturedPanel listener trigger, but no character cqi has been saved. Aborting!")
-                    return
-                end
-
-                local character = cm:get_character_by_cqi(character_cqi)
-
-                if not character or character:is_null_interface() then
-                    lm:error("LicheSettlementCapturedPanel listener triggered, but no character from the Legion has been found. Aborting!")
-                    return
-                end
-
-                local region = character:region()
-
-                if region:is_null_interface() then
-                    lm:error("LicheSettlementCapturedPanel listener triggered, but the current selected character's region is null? Aborting!")
-                    return
-                end
-
+                lm:log("TESTING 111111")
+                local pb = context:pending_battle()
+                local region = pb:contested_garrison():region()
                 local region_key = region:name()
-                
-                if region:is_abandoned() then
-                    local search_ruins_button = find_uicomponent(panel, "1240")
-                    local resettle_button = find_uicomponent(panel, "948")
-                    local colonise_button = find_uicomponent(panel, "906")
-                    if not not search_ruins_button then 
-                        UTILITY.remove_component(search_ruins_button) 
-                    end
-                    if not lm:can_occupy_region(region_key) then
-                        -- remove occupation options
-                        if not not colonise_button then
-                            UTILITY.remove_component(colonise_button)
-                        end
-                        if not not resettle_button then
-                            UTILITY.remove_component(resettle_button)
-                        end
 
-                        lm:ruinsUI(region_key)
-                    else
-                        -- keep occupation options, passing the number in order to move the UIC over
-                        if not not colonise_button then
-                            lm:ruinsUI(region_key, "906")
-                        elseif not not resettle_button then
-                            lm:ruinsUI(region_key, "948")
-                        else
-                            lm:error("How did this happen?")
+                --[[local attacker = pb:attacker()
+
+                local char = attacker
+
+                local char_cqi = char:command_queue_index()]]
+
+                core:add_listener(
+                    "LicheSettlementCapturedPanel",
+                    "PanelOpenedCampaign",
+                    function(context)
+                        return context.string == "settlement_captured" and cm:get_local_faction(true) == legion
+                    end,
+                    function(context)
+                        local root = core:get_ui_root()
+        
+                        local panel = find_uicomponent(core:get_ui_root(), "settlement_captured")
+                        --local name = find_uicomponent(panel, "header_docker", "panel_subtitle", "settlement_name"):GetStateText()
+                                
+                        if not region:is_abandoned() then
+                            if not lm:can_occupy_region(region_key) then
+                                local loot_and_occupy_button = find_uicomponent(panel, "924")
+                                local occupy_button = find_uicomponent(panel, "930")
+                                local option_width, option_height = occupy_button:Width(), occupy_button:Height()
+                                if not not loot_and_occupy_button then
+                                    UTILITY.remove_component(loot_and_occupy_button)
+                                end
+                                if not not occupy_button then
+                                    UTILITY.remove_component(occupy_button)
+                                end
+                                -- fix the ugly stretch!
+                                panel:Resize(option_width * 2 + option_width / 3, panel:Height())
+                            end
                         end
-                    end
-                else
-                    -- get rid of occupation options 
-                    if not lm:can_occupy_region(region_key) then
-                        local loot_and_occupy_button = find_uicomponent(panel, "924")
-                        local occupy_button = find_uicomponent(panel, "930")
-                        local option_width, option_height = occupy_button:Width(), occupy_button:Height()
-                        if not not loot_and_occupy_button then
-                            UTILITY.remove_component(loot_and_occupy_button)
-                        end
-                        if not not occupy_button then
-                            UTILITY.remove_component(occupy_button)
-                        end
-                        -- fix the ugly stretch!
-                        panel:Resize(option_width * 2 + option_width / 3, panel:Height())
-                    end
-                end
+                    end,
+                    false
+                )
             end,
             true
-        ) 
+        )
+
+        -- all the stuff needed for the Ruins UI
+        core:add_listener(
+            "LicheRuinsDefileBarrowUI",
+            "CharacterCapturedSettlementUnopposed",
+            function(context)
+                return context:character():faction():name() == legion and cm:get_local_faction(true) == legion
+            end,
+            function(context)
+                local region = context:garrison_residence():region()
+                local region_key = region:name()
+
+                local character = context:character()
+                local character_cqi = character:command_queue_index()
+
+                core:add_listener(
+                    "LicheRuinsSettlemendCapturedPanel",
+                    "PanelOpenedCampaign",
+                    function(context)
+                        return context.string == "settlement_captured" and cm:get_local_faction(true) == legion
+                    end,
+                    function(context)
+                        local panel = UIComponent(context.component)
+
+                        if region:is_abandoned() then
+                            local search_ruins_button = find_uicomponent(panel, "1240")
+                            local resettle_button = find_uicomponent(panel, "948")
+                            local colonise_button = find_uicomponent(panel, "906")
+                            if not not search_ruins_button then 
+                                UTILITY.remove_component(search_ruins_button) 
+                            end
+                            if not lm:can_occupy_region(region_key) then
+                                -- remove occupation options
+                                if not not colonise_button then
+                                    UTILITY.remove_component(colonise_button)
+                                end
+                                if not not resettle_button then
+                                    UTILITY.remove_component(resettle_button)
+                                end
+        
+                                lm:ruinsUI(region_key)
+                            else
+                                -- keep occupation options, passing the number in order to move the UIC over
+                                if not not colonise_button then
+                                    lm:ruinsUI(region_key, "906")
+                                elseif not not resettle_button then
+                                    lm:ruinsUI(region_key, "948")
+                                else
+                                    lm:error("How did this happen?")
+                                end
+                            end
+        
+                            -- listens for an occupy option being pressed
+                            core:add_listener(
+                                "LicheOccupyButtonPressed",
+                                "ComponentLClickUp",
+                                function(context)
+                                    return context.string == "option_button" and cm:get_local_faction(true) == legion
+                                    --local component = find_uicomponent(core:get_ui_root(), "settlement_captured", "button_parent", "template_button_occupy", "option_button")
+                                end,
+                                function(context)
+                                    -- the Defile Barrow option has been pressed, do it. Otherwise, do nothing, just end the listener
+                                    if UIComponent(UIComponent(context.component):Parent()):Id() == "template_button_occupy" then
+                                        local button = find_uicomponent(panel, "button_parent", "915", "option_button")
+                                        button:SimulateLClick() -- click the "Do Nothing" button
+        
+                                        lm:defile_ruin(region_key, character_cqi) -- set the ruin as defiled
+                                    end
+                                end,
+                                false
+                            )
+                        else -- region is occupied, but with a dead garrison
+                            if not lm:can_occupy_region(region_key) then
+                                local loot_and_occupy_button = find_uicomponent(panel, "924")
+                                local occupy_button = find_uicomponent(panel, "930")
+                                local option_width, option_height = occupy_button:Width(), occupy_button:Height()
+                                if not not loot_and_occupy_button then
+                                    UTILITY.remove_component(loot_and_occupy_button)
+                                end
+                                if not not occupy_button then
+                                    UTILITY.remove_component(occupy_button)
+                                end
+                                -- fix the ugly stretch!
+                                panel:Resize(option_width * 2 + option_width / 3, panel:Height())
+                            end
+                        end
+                    end,
+                    false
+                )
+            end,
+            true
+        )
 
         -- char selected needed for a lot of mechanics, just tracks the last selected Legion character by the Legion
         core:add_listener(
@@ -1174,49 +1241,6 @@ function liche_init_listeners()
                 cm:callback(function()
                     lm:lord_pool_UI()
                 end, 0.1)
-            end,
-            true
-        )
-
-        -- listens for the custom occupy option being pressed
-        core:add_listener(
-            "LicheOccupyButtonPressed",
-            "ComponentLClickUp",
-            function(context)
-                local component = find_uicomponent(core:get_ui_root(), "settlement_captured", "button_parent", "template_button_occupy", "option_button")
-                return UIComponent(context.component) == component and cm:get_local_faction(true) == legion
-            end,
-            function(context)
-                -- no direct way to access the region, so we're reading UI, ugh. MUST BE DONE BEFORE THE SIMCLICK! DUH!
-                local panel = find_uicomponent(core:get_ui_root(), "settlement_captured")
-                
-                --local name = find_uicomponent(panel, "header_docker", "panel_subtitle", "settlement_name"):GetStateText()
-
-                local character_cqi = lm:get_character_in_battle_cqi()
-                if character_cqi == 0 then
-                    lm:error("LicheOccupyButtonPressed listener trigger, but no character cqi has been saved. Aborting!")
-                    return
-                end
-
-                local character = cm:get_character_by_cqi(character_cqi)
-
-                if not character or character:is_null_interface() then
-                    lm:error("LicheOccupyButtonPressed listener triggered, but no character from the Legion has been found. Aborting!")
-                    return
-                end
-
-                local region = character:region()
-                if region:is_null_interface() then
-                    lm:error("LicheOccupyButtonPressed listener triggered, but the character's region is null? Aborting!")
-                    return
-                end
-
-                local region_key = region:name()
-
-                local button = find_uicomponent(panel, "button_parent", "915", "option_button")
-                button:SimulateLClick() -- click the "Do Nothing" button
-
-                lm:defile_ruin(region_key) -- set the ruin as defiled
             end,
             true
         )

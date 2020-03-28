@@ -1060,7 +1060,7 @@ end
 
 ---- Link between the calculate_effect method and the methods that should be triggered, called directly from the liche_init file for now
 --v method(ruin: string)
-function liche_manager:apply_effect(ruin)
+function liche_manager:apply_effect(ruin, cqi)
     --# assume self: LICHE_MANAGER
     local effect = self:calculate_effect(ruin)
 
@@ -1083,7 +1083,7 @@ function liche_manager:apply_effect(ruin)
         end
     end
 
-    CampaignUI.TriggerCampaignScriptEvent(self:get_character_selected_cqi(), "lm_db|"..effect)
+    CampaignUI.TriggerCampaignScriptEvent(cqi, "lm_db|"..effect)
 
 end
 
@@ -1149,11 +1149,11 @@ end
 
 ---- Defile the ruin and apply the effect from defiling!
 --v method(ruin: string)
-function liche_manager:defile_ruin(ruin)
+function liche_manager:defile_ruin(ruin, cqi)
     --# assume self: LICHE_MANAGER
 
     -- run through the method that checks the "tier" of the ruin and applies the result - enemy/item/RoR/agent
-    self:apply_effect(ruin)
+    self:apply_effect(ruin, cqi)
 
     -- prevent this ruin from being defiled again
     self._ruins[ruin].is_locked = true
