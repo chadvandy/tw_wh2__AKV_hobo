@@ -22,7 +22,7 @@ local LicheLog = lm:get_module_by_name("log")
 local function calculate_post_battle_np()
     -- get kemmler's CQI to check if he was in the battle
     local cqi = lm:get_real_cqi()
-    
+
     if cqi == 0 then
         return 0
     end
@@ -1424,6 +1424,10 @@ function liche_init_listeners()
             end,
             function(context)
                 local np_result = calculate_post_battle_np()
+                if np_result == 0 then
+                    -- issue!
+                    return
+                end
 
                 cm:callback(function() 
                     local tt = find_uicomponent(core:get_ui_root(), "tooltip_captive_options")
