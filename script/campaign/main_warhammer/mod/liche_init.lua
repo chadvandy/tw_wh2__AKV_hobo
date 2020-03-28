@@ -1038,11 +1038,23 @@ function liche_init_listeners()
                 local panel = find_uicomponent(core:get_ui_root(), "settlement_captured")
                 --local name = find_uicomponent(panel, "header_docker", "panel_subtitle", "settlement_name"):GetStateText()
 
-                local character = cm:get_character_by_cqi(lm:get_character_selected_cqi())
+                local character_cqi = lm:get_character_in_battle_cqi()
+                if character_cqi == 0 then
+                    lm:error("LicheSettlementCapturedPanel listener trigger, but no character cqi has been saved. Aborting!")
+                    return
+                end
+
+                local character = cm:get_character_by_cqi(character_cqi)
+
+                if not character or character:is_null_interface() then
+                    lm:error("LicheSettlementCapturedPanel listener triggered, but no character from the Legion has been found. Aborting!")
+                    return
+                end
+
                 local region = character:region()
 
                 if region:is_null_interface() then
-                    lm:error("LicheRuinsUI listener triggered, but the current selected character's region is null? Aborting!")
+                    lm:error("LicheSettlementCapturedPanel listener triggered, but the current selected character's region is null? Aborting!")
                     return
                 end
 
@@ -1090,7 +1102,7 @@ function liche_init_listeners()
                         -- fix the ugly stretch!
                         panel:Resize(option_width * 2 + option_width / 3, panel:Height())
                     end
-                end                
+                end
             end,
             true
         ) 
@@ -1180,12 +1192,25 @@ function liche_init_listeners()
                 
                 --local name = find_uicomponent(panel, "header_docker", "panel_subtitle", "settlement_name"):GetStateText()
 
-                local character = cm:get_character_by_cqi(lm:get_character_selected_cqi())
+                local character_cqi = lm:get_character_in_battle_cqi()
+                if character_cqi == 0 then
+                    lm:error("LicheOccupyButtonPressed listener trigger, but no character cqi has been saved. Aborting!")
+                    return
+                end
+
+                local character = cm:get_character_by_cqi(character_cqi)
+
+                if not character or character:is_null_interface() then
+                    lm:error("LicheOccupyButtonPressed listener triggered, but no character from the Legion has been found. Aborting!")
+                    return
+                end
+
                 local region = character:region()
                 if region:is_null_interface() then
                     lm:error("LicheOccupyButtonPressed listener triggered, but the character's region is null? Aborting!")
                     return
                 end
+
                 local region_key = region:name()
 
                 local button = find_uicomponent(panel, "button_parent", "915", "option_button")
@@ -1241,6 +1266,34 @@ function liche_init_listeners()
                 
                 -- axe the wounded version and revert all the respawn details
                 lm:kill_wounded_kemmy()
+            end,
+            true
+        )
+
+        -- track character in pending battle for occupy/ruins/etc
+        core:add_listener(
+            "LicheTrackCharacterInBattle",
+            "PendingBattle",
+            function(context)
+                local pb = context:pending_battle()
+                if pb:has_attacker() and pb:has_defender() then
+                    local attacker_faction = pb:attacker():faction():name()
+                    local defender_faction = pb:defender():faction():name()
+                    return (attacker_faction == legion or defender_faction == legion) --and lm:can_revive()
+                end
+                return false
+            end,
+            function(context)
+                local pb = context:pending_battle()
+                local attacker = pb:attacker()
+                local defender = pb:defender()
+                local attacker_faction = attacker:faction():name()
+
+                if attacker_faction == legion then
+                    lm:set_character_in_battle_cqi(attacker:command_queue_index())
+                else
+                    lm:set_character_in_battle_cqi(defender:command_queue_index())
+                end
             end,
             true
         )

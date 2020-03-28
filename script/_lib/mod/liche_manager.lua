@@ -42,6 +42,9 @@ liche_manager._names = {names[1], names[2]}
 liche_manager._regiments = {}
 liche_manager._selected_legion = ""
 
+liche_manager._character_in_battle = 0
+liche_manager._character_selected = 0
+
 -- [[ LORDS ]]
 liche_manager._lords = {}
 
@@ -346,6 +349,14 @@ end
 function liche_manager:set_character_selected_cqi(cqi)
     --# assume self: LICHE_MANAGER
     self._character_selected = cqi
+end
+
+function liche_manager:get_character_in_battle_cqi()
+    return self._character_in_battle
+end
+
+function liche_manager:set_character_in_battle_cqi(cqi)
+    self._character_in_battle = cqi
 end
 
 ---- Internal function from the UI
@@ -2037,6 +2048,7 @@ cm:add_saving_game_callback(
         cm:save_named_value("lichemaster_last_turn_lives_changed", liche_manager._last_turn_lives_changed, context)
         cm:save_named_value("lichemaster_num_ruins_defiled", liche_manager._num_ruins_defiled, context)
         cm:save_named_value("lichemaster_num_razed_settlements", liche_manager._num_razed_settlements, context)
+        cm:save_named_value("lichemaster_character_in_battle", liche_manager._character_in_battle, context)
 
         cm:save_named_value("lichemaster_respawn_details", liche_manager._respawn_details, context)
         cm:save_named_value("lichemaster_ruins", liche_manager._ruins, context)
@@ -2052,6 +2064,7 @@ cm:add_loading_game_callback(
             liche_manager._last_turn_lives_changed = cm:load_named_value("lichemaster_last_turn_lives_changed", 0, context)
             liche_manager._num_ruins_defiled = cm:load_named_value("lichemaster_num_ruins_defiled", 0, context)
             liche_manager._num_razed_settlements = cm:load_named_value("lichemaster_num_razed_settlements", 0, context)
+            liche_manager._character_in_battle = cm:load_named_value("lichemaster_character_in_battle", 0, context)
 
             liche_manager._respawn_details = cm:load_named_value("lichemaster_respawn_details", {}, context)
             liche_manager._ruins = cm:load_named_value("lichemaster_ruins", {}, context)
