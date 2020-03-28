@@ -70,7 +70,7 @@ local function calculate_post_battle_np()
     -- divide value of defender and attacker armies, to get a multiplier for NP value, if the player wins
     -- base the amount of NP lost on how many troops were lost
 
-    local np_result
+    local np_result = 0
     if player == "attacker" then 
         if attacker_won then 
             local multiplier = defender_value / attacker_value 

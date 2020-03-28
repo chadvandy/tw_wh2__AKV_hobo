@@ -184,17 +184,6 @@ end;
 function setup_battle()
     cm:set_saved_value("lichemaster_intro_battle_completed", true)
 
-    --[[cm:win_next_autoresolve_battle("wh2_dlc11_vmp_the_barrow_legion")
-
-    cm:modify_next_autoresolve_battle(
-        1,
-        0,
-        1,
-        5,
-        true
-    )]]
-
-    --# assume remove_battle_script_override: function()
     remove_battle_script_override()
 
     cm:add_custom_battlefield(
