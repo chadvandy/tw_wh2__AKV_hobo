@@ -768,16 +768,31 @@ function liche_manager:revive_barrow_units(cqi)
 
     local mf = char:military_force()
     local unit_list = mf:unit_list()
+    local barrows = {} --: vector<string>
 
-    -- heal all barrow units in the army!
+    -- remove all barrow units from the army, and save them in the above table
     for i = 0, unit_list:num_items() - 1 do
         local unit = unit_list:item_at(i)
         if self:is_unit_barrow(unit:unit_key()) then
-            cm:set_unit_hp_to_unary_of_maximum(unit, 1)
+            table.insert(barrows, unit:unit_key())
+            cm:remove_unit_from_character(char_str, unit:unit_key())
         end
     end
 
-    self:log("DEFILE BARROW: Revived Barrow units for character with CQI ["..cqi.."].")
+    -- run through the above table and add new units back in
+    if not is_nil(barrows) and not is_nil(barrows[1]) then
+        for i = 1, #barrows do
+            cm:grant_unit_to_character(char_str, barrows[i])
+        end
+    end
+
+    -- remove the colonel that spawns from remove_unit_from_character()
+    cm:callback(function()
+        self:kill_colonel()
+    end, 0.1)
+
+    --# assume cqi: number -- I HATE DOING THIS 
+    self:log("DEFILE BARROW: Revived Barrow units for character with CQI ["..cqi.."] and killed that cruel Colonel.")
 end
 
 ---- random shot between spawning a Druid or Barrow King
