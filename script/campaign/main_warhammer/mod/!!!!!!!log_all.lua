@@ -33,3 +33,27 @@ end
 cm:add_first_tick_callback(function()
 
 end)
+
+
+-- Uncomment to check UIC methods
+--[[core:add_listener(
+	"anyclick",
+	"ComponentLClickUp",
+	true,
+	function(context)
+		out("CHECKING UIC METHODS")
+		local uic = UIComponent(context.component)
+		local mt = getmetatable(uic)
+		for name,f in pairs(mt) do
+		if is_function(f) then
+			out("uic:"..tostring(name).."()")
+		elseif name == "__index" and not is_function(f) then
+			for in_name, in_f in pairs(f) do
+				out("Found in index:")
+				out("uic:"..tostring(in_name).."()")
+			end
+		end
+		end
+	end,
+	false
+)]]
