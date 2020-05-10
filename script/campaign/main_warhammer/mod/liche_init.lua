@@ -1027,17 +1027,17 @@ function liche_init_listeners()
             "LicheBattleCompletedOccupyUI",
             "ScriptEventPlayerWinsSettlementAttackBattle",
             function(context)
-                lm:log("TESTING 0000000")
+                --lm:log("TESTING 0000000")
                 local pb = context:pending_battle()
-                lm:log(cm:pending_battle_cache_faction_is_involved(legion))
+                --[[lm:log(cm:pending_battle_cache_faction_is_involved(legion))
                 lm:log(cm:get_local_faction(true) == legion)
                 lm:log(pb:seige_battle())
                 lm:log(pb:has_attacker())
-                lm:log(pb:attacker():faction():name() == legion)
+                lm:log(pb:attacker():faction():name() == legion)]]
                 return cm:pending_battle_cache_faction_is_involved(legion) and cm:get_local_faction(true) == legion and pb:seige_battle() and pb:has_attacker() and pb:attacker():faction():name() == legion --and pb:has_defender() -- Requires an actual garrisoned army, unnecessary
             end,
             function(context)
-                lm:log("TESTING 111111")
+                --lm:log("TESTING 111111")
                 local pb = context:pending_battle()
                 local region = pb:contested_garrison():region()
                 local region_key = region:name()
