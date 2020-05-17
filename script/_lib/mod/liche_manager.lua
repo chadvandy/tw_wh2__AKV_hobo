@@ -1577,47 +1577,88 @@ end
 
 ---- Runs through the pool of lords, when that panel opens up, and hides any lord that isn't one of the legendary lords
 --v method()
-function liche_manager:lord_pool_UI()
-    --# assume self: LICHE_MANAGER
+function liche_manager:lord_pool_UI(type)
+    local panel = find_uicomponent("character_panel")
+    if not is_uicomponent(panel) then self:log("lord_pool_UI() called but the character panel doesn't exist! Err!") return false end
+    if type == "agent" then
+        local parent = find_uicomponent(panel, "agent_parent")
 
-    -- grab the listbox (scroll bar) and make sure it exists
-    local component = find_uicomponent(core:get_ui_root(), "character_panel", "general_selection_panel", "character_list_parent", "character_list", "listview", "list_clip", "list_box")
-    if not component then
-        self:error("lord_pool_UI() called, but the general candidate list is nonexistent!")
-        return
-    end
-
-    local selected = false
-
-    -- loop through all the UIC's found underneath the listbox
-    for i = 0, 20 do
-        local agent = find_uicomponent(component, "general_candidate_"..i.."_")
-
-        -- stop loop if there is not UIC with that name
-        if not agent then break end
-        
-        -- check the on-screen text
-        local subtype = find_uicomponent(agent, "dy_subtype"):GetStateText()
-
-        -- grab the localised strings for each LL (for the sake of non-English!)
-        local checks = {
-            [effect.get_localised_string("agent_subtypes_onscreen_name_override_AK_hobo_draesca")] = true,
-            [effect.get_localised_string("agent_subtypes_onscreen_name_override_AK_hobo_priestess")] = true,
-            [effect.get_localised_string("agent_subtypes_onscreen_name_override_AK_hobo_nameless")] = true,
-            [effect.get_localised_string("agent_subtypes_onscreen_name_override_vmp_heinrich_kemmler")] = true
-        } --: map<string, bool>
-
-        -- if the state text isn't the same as one of the four above, hide it
-        if not checks[subtype] then
-            agent:SetVisible(false)
-        else
-            if not selected then
-                -- select the top legendary lord, to prevent it from defaulting to a vanilla Vamp Lord
-                agent:SimulateLClick()
-                selected = true
+        -- hide the banshee/vampire tabs
+        local button_group = find_uicomponent(parent, "button_group_agents")
+        for i = 0, button_group:ChildCount() -1 do
+            local child = UIComponent(button_group:Find(i))
+            if child:Id() ~= "champion" and child:Id() ~= "wizard" then
+                child:SetVisible(false)
             end
         end
+
+        local nc = find_uicomponent("character_panel", "no_candidates_panel")
+        nc:SetVisible(false)
+    else
+
+        local component = find_uicomponent(core:get_ui_root(), "character_panel", "general_selection_panel", "character_list_parent", "character_list", "listview", "list_clip", "list_box")
+        if not component then
+            self:error("lord_pool_UI() called, but the general candidate list is nonexistent!")
+            return
+        end
+    
+        -- hide the boxes for non-Kemmy lord types
+        local lord_parent = find_uicomponent("character_panel", "lord_parent")
+        local box = find_uicomponent(lord_parent, "list_clip", "holder", "list_box")
+        for i = 0, box:ChildCount() -1 do
+            local child = UIComponent(box:Find(i))
+            if child:Id() ~= "kem_lords" and child:Id() ~= "vmp_legendary_lords" then
+                child:SetVisible(false)
+            end
+        end
+    
+        local selected = false
+    
+        -- loop through all the UIC's found underneath the listbox
+        for i = 0, 20 do
+            local agent = find_uicomponent(component, "general_candidate_"..i.."_")
+    
+            -- stop loop if there is not UIC with that name
+            if not agent then break end
+            
+            -- check the on-screen text
+            local subtype = find_uicomponent(agent, "dy_subtype"):GetStateText()
+    
+            -- grab the localised strings for each LL (for the sake of non-English!)
+            local checks = {
+                [effect.get_localised_string("agent_subtypes_onscreen_name_override_AK_hobo_draesca")] = true,
+                [effect.get_localised_string("agent_subtypes_onscreen_name_override_AK_hobo_priestess")] = true,
+                [effect.get_localised_string("agent_subtypes_onscreen_name_override_AK_hobo_nameless")] = true,
+                [effect.get_localised_string("agent_subtypes_onscreen_name_override_vmp_heinrich_kemmler")] = true
+            } --: map<string, bool>
+    
+            -- if the state text isn't the same as one of the four above, hide it
+            if not checks[subtype] then
+                agent:SetVisible(false)
+            else
+                if not selected then
+                    -- select the top legendary lord, to prevent it from defaulting to a vanilla Vamp Lord
+                    agent:SimulateLClick()
+                    selected = true
+                end
+            end
+        end
+    
+        -- trigger the "No Characters!" popup
+        local nc = find_uicomponent("character_panel", "no_candidates_panel")
+        if not selectd then
+            nc:SetVisible(true)
+            find_uicomponent("character_panel", "general_selection_panel"):SetVisible(false)
+
+            local tx = find_uicomponent(nc, "tx_reason")
+            tx:SetStateText("Unlock a Legendary Evil lord through the quests.")
+        else
+
+        end
     end
+
+
+
 
     self:log("LORDS: Hiding all candidates from the lord pool except for the legendary Barrow subtypes.")
 end

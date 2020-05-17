@@ -1197,14 +1197,14 @@ function liche_init_listeners()
                     lm:ror_UI(char_cqi)
 
                     -- in case there's a click from settlement to garrisoned lord
-                    lm:lord_lock_UI(false)
+                    -- lm:lord_lock_UI(false)
                 end, 0.1)
             end,
             true
         )
             
         -- lock the create army button if there's no available lords - prevents a glitch where you can recruit a locked general
-        core:add_listener(
+        --[[core:add_listener(
             "LicheHordePanel",
             "ComponentLClickUp",
             function(context)
@@ -1214,9 +1214,9 @@ function liche_init_listeners()
                 lm:lord_lock_UI(false)
             end,
             true
-        )
+        )]]
 
-        core:add_listener(
+        --[[core:add_listener(
             "LicheSettlementPanel",
             "PanelOpenedCampaign",
             function(context)
@@ -1228,18 +1228,67 @@ function liche_init_listeners()
                 end, 0.1)
             end,
             true
-        )
+        )]]
 
         -- hides all the unavailable lords in the create army panel
         core:add_listener(
-            "LicheGeneralUI2",
+            "LicheGeneralUI",
             "ComponentLClickUp",
             function(context)
                 return context.string == "button_create_army" and cm:get_local_faction(true) == legion
             end,
             function(context)
                 cm:callback(function()
-                    lm:lord_pool_UI()
+                    lm:lord_pool_UI("lord")
+                end, 0.1)
+            end,
+            true
+        )
+
+        core:add_listener(
+            "LicheGeneralUI",
+            "ComponentLClickUp",
+            function(context)
+                return context.string == "button_agents" and cm:get_local_faction(true) == legion
+            end,
+            function(context)
+                cm:callback(function()
+                    lm:lord_pool_UI("agent")
+                end, 0.1)
+            end,
+            true
+        )
+
+        core:add_listener(
+            "LicheAgentUI",
+            "ComponentLClickUp",
+            function(context)
+                return context.string == "wizard" or context.string == "champion" and UIComponent(UIComponent(context.component):Parent()):Id() == "button_group_agents" and cm:get_local_faction(true) == legion
+            end,
+            function(context)
+                local str = context.string
+                cm:callback(function()
+                    local list = find_uicomponent("character_panel", "agent_parent", "wizard_type", "type_list")
+
+                    if str == "wizard" then
+                        for i = 0, list:ChildCount() -1 do
+                            local child = UIComponent(list:Find(i))
+                            local id = tostring(child:Id())
+
+                            if not string.find(id, "AK_hobo_druid") then
+                                out("HIDING BOY: "..tostring(id))
+                                child:SetVisible(false)
+                            end
+                        end
+                    elseif str == "champion" then
+                        for i = 0, list:ChildCount() -1 do
+                            local child = UIComponent(list:Find(i))
+                            local id = child:Id()
+                            if not string.find(id, "AK_hobo_barrow_king") then
+                                child:SetVisible(false)
+                            end
+                        end
+                    end
                 end, 0.1)
             end,
             true

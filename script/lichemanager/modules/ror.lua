@@ -192,35 +192,37 @@ local function create_new_widget_box()
     local parchment = find_uicomponent(frame, "parchment")
 
     -- right box with selected unit & spawn button & np cost
-    parchment:CreateComponent("widget_main_box", "ui/kemmler/custom_image")
+    parchment:CreateComponent("widget_main_box", "ui/vandy_lib/custom_image_tiled")
     local widget_main_box = find_uicomponent(parchment, "widget_main_box")
-    widget_main_box:SetState("custom_state_1")
-    widget_main_box:SetImagePath("ui/skins/default/panel_leather_tile_blue.png")
+    widget_main_box:SetState("custom_state_2")
+    widget_main_box:SetImagePath("ui/skins/default/panel_leather_tile_blue.png", 1)
 
-    parchment:CreateComponent("widget_main_box_border", "ui/kemmler/custom_image")
+    parchment:CreateComponent("widget_main_box_border", "ui/vandy_lib/custom_image_tiled")
     local widget_main_box_border = find_uicomponent(parchment, "widget_main_box_border")
-    widget_main_box_border:SetState("custom_state_1")
-    widget_main_box_border:SetImagePath("ui/skins/default/panel_leather_frame_blue.png")
+    widget_main_box_border:SetState("custom_state_2")
+    widget_main_box_border:SetImagePath("ui/skins/default/panel_leather_frame_blue.png", 1)
 
     parchment:CreateComponent("widget_main_box_text", "ui/vandy_lib/black_text")
     local widget_main_box_text = find_uicomponent(parchment, "widget_main_box_text")
 
+    widget_main_box_text:PropagatePriority(widget_main_box:Priority() +20)
     widget_main_box_text:SetStateText("{{tr:kemmler_lou_selected_legion}}")
 
     -- left text box with the ui_tr's
-    parchment:CreateComponent("widget_text_box", "ui/kemmler/custom_image")
+    parchment:CreateComponent("widget_text_box", "ui/vandy_lib/custom_image_tiled")
     local widget_text_box = find_uicomponent(parchment, "widget_text_box")
-    widget_text_box:SetState("custom_state_1")
-    widget_text_box:SetImagePath("ui/skins/default/panel_leather_tile_blue.png")
+    widget_text_box:SetState("custom_state_2")
+    widget_text_box:SetImagePath("ui/skins/default/panel_leather_tile_blue.png", 1)
 
-    parchment:CreateComponent("widget_text_box_border", "ui/kemmler/custom_image")
+    parchment:CreateComponent("widget_text_box_border", "ui/vandy_lib/custom_image_tiled")
     local widget_text_box_border = find_uicomponent(parchment, "widget_text_box_border")
-    widget_text_box_border:SetState("custom_state_1")
-    widget_text_box_border:SetImagePath("ui/skins/default/panel_leather_frame_blue.png")
+    widget_text_box_border:SetState("custom_state_2")
+    widget_text_box_border:SetImagePath("ui/skins/default/panel_leather_frame_blue.png", 1)
 
     parchment:CreateComponent("widget_text_box_text", "ui/vandy_lib/black_text")
     local widget_text_box_text = find_uicomponent(parchment, "widget_text_box_text")
 
+    widget_text_box_text:PropagatePriority(widget_text_box:Priority() +20)
     widget_text_box_text:SetStateText("{{tr:kemmler_lou_legion_details}}")
 end
 
@@ -252,12 +254,18 @@ local function initialize_widget_text_box_components()
             text3 = "AK_hobo_units_barrow"
         end
 
-        parchment:CreateComponent("legions_of_undeath_middle_text", "ui/vandy_lib/black_text")
-        local middle_text = find_uicomponent(parchment, "legions_of_undeath_middle_text")
+        local middle_text = find_uicomponent(parchment, "legions_of_undead_middle_text")
+        if not is_uicomponent(middle_text) then
+            middle_text = UIComponent(parchment:CreateComponent("legions_of_undeath_middle_text", "ui/vandy_lib/black_text"))
+        end
+
         middle_text:SetStateText("[[col:alliance_neutral]]{{tr:"..text2.."}}[[/col]]")
 
-        parchment:CreateComponent("legions_of_undeath_bottom_text", "ui/vandy_lib/black_text")
         local bottom_text = find_uicomponent(parchment, "legions_of_undeath_bottom_text")
+        if not is_uicomponent(bottom_text) then
+            bottom_text = parchment:CreateComponent("legions_of_undeath_bottom_text", "ui/vandy_lib/black_text")
+        end
+
         bottom_text:SetStateText("[[col:alliance_neutral]]{{tr:"..text3.."}}[[/col]]")
 
 
@@ -316,21 +324,24 @@ local function initialize_widget_main_box_components()
     local parchment = find_uicomponent(frame, "parchment")
     local widget_main_box = find_uicomponent(parchment, "widget_main_box")
 
-    widget_main_box:CreateComponent("lichemaster_spawn_button", "ui/templates/square_large_text_button")
-    local spawn_button = find_uicomponent(widget_main_box, "lichemaster_spawn_button")
+    parchment:CreateComponent("lichemaster_spawn_button", "ui/templates/square_large_text_button")
+    local spawn_button = find_uicomponent(parchment, "lichemaster_spawn_button")
 
     local spawn_button_text = UIComponent(spawn_button:Find("button_txt"))
 
+    spawn_button:PropagatePriority(widget_main_box:Priority() +20)
     spawn_button:SetState("inactive")
     spawn_button:SetTooltipText("{{tr:kemmler_lou_spawn_button_tt_unselected}}", true)
     spawn_button_text:SetStateText("{{tr:kemmler_lou_spawn_button_default_text}}")
 
-    widget_main_box:CreateComponent("np_cost_icon", "ui/kemmler/custom_image")
-    local np_cost_icon = find_uicomponent(widget_main_box, "np_cost_icon")
+    parchment:CreateComponent("np_cost_icon", "ui/vandy_lib/custom_image")
+    local np_cost_icon = find_uicomponent(parchment, "np_cost_icon")
     np_cost_icon:SetState("custom_state_1")
     np_cost_icon:SetInteractive(true)
     np_cost_icon:SetImagePath("ui/kemmler/AK_hobo_necropowa_lou_cost.png")
     np_cost_icon:SetTooltipText(effect.get_localised_string("pooled_resources_display_name_necropower"), true)
+
+    np_cost_icon:PropagatePriority(widget_main_box:Priority() +20)
 
     np_cost_icon:SetCanResizeHeight(true)
     np_cost_icon:SetCanResizeWidth(true)
@@ -345,15 +356,17 @@ local function initialize_widget_main_box_components()
 
     --v function(text: string)
     local function set_selected_text(text)
-        local widget_main_box = find_uicomponent(core:get_ui_root(), "legions_of_undeath", "parchment", "widget_main_box")
-        local existing_text = find_uicomponent(widget_main_box, "legions_of_undeath_selected_text")
+        local parchment = find_uicomponent(core:get_ui_root(), "legions_of_undeath", "parchment")
+        local existing_text = find_uicomponent(parchment, "legions_of_undeath_selected_text")
         if existing_text then
             UTILITY.remove_component(existing_text)
         end
 
-        widget_main_box:CreateComponent("legions_of_undeath_selected_text", "ui/vandy_lib/black_text")
-        local new_text = find_uicomponent(widget_main_box, "legions_of_undeath_selected_text")
+        parchment:CreateComponent("legions_of_undeath_selected_text", "ui/vandy_lib/black_text")
+        local new_text = find_uicomponent(parchment, "legions_of_undeath_selected_text")
         new_text:SetStateText("[[col:alliance_neutral]]"..text.."[[/col]]")
+        
+        new_text:PropagatePriority(widget_main_box:Priority() +20)
               
         box_x, box_y = widget_main_box:Position()
         box_width, box_height = widget_main_box:Width(), widget_main_box:Height()
@@ -366,7 +379,7 @@ local function initialize_widget_main_box_components()
 
     --v function(state: string)
     local function set_button_state(state)
-        local spawn_button_uic = find_uicomponent(core:get_ui_root(), "legions_of_undeath", "parchment", "widget_main_box", "lichemaster_spawn_button")
+        local spawn_button_uic = find_uicomponent(core:get_ui_root(), "legions_of_undeath", "parchment", "lichemaster_spawn_button")
         local spawn_button_text = UIComponent(spawn_button_uic:Find("button_txt"))
         if state == "active" then
             spawn_button_uic:SetState("active")
@@ -389,7 +402,7 @@ local function initialize_widget_main_box_components()
                     else
                         if lm:get_regiment_status(key) == "AVAILABLE" then
                             lm:spawn_ror_for_character(selected_cqi, key)
-                            local spawn_button_uic = find_uicomponent(core:get_ui_root(), "legions_of_undeath", "parchment", "widget_main_box", "lichemaster_spawn_button")
+                            local spawn_button_uic = find_uicomponent(core:get_ui_root(), "legions_of_undeath", "parchment", "lichemaster_spawn_button")
                             if not spawn_button_uic then
                                 lm:error("In ror.lua, spawnButtonUIC is not found. WHY?")
                             else
