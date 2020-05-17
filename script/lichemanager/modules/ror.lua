@@ -254,7 +254,7 @@ local function initialize_widget_text_box_components()
             text3 = "AK_hobo_units_barrow"
         end
 
-        local middle_text = find_uicomponent(parchment, "legions_of_undead_middle_text")
+        local middle_text = find_uicomponent(parchment, "legions_of_undeath_middle_text")
         if not is_uicomponent(middle_text) then
             middle_text = UIComponent(parchment:CreateComponent("legions_of_undeath_middle_text", "ui/vandy_lib/black_text"))
         end
@@ -263,7 +263,7 @@ local function initialize_widget_text_box_components()
 
         local bottom_text = find_uicomponent(parchment, "legions_of_undeath_bottom_text")
         if not is_uicomponent(bottom_text) then
-            bottom_text = parchment:CreateComponent("legions_of_undeath_bottom_text", "ui/vandy_lib/black_text")
+            bottom_text = UIComponent(parchment:CreateComponent("legions_of_undeath_bottom_text", "ui/vandy_lib/black_text"))
         end
 
         bottom_text:SetStateText("[[col:alliance_neutral]]{{tr:"..text3.."}}[[/col]]")
@@ -357,13 +357,16 @@ local function initialize_widget_main_box_components()
     --v function(text: string)
     local function set_selected_text(text)
         local parchment = find_uicomponent(core:get_ui_root(), "legions_of_undeath", "parchment")
-        local existing_text = find_uicomponent(parchment, "legions_of_undeath_selected_text")
+        --[[local existing_text = find_uicomponent(parchment, "legions_of_undeath_selected_text")
         if existing_text then
             UTILITY.remove_component(existing_text)
+        end]]
+
+        local new_text = find_uicomponent(parchment, "legions_of_undeath_selected_text")
+        if not is_uicomponent(new_text) then
+            new_text = UIComponent(parchment:CreateComponent("legions_of_undeath_selected_text", "ui/vandy_lib/black_text"))
         end
 
-        parchment:CreateComponent("legions_of_undeath_selected_text", "ui/vandy_lib/black_text")
-        local new_text = find_uicomponent(parchment, "legions_of_undeath_selected_text")
         new_text:SetStateText("[[col:alliance_neutral]]"..text.."[[/col]]")
         
         new_text:PropagatePriority(widget_main_box:Priority() +20)

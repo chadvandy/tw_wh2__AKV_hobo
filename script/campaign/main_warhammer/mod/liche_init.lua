@@ -1276,7 +1276,6 @@ function liche_init_listeners()
                             local id = tostring(child:Id())
 
                             if not string.find(id, "AK_hobo_druid") then
-                                out("HIDING BOY: "..tostring(id))
                                 child:SetVisible(false)
                             end
                         end
@@ -1288,6 +1287,14 @@ function liche_init_listeners()
                                 child:SetVisible(false)
                             end
                         end
+                    end
+
+                    local nc = find_uicomponent("character_panel", "no_candidates_panel")
+                    --nc:SetVisible(false)
+            
+                    if nc:Visible() then
+                        local nc_tx = find_uicomponent(nc, "tx_reason")
+                        nc_tx:SetStateText("Unlock agents through Defiling Barrows.")
                     end
                 end, 0.1)
             end,

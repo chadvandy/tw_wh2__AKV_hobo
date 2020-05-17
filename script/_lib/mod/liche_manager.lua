@@ -1592,8 +1592,24 @@ function liche_manager:lord_pool_UI(type)
             end
         end
 
+        local list = find_uicomponent(parent, "wizard_type", "type_list")
+
+        for i = 0, list:ChildCount() -1 do
+            local child = UIComponent(list:Find(i))
+            local id = tostring(child:Id())
+
+            if not string.find(id, "AK_hobo_druid") then
+                child:SetVisible(false)
+            end
+        end
+
         local nc = find_uicomponent("character_panel", "no_candidates_panel")
-        nc:SetVisible(false)
+        --nc:SetVisible(false)
+
+        if nc:Visible() then
+            local nc_tx = find_uicomponent(nc, "tx_reason")
+            nc_tx:SetStateText("Unlock agents through Defiling Barrows.")
+        end
     else
 
         local component = find_uicomponent(core:get_ui_root(), "character_panel", "general_selection_panel", "character_list_parent", "character_list", "listview", "list_clip", "list_box")
