@@ -1062,8 +1062,8 @@ function liche_init_listeners()
                                 
                         if not region:is_abandoned() then
                             if not lm:can_occupy_region(region_key) then
-                                local loot_and_occupy_button = find_uicomponent(panel, "924")
-                                local occupy_button = find_uicomponent(panel, "930")
+                                local loot_and_occupy_button = find_uicomponent(panel, "9819842")
+                                local occupy_button = find_uicomponent(panel, "9819843")
                                 local option_width, option_height = occupy_button:Width(), occupy_button:Height()
                                 if not not loot_and_occupy_button then
                                     UTILITY.remove_component(loot_and_occupy_button)
@@ -1107,8 +1107,8 @@ function liche_init_listeners()
 
                         if region:is_abandoned() then
                             local search_ruins_button = find_uicomponent(panel, "1240")
-                            local resettle_button = find_uicomponent(panel, "948")
-                            local colonise_button = find_uicomponent(panel, "906")
+                            local resettle_button = find_uicomponent(panel, "9819844")
+                            local colonise_button = find_uicomponent(panel, "9819841")
                             if not not search_ruins_button then 
                                 UTILITY.remove_component(search_ruins_button) 
                             end
@@ -1125,9 +1125,9 @@ function liche_init_listeners()
                             else
                                 -- keep occupation options, passing the number in order to move the UIC over
                                 if not not colonise_button then
-                                    lm:ruinsUI(region_key, "906")
+                                    lm:ruinsUI(region_key, "9819841")
                                 elseif not not resettle_button then
-                                    lm:ruinsUI(region_key, "948")
+                                    lm:ruinsUI(region_key, "9819844")
                                 else
                                     lm:error("How did this happen?")
                                 end
@@ -1154,8 +1154,8 @@ function liche_init_listeners()
                             )
                         else -- region is occupied, but with a dead garrison
                             if not lm:can_occupy_region(region_key) then
-                                local loot_and_occupy_button = find_uicomponent(panel, "924")
-                                local occupy_button = find_uicomponent(panel, "930")
+                                local loot_and_occupy_button = find_uicomponent(panel, "9819842")
+                                local occupy_button = find_uicomponent(panel, "9819843")
                                 local option_width, option_height = occupy_button:Width(), occupy_button:Height()
                                 if not not loot_and_occupy_button then
                                     UTILITY.remove_component(loot_and_occupy_button)
@@ -1578,6 +1578,44 @@ function liche_init_listeners()
                     value:SetState('positive')
                     value:SetStateText('')
                 end, 0.1)
+            end,
+            true
+        )
+
+        -- display the Necromantic Power add from Sack
+        core:add_listener(
+            "LicheTTSet",
+            "PanelOpenedCampaign",
+            function(context)
+                return context.string == "settlement_captured" and cm:get_local_faction(true) == legion
+            end,
+            function(context)
+                local panel = find_uicomponent("settlement_captured")
+                if not is_uicomponent(panel) then
+                    -- wtf
+                    lm:error("LicheTTSet listener triggered but the panel doesn't exist")
+                    return false
+                end
+
+                local sack_button = find_uicomponent(panel, "button_parent", "956")
+                if not is_uicomponent(sack_button) then
+                    -- can't sack this settlement
+                    return false
+                end
+
+                local icon_parent = find_uicomponent(sack_button, "frame", "icon_parent")
+                local copy = find_uicomponent(icon_parent, "dy_income")
+
+                local np_uic = UIComponent(copy:CopyComponent("dy_necropower"))
+                local np_uic_icon = UIComponent(np_uic:Find("icon"))
+
+                local tt = effect.get_localised_string("pooled_resources_display_name_necropower").."||"..effect.get_localised_string("pooled_resources_description_necropower")
+
+                np_uic:SetTooltipText(tt, true)
+                np_uic:SetStateText(tostring(calculate_post_battle_np()))
+
+                np_uic_icon:SetTooltipText(tt, true)
+                np_uic_icon:SetImagePath('ui/kemmler/AK_hobo_necropowa_bullet.png')
             end,
             true
         )
