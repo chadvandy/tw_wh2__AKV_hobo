@@ -1662,7 +1662,7 @@ function liche_manager:lord_pool_UI(type)
     
         -- trigger the "No Characters!" popup
         local nc = find_uicomponent("character_panel", "no_candidates_panel")
-        if not selectd then
+        if not selected then
             nc:SetVisible(true)
             find_uicomponent("character_panel", "general_selection_panel"):SetVisible(false)
 
