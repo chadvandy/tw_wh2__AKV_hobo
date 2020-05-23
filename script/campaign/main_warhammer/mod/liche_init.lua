@@ -1263,7 +1263,7 @@ function liche_init_listeners()
             "LicheAgentUI",
             "ComponentLClickUp",
             function(context)
-                return context.string == "wizard" or context.string == "champion" and UIComponent(UIComponent(context.component):Parent()):Id() == "button_group_agents" and cm:get_local_faction(true) == legion
+                return (context.string == "wizard" or context.string == "champion") and UIComponent(UIComponent(context.component):Parent()):Id() == "button_group_agents" and cm:get_local_faction(true) == legion
             end,
             function(context)
                 local str = context.string
