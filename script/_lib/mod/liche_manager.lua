@@ -584,7 +584,8 @@ function liche_manager:is_landmark_region(region_name)
         ["wh_main_southern_badlands_galbaraz"] = true,
         ["wh2_main_the_chill_road_ghrond"] = true,
         ["wh2_main_devils_backbone_lahmia"] = true,
-        ["wh2_main_great_mortis_delta_black_pyramid_of_nagash"]  = true
+        ["wh2_main_great_mortis_delta_black_pyramid_of_nagash"]  = true,
+        ["wh2_main_the_broken_teeth_nagashizar"] = true
     }--:map<string, boolean>
 
     if landmarks[region_name] then
