@@ -1105,8 +1105,9 @@ function unit_card_obj:create_stat_unit_card_for_frontend()
             end
 
             do
-                local tm = get_tm()
-                tm:callback(function()
+                --local tm = get_tm()
+                --tm:callback(function()
+                local function do_it()
                     local effect_list = find_uicomponent(tooltip, "background", "effect_list")
 
                     local thing = find_uicomponent(tooltip, "background", "source_parent")
@@ -1228,7 +1229,12 @@ function unit_card_obj:create_stat_unit_card_for_frontend()
                         end
 
                     end
-                end, 10)
+                --end, 10)
+                end
+
+                core:add_listener("do", "RealTimeTrigger", function(context) return context.string == "do_it" end, function(context) do_it() end, false)
+
+                real_timer.register_singleshot("do_it", 0)
             end
 
 
@@ -1397,8 +1403,9 @@ function unit_card_manager:remove_frontend_unit_for_starting_general(frontend_un
             return context.string == starting_general
         end,
         function(context)
-            local timer_obj = get_tm()
-            timer_obj:callback(function()
+            --local timer_obj = get_tm()
+            --timer_obj:callback(function()
+            local function do_it()
                 local parent = find_uicomponent(core:get_ui_root(), "sp_grand_campaign", "dockers", "centre_docker", "lord_details_panel", "units", "start_units", "card_holder")
                 if parent then
                     local unit_card = find_uicomponent(parent, frontend_unit)
@@ -1406,7 +1413,11 @@ function unit_card_manager:remove_frontend_unit_for_starting_general(frontend_un
                         unit_card:SetVisible(false)
                     end
                 end
-            end, 10)
+            --end, 10)
+            end
+
+            core:add_listener("do_it", "RealTimeTrigger", function(context) return context.string == "do_it" end, function(context) do_it() end, false)
+            real_timer.register_singleshot("do_it", 0)
         end,
         true
     )
@@ -1442,8 +1453,9 @@ function unit_card_manager:add_frontend_unit_for_starting_general(unit_key, star
             return context.string == starting_general
         end,
         function(context)
-            local timer_obj = get_tm()
-            timer_obj:callback(function()
+            --local timer_obj = get_tm()
+            --timer_obj:callback(function()
+            local function do_it()
                 local parent = find_uicomponent(core:get_ui_root(), "sp_grand_campaign", "dockers", "centre_docker", "lord_details_panel", "units", "start_units", "card_holder")
                 unit_card:create_land_unit_card_for_frontend(parent)
                 local land_unit_uic = unit_card._land_card_uic
@@ -1451,7 +1463,11 @@ function unit_card_manager:add_frontend_unit_for_starting_general(unit_key, star
                 unit_card:add_uic_on_hover(land_unit_uic)
                 --local w, h = uic:Bounds()
                 --unit_stat_card:set_position_relative_to_uic_on_hover(w, h/2, "bottom_left")
-            end, 20)
+            --end, 20)
+            end
+
+            core:add_listener("do_it", "RealTimeTrigger", function(context) return context.string == "do_it" end, function(context) do_it() end, false)
+            real_timer.register_singleshot("do_it", 0)
         end,
         true
     )

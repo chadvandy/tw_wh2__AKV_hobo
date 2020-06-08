@@ -314,10 +314,11 @@ core:add_listener(
         return context.string == "Heinrich Kemmler" 
     end, 
     function(context)
-        local tm = get_tm()
-        tm:callback(function()
-            local root = core:get_ui_root()
-            local parent = find_uicomponent(root, "sp_grand_campaign", "dockers", "centre_docker", "lord_details_panel", "faction", "faction_traits", "effects", "listview", "list_clip", "list_box")
+        --local tm = get_tm()
+		--tm:callback(function()
+		local function do_it()
+			local root = core:get_ui_root()
+			local parent = find_uicomponent(root, "sp_grand_campaign", "dockers", "centre_docker", "lord_details_panel", "faction", "faction_traits", "effects", "listview", "list_clip", "list_box")
 			if is_uicomponent(parent) then
 				local kill1 = find_uicomponent(parent, "lord_effect6") kill1:SetVisible(false)
 				local kill2 = find_uicomponent(parent, "lord_effect10") kill2:SetVisible(false)
@@ -326,7 +327,22 @@ core:add_listener(
 				local kill5 = find_uicomponent(parent, "lord_effect8") kill5:SetVisible(false)
 				local kill6 = find_uicomponent(parent, "lord_effect11") kill6:SetVisible(false)
 			end
-        end, 50)
+		end
+
+		core:add_listener(
+			"trigger_timer",
+			"RealTimeTrigger",
+			function(context) 
+				return context.string == "do_it"
+			end,
+			function(context)
+				do_it()
+			end,
+			false
+		)
+
+		real_timer.register_singleshot("do_it", 0)
+        --end, 50)
     end,
     true
 )
