@@ -762,6 +762,18 @@ function lichemaster_postbattle_setup()
     add_missions_and_unlock_requirements()
     kill_extra_recruitment()
 
+    -- trigger the How To Play event
+    cm:show_message_event(
+        legion,
+        "event_feed_strings_text_wh2_scripted_event_how_they_play_title",
+        "factions_screen_name_"..legion,
+        "event_feed_strings_text_AK_hobo_how",
+        true,
+        594,
+        nil,
+        nil
+    )
+
     -- check to see if Jacsen survived pre-battle (delay to make sure the below stuff worked fine)
     cm:callback(function()
         jacsen_are_you_ok()
