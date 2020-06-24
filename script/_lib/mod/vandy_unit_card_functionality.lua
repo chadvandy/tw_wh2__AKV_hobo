@@ -1390,7 +1390,7 @@ end
 -- API STUFF
 
 --v method(frontend_unit: string, starting_general: string)
-function unit_card_manager:remove_frontend_unit_for_starting_general(frontend_unit, starting_general)
+function unit_card_manager:remove_frontend_unit_for_starting_general(frontend_unit, starting_general_id)
     if not core:is_frontend() then
         script_error("Remove Frontend Unit for Starting General called while the game isn't in the frontend!")
         return
@@ -1400,7 +1400,8 @@ function unit_card_manager:remove_frontend_unit_for_starting_general(frontend_un
         "ListenForLordSelected",
         "ComponentLClickUp",
         function(context)
-            return context.string == starting_general
+            local uic = UIComponent(context.component)
+            return uic:GetProperty("lord_key") == starting_general_id
         end,
         function(context)
             --local timer_obj = get_tm()
@@ -1434,23 +1435,23 @@ end
 
 
 --v method(unit_key: string, starting_general: string)
-function unit_card_manager:add_frontend_unit_for_starting_general(unit_key, starting_general)
+function unit_card_manager:add_frontend_unit_for_starting_general(unit_key, starting_general_id)
     --# assume self: VANDY_UCM
 
-    if not is_string(unit_key) or not is_string(starting_general) then
+    if not is_string(unit_key) or not is_string(starting_general_id) then
         script_error("Improper argument types!")
         return
     end
 
     local unit_card = self:get_unit_card_with_key(unit_key)
-
     
 
     core:add_listener(
         "AddUnitForFrontendLord",
         "ComponentLClickUp",
         function(context)
-            return context.string == starting_general
+            local uic = UIComponent(context.component)
+            return uic:GetProperty("lord_key") == starting_general_id
         end,
         function(context)
             --local timer_obj = get_tm()

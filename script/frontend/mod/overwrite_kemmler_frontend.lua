@@ -3,17 +3,17 @@ local unit_card_manager = core:get_static_object("vandy_unit_card_manager")
 
 unit_card_manager:remove_frontend_unit_for_starting_general(
 	"wh_main_vmp_mon_dire_wolves", 
-	"Heinrich Kemmler"
+	"2140783651"
 )
 
 unit_card_manager:remove_frontend_unit_for_starting_general(
 	"wh_main_vmp_inf_cairn_wraiths", 
-	"Heinrich Kemmler"
+	"2140783651"
 )
 
 unit_card_manager:remove_frontend_unit_for_starting_general(
 	"wh_main_vmp_cav_hexwraiths", 
-	"Heinrich Kemmler"
+	"2140783651"
 )
 
 unit_card_manager:new_unit_card(
@@ -108,7 +108,7 @@ unit_card_manager:add_ability_to_unit(
 
 unit_card_manager:add_frontend_unit_for_starting_general(
 	"AK_hobo_barrow_guardians", 
-	"Heinrich Kemmler"
+	"2140783651"
 )
 
 unit_card_manager:new_unit_card(
@@ -203,7 +203,7 @@ unit_card_manager:add_ability_to_unit(
 
 unit_card_manager:add_frontend_unit_for_starting_general(
 	"AK_hobo_hexwr", 
-	"Heinrich Kemmler"
+	"2140783651"
 )
 
 unit_card_manager:new_ui_unit_bullet_point_enum(
@@ -303,15 +303,16 @@ unit_card_manager:add_ability_to_unit(
 
 unit_card_manager:add_frontend_unit_for_starting_general(
 	"AK_hobo_glooms", 
-	"Heinrich Kemmler"
+	"2140783651"
 )
 
 -- hide the effects from vanilla
 core:add_listener(
     "HideKemmlerEffects",
     "ComponentLClickUp",
-    function(context) 
-        return context.string == "Heinrich Kemmler" 
+	function(context) 
+		local uic = UIComponent(context.component)
+        return uic:GetProperty("lord_key") == "2140783651"
     end, 
     function(context)
         --local tm = get_tm()
