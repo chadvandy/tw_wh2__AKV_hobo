@@ -45,7 +45,8 @@ bm:register_phase_change_callback(
             local start_deployment = find_uicomponent(core:get_ui_root(), "winds_of_magic", "pre_deployment_parent", "button_start_deployment")
             start_deployment:SimulateLClick()
             
-
+            
+            -- remotely necessary? TODO
                 local start_battle = find_uicomponent(core:get_ui_root(), "finish_deployment", "deployment_end_sp", "button_battle_start")
 
             core:add_listener(
