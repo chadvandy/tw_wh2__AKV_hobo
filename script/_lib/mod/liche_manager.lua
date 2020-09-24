@@ -71,22 +71,18 @@ function liche_manager:set_defile_debug(effect_option)
     --# assume self: LICHE_MANAGER
     local options = {
         --"effectBundle",
-        "spawnAgent",
-        "spawnRoR",
-        "item",
-        "enemy"
+        ["spawnAgent"] = true,
+        ["spawnRoR"] = true,
+        ["item"] = true,
+        ["enemy"] = true,
     }--: vector<string>
 
-    for i = 1, #options do
-        local option = options[i]
-        if effect_option == option then
-            self._defile_debug = effect_option
-            return
-        end
+    if options[effect_option] then
+        self._defile_debug = effect_option
+    else
+        self:error("set_defile_debug() called, but the argument passed isn't a defile option!")
+        self:error("Valid options are: 'spawnAgent', 'spawnRoR', 'item', and 'enemy'")
     end
-
-    self:error("set_defile_debug() called, but the argument passed isn't a defile option!")
-    self:error("Valid options are: 'spawnAgent', 'spawnRoR', 'item', and 'enemy'")
 end
 
 --v method()
