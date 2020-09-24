@@ -2014,12 +2014,16 @@ function liche_manager:spawn_wounded_kemmy(kem_cqi, og_unit_list)
 
     kem_x = kem_obj:logical_position_x()
     kem_y = kem_obj:logical_position_y()
-    -- TODO make sure this doesn't cause a break if in chaos wastes
-    kem_region = kem_obj:region():name()
+    
+    if not kem_obj:region():is_null_interface() then
+        kem_region = kem_obj:region():name()
+    else
+        kem_region = "wh_main_chaos_wastes"
+    end
 
-    spawn_x, spawn_y = cm:find_valid_spawn_location_for_character_from_position(self._faction_key, kem_x, kem_y, true, 7)
+    --local spawn_x, spawn_y = cm:find_valid_spawn_location_for_character_from_position(self._faction_key, kem_x, kem_y, true, 7)
 
-    -- setup details for the game to save 
+    -- setup details for the game to save
     self:set_unit_list(og_unit_list)
     self:set_respawn_pending(true)
 
