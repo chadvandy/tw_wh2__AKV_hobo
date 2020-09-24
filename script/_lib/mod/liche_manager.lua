@@ -2014,6 +2014,7 @@ function liche_manager:spawn_wounded_kemmy(kem_cqi, og_unit_list)
 
     kem_x = kem_obj:logical_position_x()
     kem_y = kem_obj:logical_position_y()
+    -- TODO make sure this doesn't cause a break if in chaos wastes
     kem_region = kem_obj:region():name()
 
     spawn_x, spawn_y = cm:find_valid_spawn_location_for_character_from_position(self._faction_key, kem_x, kem_y, true, 7)
@@ -2075,6 +2076,7 @@ liche_manager:load_module("ror", "modules")
 liche_manager:load_module("ruins", "modules")
 
 --v function() --> LICHE_MANAGER
+-- TODO use core:get_static_object, lil safer that way
 function get_lichemanager()
     return liche_manager
 end
