@@ -37,26 +37,48 @@ bm:register_phase_change_callback(
                 unit_id_holder_uic:SetVisible(false)
             end
 
+            -- hide the reinforcements in both prebattle and active battle
             local uic_reinforcements_parent = find_uicomponent(core:get_ui_root(), "layout", "radar_holder", "reinforcements_parent")
             if uic_reinforcements_parent then
                 uic_reinforcements_parent:SetVisible(false);
             end
+
+            local ping_parent = find_uicomponent(core:get_ui_root(), "layout", "ping_parent")
+            if ping_parent then
+                ping_parent:SetVisible(false)
+            end
+
+            -- bad ideas are bad
+            --[[local battle_orders = find_uicomponent(core:get_ui_root(), "layout", "battle_orders")
+            if battle_orders then
+                battle_orders:SetVisible(false)
+            end
+
+            local radar = find_uicomponent(core:get_ui_root(), "layout", "radar_holder", "radar_group", "radar")
+            if radar then
+                radar:SetVisible(false)
+            end]]
 
             local start_deployment = find_uicomponent(core:get_ui_root(), "winds_of_magic", "pre_deployment_parent", "button_start_deployment")
             start_deployment:SimulateLClick()
             
             
             -- remotely necessary? TODO
-                local start_battle = find_uicomponent(core:get_ui_root(), "finish_deployment", "deployment_end_sp", "button_battle_start")
+            --local start_battle = find_uicomponent(core:get_ui_root(), "finish_deployment", "deployment_end_sp", "button_battle_start")
 
             core:add_listener(
                 "deployment_begun",
                 "ComponentLClickUp",
                 function(context)
-                    return context.string = "button_battle_start"
+                    return context.string == "button_battle_start"
                 end,
                 function(context)
                     bm:callback(function() -- TODO find these UIC's anew within this callback
+                        local battle_uic = find_uicomponent(core:get_ui_root(), "battle")
+                        local unit_id_holder_uic = find_uicomponent(core:get_ui_root(), "unit_id_holder")
+                        local battle_orders = find_uicomponent(core:get_ui_root(), "layout", "battle_orders")
+                        local radar = find_uicomponent(core:get_ui_root(), "layout", "radar_holder", "radar_group", "radar")
+
                         if is_uicomponent(battle_uic) then
                             battle_uic:SetVisible(true)
                         end
@@ -64,11 +86,19 @@ bm:register_phase_change_callback(
                         if is_uicomponent(unit_id_holder_uic) then
                             unit_id_holder_uic:SetVisible(true)
                         end
-                    end, 0.5) -- TODO verify that bm callbacks take seconds and not milliseconds
+
+                        --[[if is_uicomponent(battle_orders) then
+                            battle_orders:SetVisible(false)
+                        end
+            
+                        if is_uicomponent(radar) then
+                            radar:SetVisible(false)
+                        end]]
+                    end, 100)
                 end,
                 false
             )
-        end, 1)
+        end, 1000)
     end
 )
 
