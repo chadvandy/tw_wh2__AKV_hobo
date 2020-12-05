@@ -305,7 +305,7 @@ local function add_pr_uic()
         end
     end
 
-    if cm:get_local_faction(true) == legion then
+    if cm:get_local_faction_name(true) == legion then
         create_uic()
         check_value()
     end
@@ -441,7 +441,7 @@ local function add_pr_uic()
         pooled_resource_key.."_value_changed",
         "PooledResourceEffectChangedEvent",
         function(context)
-            return context:faction():name() == legion and context:resource():key() == pooled_resource_key and context:faction():is_human() and cm:get_local_faction(true) == legion
+            return context:faction():name() == legion and context:resource():key() == pooled_resource_key and context:faction():is_human() and cm:get_local_faction_name(true) == legion
         end,
         function(context)
             check_value()
@@ -1086,11 +1086,11 @@ function liche_init_listeners()
                 --lm:log("TESTING 0000000")
                 local pb = context:pending_battle()
                 --[[lm:log(cm:pending_battle_cache_faction_is_involved(legion))
-                lm:log(cm:get_local_faction(true) == legion)
+                lm:log(cm:get_local_faction_name(true) == legion)
                 lm:log(pb:seige_battle())
                 lm:log(pb:has_attacker())
                 lm:log(pb:attacker():faction():name() == legion)]]
-                return cm:pending_battle_cache_faction_is_involved(legion) and cm:get_local_faction(true) == legion and pb:seige_battle() and pb:has_attacker() and pb:attacker():faction():name() == legion --and pb:has_defender() -- Requires an actual garrisoned army, unnecessary
+                return cm:pending_battle_cache_faction_is_involved(legion) and cm:get_local_faction_name(true) == legion and pb:seige_battle() and pb:has_attacker() and pb:attacker():faction():name() == legion --and pb:has_defender() -- Requires an actual garrisoned army, unnecessary
             end,
             function(context)
                 --lm:log("TESTING 111111")
@@ -1108,7 +1108,7 @@ function liche_init_listeners()
                     "LicheSettlementCapturedPanel",
                     "PanelOpenedCampaign",
                     function(context)
-                        return context.string == "settlement_captured" and cm:get_local_faction(true) == legion
+                        return context.string == "settlement_captured" and cm:get_local_faction_name(true) == legion
                     end,
                     function(context)
                         local root = core:get_ui_root()
@@ -1143,7 +1143,7 @@ function liche_init_listeners()
             "LicheRuinsDefileBarrowUI",
             "CharacterCapturedSettlementUnopposed",
             function(context)
-                return context:character():faction():name() == legion and cm:get_local_faction(true) == legion
+                return context:character():faction():name() == legion and cm:get_local_faction_name(true) == legion
             end,
             function(context)
                 local region = context:garrison_residence():region()
@@ -1156,7 +1156,7 @@ function liche_init_listeners()
                     "LicheRuinsSettlemendCapturedPanel",
                     "PanelOpenedCampaign",
                     function(context)
-                        return context.string == "settlement_captured" and cm:get_local_faction(true) == legion
+                        return context.string == "settlement_captured" and cm:get_local_faction_name(true) == legion
                     end,
                     function(context)
                         local panel = UIComponent(context.component)
@@ -1194,7 +1194,7 @@ function liche_init_listeners()
                                 "LicheOccupyButtonPressed",
                                 "ComponentLClickUp",
                                 function(context)
-                                    return context.string == "option_button" and cm:get_local_faction(true) == legion
+                                    return context.string == "option_button" and cm:get_local_faction_name(true) == legion
                                     --local component = find_uicomponent(core:get_ui_root(), "settlement_captured", "button_parent", "template_button_occupy", "option_button")
                                 end,
                                 function(context)
@@ -1235,7 +1235,7 @@ function liche_init_listeners()
             "LicheCharacterTracker",
             "CharacterSelected",
             function(context)
-                return context:character():faction():name() == legion and cm:get_local_faction(true) == legion
+                return context:character():faction():name() == legion and cm:get_local_faction_name(true) == legion
                 -- required to prevent the Wounded Kemmy spawn from interrupting the internal tracking
                 and not lm:is_respawn_pending()
             end,
@@ -1264,7 +1264,7 @@ function liche_init_listeners()
             "LicheHordePanel",
             "ComponentLClickUp",
             function(context)
-                return context.string == "tab_horde_buildings" and cm:get_local_faction(true) == legion
+                return context.string == "tab_horde_buildings" and cm:get_local_faction_name(true) == legion
             end,
             function(context)
                 lm:lord_lock_UI(false)
@@ -1276,7 +1276,7 @@ function liche_init_listeners()
             "LicheSettlementPanel",
             "PanelOpenedCampaign",
             function(context)
-                return context.string == "settlement_panel" and cm:get_local_faction(true) == legion
+                return context.string == "settlement_panel" and cm:get_local_faction_name(true) == legion
             end,
             function(context)
                 cm:callback(function()
@@ -1291,7 +1291,7 @@ function liche_init_listeners()
             "LicheGeneralUI",
             "ComponentLClickUp",
             function(context)
-                return context.string == "button_create_army" and cm:get_local_faction(true) == legion
+                return context.string == "button_create_army" and cm:get_local_faction_name(true) == legion
             end,
             function(context)
                 cm:callback(function()
@@ -1305,7 +1305,7 @@ function liche_init_listeners()
             "LicheGeneralUI",
             "ComponentLClickUp",
             function(context)
-                return context.string == "button_agents" and cm:get_local_faction(true) == legion
+                return context.string == "button_agents" and cm:get_local_faction_name(true) == legion
             end,
             function(context)
                 cm:callback(function()
@@ -1319,7 +1319,7 @@ function liche_init_listeners()
             "LicheAgentUI",
             "ComponentLClickUp",
             function(context)
-                return (context.string == "wizard" or context.string == "champion") and UIComponent(UIComponent(context.component):Parent()):Id() == "button_group_agents" and cm:get_local_faction(true) == legion
+                return (context.string == "wizard" or context.string == "champion") and UIComponent(UIComponent(context.component):Parent()):Id() == "button_group_agents" and cm:get_local_faction_name(true) == legion
             end,
             function(context)
                 local str = context.string
@@ -1609,7 +1609,7 @@ function liche_init_listeners()
             "LicheTTSet",
             "ComponentMouseOn",
             function(context)
-                return context.string == "enslavewh_captive_option_enslave_vampire_counts" and cm:pending_battle_cache_faction_is_involved(legion) and cm:get_local_faction(true) == legion
+                return context.string == "enslavewh_captive_option_enslave_vampire_counts" and cm:pending_battle_cache_faction_is_involved(legion) and cm:get_local_faction_name(true) == legion
             end,
             function(context)
                 local np_result = calculate_post_battle_np()
@@ -1643,7 +1643,7 @@ function liche_init_listeners()
             "LicheTTSet",
             "PanelOpenedCampaign",
             function(context)
-                return context.string == "settlement_captured" and cm:get_local_faction(true) == legion
+                return context.string == "settlement_captured" and cm:get_local_faction_name(true) == legion
             end,
             function(context)
                 local panel = find_uicomponent("settlement_captured")
@@ -1721,7 +1721,7 @@ function liche_init_listeners()
         -- MP Compat listeners
         core:add_listener(
             "LichemasterLegionOfUndeathSpawn",
-            "UITriggerScriptEvent",
+            "UITrigger",
             function(context)
                 return context:trigger():starts_with("lichemanager_ror|")
             end,
@@ -1747,7 +1747,7 @@ function liche_init_listeners()
 
         core:add_listener(
             "LichemasterDefileBarrowTrigger",
-            "UITriggerScriptEvent",
+            "UITrigger",
             function(context)
                 return context:trigger():starts_with("lm_db|")
             end,
@@ -1814,7 +1814,7 @@ cm:add_first_tick_callback(
         check_np_effects()
 
         -- UI stuff
-        if cm:get_local_faction(true) == legion then
+        if cm:get_local_faction_name(true) == legion then
             CampaignUI.ClearSelection()
             
             disable_tech_notification()
