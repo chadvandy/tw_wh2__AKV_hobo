@@ -520,6 +520,8 @@ function unit_card_obj:create_stat_unit_card_for_frontend()
         return
     end
 
+    -- ModLog("Create stat card 1")
+
     --print_all_uicomponent_children(stat_card_uic)
 
     self._stat_card_uic = stat_card_uic
@@ -545,19 +547,29 @@ function unit_card_obj:create_stat_unit_card_for_frontend()
     y = y + (h/2)
     y = y + stat_card_uic:Height() * -1
 
+    -- ModLog("Create stat card 2")
+
     stat_card_uic:MoveTo(x, y)
 
     -- hide needless UIC's, until someone begs for them to be implemented. plz don't beg.
-    local kill_1 = find_uicomponent(stat_card_uic, "dy_food")
-    local kill_2 = find_uicomponent(stat_card_uic, "details", "health_and_stats_parent", "health_parent", "health_frame", "health_bar", "label_compare")
-    local kill_3 = find_uicomponent(stat_card_uic, "top_section", "bret_peasant_icon")
-    local kill_4 = find_uicomponent(stat_card_uic, "details", "top_bar", "upkeep_cost")
-    local kill_5 = find_uicomponent(stat_card_uic, "details", "top_bar", "experience_parent")
-    kill_1:SetVisible(false) kill_2:SetVisible(false) kill_3:SetVisible(false) kill_4:SetVisible(false) kill_5:SetVisible(false)
+    local kill = {
+        -- find_uicomponent(stat_card_uic, "dy_food"),
+        find_uicomponent(stat_card_uic, "details", "health_and_stats_parent", "health_parent", "health_frame", "health_bar", "label_compare"),
+        find_uicomponent(stat_card_uic, "top_section", "bret_peasant_icon"),
+        find_uicomponent(stat_card_uic, "details", "top_bar", "upkeep_cost"),
+        find_uicomponent(stat_card_uic, "details", "top_bar", "experience_parent"),
+    }
+
+
+    UTILITY.remove_component(kill)
+
+    -- kill_1:SetVisible(false) kill_2:SetVisible(false) kill_3:SetVisible(false) kill_4:SetVisible(false) kill_5:SetVisible(false)
 
     -- set various different localisations, should be self-evident
     local unit_name_text = find_uicomponent(stat_card_uic, "top_section", "tx_unit-type")
     unit_name_text:SetStateText(effect.get_localised_string(self._loc_unit_name))
+
+    -- ModLog("Create stat card 3")
 
 
     local unit_cat_text = find_uicomponent(stat_card_uic, "top_section", "custom_name_display")
@@ -566,9 +578,12 @@ function unit_card_obj:create_stat_unit_card_for_frontend()
     unit_cat_text:SetStateText(uc["text"])
     unit_cat_text:SetTooltipText(uc["tooltip"], true)
 
+    -- ModLog("Create stat card 4")
+
     local unit_short_desc_text = find_uicomponent(stat_card_uic, "short_description")
     unit_short_desc_text:SetStateText(effect.get_localised_string(self._loc_short_desc))
 
+    -- ModLog("Create stat card 5")
 
     local unit_bullet_point_parent = find_uicomponent(stat_card_uic, "bullet_point_parent")
 
@@ -598,12 +613,14 @@ function unit_card_obj:create_stat_unit_card_for_frontend()
 
     end
 
+    -- ModLog("Create stat card 6")
+
     local unit_cat_icon = find_uicomponent(unit_cat_text, "unit_cat_frame", "unit_category_icon")
     local icon = self._manager._ui_unit_groupings[self._unit_category]["icon"]
     unit_cat_icon:SetImagePath("ui/common ui/unit_category_icons/" .. icon .. ".png")
 
 
-    local unit_num_models_text = find_uicomponent(stat_card_uic, "top_bar", "dy_men")
+    local unit_num_models_text = find_uicomponent(stat_card_uic, "details", "top_bar", "dy_men")
 
     if self._is_large then
         unit_num_models_text:SetState("large")
@@ -611,12 +628,12 @@ function unit_card_obj:create_stat_unit_card_for_frontend()
         unit_num_models_text:SetState("small")
     end
 
-
+    -- ModLog("Create stat card 7")
 
     unit_num_models_text:SetStateText(tostring(self._num_models))
 
-    local unit_upkeep_cost_text = find_uicomponent(stat_card_uic, "top_bar", "upkeep_cost", "dy_value")
-    unit_upkeep_cost_text:SetStateText(tostring(self._upkeep_cost))
+    -- local unit_upkeep_cost_text = find_uicomponent(stat_card_uic, "details", "top_bar", "upkeep_cost", "dy_value")
+    -- unit_upkeep_cost_text:SetStateText(tostring(self._upkeep_cost))
 
     local unit_health = find_uicomponent(stat_card_uic, "details", "health_and_stats_parent", "health_parent", "health_frame")
 
@@ -688,15 +705,21 @@ function unit_card_obj:create_stat_unit_card_for_frontend()
     -- loop through and create all the new stats!
     local stats_parent = find_uicomponent(stat_card_uic, "details", "health_and_stats_parent", "dynamic_stats")
 
+    -- ModLog("Create stat card 8")
+
     local extant_stat = find_uicomponent(stats_parent, "stat1")
     local steve, dave = extant_stat:Position()
     extant_stat:SetVisible(false)
+
+    -- ModLog("Create stat card 9")
 
     for i = 1, #self._stats do
         local stat_copy = core:get_or_create_component("stat_"..i, self._stat_card_uic_path, root)
         local stat = find_uicomponent(stat_copy, "details", "health_and_stats_parent", "dynamic_stats", "stat1")
         stats_parent:Adopt(stat:Address())
         UTILITY.remove_component(stat_copy)
+
+        -- ModLog("Create stat card 10")
     
         stat:MoveTo(steve, dave)
 
@@ -707,7 +730,7 @@ function unit_card_obj:create_stat_unit_card_for_frontend()
         local bar_mod = find_uicomponent(bar, "bar_mod")
         local bar_base = find_uicomponent(bar, "bar_base")
 
-        bar:SetTooltipText("fuck", true)
+        -- bar:SetTooltipText("fuck", true)
 
         -- resize the width, since the UI template has it started at half
         bar_mod:SetCanResizeHeight(true)
@@ -715,6 +738,8 @@ function unit_card_obj:create_stat_unit_card_for_frontend()
         bar_mod:Resize(bar_mod:Width() * 2, bar_mod:Height())
         bar_mod:SetCanResizeHeight(false)
         bar_mod:SetCanResizeWidth(false)
+
+        -- ModLog("Create stat card 11")
 
         -- get necessary coordinates
         local bar_start, _ = bar:Position()
@@ -733,6 +758,8 @@ function unit_card_obj:create_stat_unit_card_for_frontend()
 
         local width = bar_width * percent
 
+        -- ModLog("Create stat card 12")
+
         bar_mod:SetCanResizeHeight(true)
         bar_mod:SetCanResizeWidth(true)
         bar_mod:Resize(width, bar_mod:Height())
@@ -750,6 +777,8 @@ function unit_card_obj:create_stat_unit_card_for_frontend()
             bar_mod:SetVisible(false)
             bar_base:SetVisible(false)
         end
+
+        -- ModLog("Create stat card 13")
 
         -- add icons next to the value, if any are applicable
         local icon_holder = find_uicomponent(stat, "dy_value", "mod_icon_holder", "mod_icon_list")
@@ -901,6 +930,8 @@ function unit_card_obj:create_stat_unit_card_for_frontend()
             end
         end
 
+        -- ModLog("Create stat card 14")
+
         -- get the necessary UI elements for the stuff
         local stat_icon = find_uicomponent(stat, "icon")
         local stat_name = find_uicomponent(stat, "stat_name")
@@ -913,6 +944,8 @@ function unit_card_obj:create_stat_unit_card_for_frontend()
         local key = stat_conversion[i]
         local icon = icon_conversion[i]
         local tt = tooltip_conversion[i]
+
+        -- ModLog("Create stat card 15")
 
         if i == 6 then
             -- check for weapon damage breakdown
@@ -967,10 +1000,14 @@ function unit_card_obj:create_stat_unit_card_for_frontend()
             tt = tt .. "\n\n Damage value shown is damage over 10 seconds"
         end
 
+        -- ModLog("Create stat card 16")
+
         stat_name:SetStateText(key)
         stat_icon:SetImagePath(icon)
         stat_value:SetStateText(tostring(self._stats[i]))
         stat:SetTooltipText(tt, true)
+
+        -- ModLog("Create stat card 17")
     end
 
     local abilities_parent = find_uicomponent(stat_card_uic, "ability_list")

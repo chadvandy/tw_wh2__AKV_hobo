@@ -1889,7 +1889,7 @@ function liche_manager:get_wounded_kemmy_position()
     local wounded_kemmy_cqi = self:get_wounded_cqi()
     local wounded_kemmy_obj = cm:get_character_by_cqi(wounded_kemmy_cqi)
 
-    if wounded_kemmy_obj:is_null_interface() then
+    if wounded_kemmy_obj:is_null_interface() or not wounded_kemmy_obj:has_region() then
         return -1, -1, ""
     end
 
@@ -1985,7 +1985,7 @@ function liche_manager:wounded_kemmy_unit_list()
     random_army_manager:add_unit(force_key, "AK_hobo_horsemen", 2)
     random_army_manager:add_unit(force_key, "AK_hobo_horsemen_lances", 1)
 
-    return random_army_manager:generate_force(force_key, {6, 13}, false) 
+    return random_army_manager:generate_force(force_key, {6, 13}, false)
 end
 
 ---- Spawn Wounded Kemmy off-screen when Kemmler is in a pending battle and has at least one life.
