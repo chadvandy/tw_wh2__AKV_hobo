@@ -10,18 +10,7 @@
 -----------------------------------------------------------------------------------
 -----------------------------------------------------------------------------------
 
--- KAILUA TYPES because I'm tired of the errors!
---# assume local_faction: string
---# assume faction_new_sp_game_startup: function()
---# assume faction_each_sp_game_startup: function()
---# assume faction_new_mp_game_startup: function()
---# assume faction_each_mp_game_startup: function()
---# assume start_faction: function()
---# assume cutscene_intro_play: function()
---# assume cutscene_intro_skipped: function(advice_to_play: vector<string>)
---# assume show_benchmark_camera_pan_if_required: function(function())
---# assume cutscene_prebattle: function()
-
+-- TODO get rid of all of the gameplay shit in this file
 
 local debug = false
 

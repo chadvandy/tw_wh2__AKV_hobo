@@ -1003,7 +1003,7 @@ function liche_manager:ruins_spawn_enemy()
                     false
                 )
 
-                cm:force_declare_war(faction, "hobo_kemmy", false, false, false)
+                cm:force_declare_war(faction, liche_manager._faction_key, false, false, false)
             else
                 liche_manager:error("ruins_spawn_enemy() called but the army didn't spawn? Reviving barrow units and calling it a day!")
                 liche_manager:revive_barrow_units(char:command_queue_index())
@@ -1729,7 +1729,7 @@ function liche_manager:apply_attrition()
     local kemmy = faction:faction_leader()
     for i = 0, char_list:num_items() - 1 do
         local char = char_list:item_at(i)
-        if not char:character_subtype("vmp_heinrich_kemmler") and not char:character_subtype("AK_hobo_kemmy_wounded") and char:has_military_force() and char:faction():name() == "hobo_kemmy" then
+        if not char:character_subtype("vmp_heinrich_kemmler") and not char:character_subtype("AK_hobo_kemmy_wounded") and char:has_military_force() and char:faction():name() == self._faction_key then
             if not char:region():is_null_interface() and not kemmy:region():is_null_interface() then
                 if char:region():name() ~= kemmy:region():name() then
                     self:log("NECROMANTIC POWER: Applying the low-necromantic-power attrition to character with surname ["..char:get_surname().."] in region ["..char:region():name().."] for one turn.")
