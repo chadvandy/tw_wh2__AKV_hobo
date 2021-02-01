@@ -1,20 +1,20 @@
 local unit_card_manager = core:get_static_object("vandy_unit_card_manager")
 --# assume unit_card_manager: VANDY_UCM
 
-unit_card_manager:remove_frontend_unit_for_starting_general(
-	"wh_main_vmp_mon_dire_wolves", 
-	"2140783651"
-)
+-- unit_card_manager:remove_frontend_unit_for_starting_general(
+-- 	"wh_main_vmp_mon_dire_wolves", 
+-- 	"928012504"
+-- )
 
-unit_card_manager:remove_frontend_unit_for_starting_general(
-	"wh_main_vmp_inf_cairn_wraiths", 
-	"2140783651"
-)
+-- unit_card_manager:remove_frontend_unit_for_starting_general(
+-- 	"wh_main_vmp_inf_cairn_wraiths", 
+-- 	"928012504"
+-- )
 
-unit_card_manager:remove_frontend_unit_for_starting_general(
-	"wh_main_vmp_cav_hexwraiths", 
-	"2140783651"
-)
+-- unit_card_manager:remove_frontend_unit_for_starting_general(
+-- 	"wh_main_vmp_cav_hexwraiths", 
+-- 	"928012504"
+-- )
 
 unit_card_manager:new_unit_card(
 	"AK_hobo_barrow_guardians", 
@@ -108,7 +108,7 @@ unit_card_manager:add_ability_to_unit(
 
 unit_card_manager:add_frontend_unit_for_starting_general(
 	"AK_hobo_barrow_guardians", 
-	"2140783651"
+	"928012504"
 )
 
 unit_card_manager:new_unit_card(
@@ -203,7 +203,7 @@ unit_card_manager:add_ability_to_unit(
 
 unit_card_manager:add_frontend_unit_for_starting_general(
 	"AK_hobo_hexwr", 
-	"2140783651"
+	"928012504"
 )
 
 unit_card_manager:new_ui_unit_bullet_point_enum(
@@ -303,47 +303,51 @@ unit_card_manager:add_ability_to_unit(
 
 unit_card_manager:add_frontend_unit_for_starting_general(
 	"AK_hobo_glooms", 
-	"2140783651"
+	"928012504"
 )
 
--- hide the effects from vanilla
-core:add_listener(
-    "HideKemmlerEffects",
-    "ComponentLClickUp",
-	function(context) 
-		local uic = UIComponent(context.component)
-        return uic:GetProperty("lord_key") == "2140783651"
-    end, 
-    function(context)
-        --local tm = get_tm()
-		--tm:callback(function()
-		local function do_it()
-			local root = core:get_ui_root()
-			local parent = find_uicomponent(root, "sp_grand_campaign", "dockers", "centre_docker", "lord_details_panel", "faction", "faction_traits", "effects", "listview", "list_clip", "list_box")
-			if is_uicomponent(parent) then
-				local kill1 = find_uicomponent(parent, "lord_effect6") kill1:SetVisible(false)
-				local kill2 = find_uicomponent(parent, "lord_effect10") kill2:SetVisible(false)
-				local kill3 = find_uicomponent(parent, "lord_effect7") kill3:SetVisible(false)
-				local kill4 = find_uicomponent(parent, "lord_effect9") kill4:SetVisible(false)
-				local kill5 = find_uicomponent(parent, "lord_effect8") kill5:SetVisible(false)
-				local kill6 = find_uicomponent(parent, "lord_effect11") kill6:SetVisible(false)
-			end
-		end
+-- TODO remove the vanilla Kemmy, or do something that differentiates between them
 
-		core:add_listener(
-			"trigger_timer",
-			"RealTimeTrigger",
-			function(context) 
-				return context.string == "do_it"
-			end,
-			function(context)
-				do_it()
-			end,
-			false
-		)
+-- TODO, trigger a big big big big big big big big error message if the Mixer isn't enabled when initially loading up the game 
 
-		real_timer.register_singleshot("do_it", 0)
-        --end, 50)
-    end,
-    true
-)
+-- -- hide the effects from vanilla
+-- core:add_listener(
+--     "HideKemmlerEffects",
+--     "ComponentLClickUp",
+-- 	function(context) 
+-- 		local uic = UIComponent(context.component)
+--         return uic:GetProperty("lord_key") == "928012504"
+--     end, 
+--     function(context)
+--         --local tm = get_tm()
+-- 		--tm:callback(function()
+-- 		local function do_it()
+-- 			local root = core:get_ui_root()
+-- 			local parent = find_uicomponent(root, "sp_grand_campaign", "dockers", "centre_docker", "lord_details_panel", "faction", "faction_traits", "effects", "listview", "list_clip", "list_box")
+-- 			if is_uicomponent(parent) then
+-- 				local kill1 = find_uicomponent(parent, "lord_effect6") kill1:SetVisible(false)
+-- 				local kill2 = find_uicomponent(parent, "lord_effect10") kill2:SetVisible(false)
+-- 				local kill3 = find_uicomponent(parent, "lord_effect7") kill3:SetVisible(false)
+-- 				local kill4 = find_uicomponent(parent, "lord_effect9") kill4:SetVisible(false)
+-- 				local kill5 = find_uicomponent(parent, "lord_effect8") kill5:SetVisible(false)
+-- 				local kill6 = find_uicomponent(parent, "lord_effect11") kill6:SetVisible(false)
+-- 			end
+-- 		end
+
+-- 		core:add_listener(
+-- 			"trigger_timer",
+-- 			"RealTimeTrigger",
+-- 			function(context) 
+-- 				return context.string == "do_it"
+-- 			end,
+-- 			function(context)
+-- 				do_it()
+-- 			end,
+-- 			false
+-- 		)
+
+-- 		real_timer.register_singleshot("do_it", 0)
+--         --end, 50)
+--     end,
+--     true
+-- )

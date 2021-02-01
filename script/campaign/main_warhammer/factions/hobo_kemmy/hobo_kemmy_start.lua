@@ -205,7 +205,7 @@ end
 
 function cutscene_prebattle_prep()
     cm:transfer_region_to_faction("wh_main_northern_grey_mountains_blackstone_post", "wh_main_dwf_karak_ziflin")
-    local faction = cm:get_faction("wh2_dlc11_vmp_the_barrow_legion")
+    local faction = cm:get_faction("hobo_kemmy")
 
     local kemmler_start_x = 423
     local kemmler_start_y = 429
@@ -290,13 +290,13 @@ end
 
 -- due to a likely startpos-induced limitation, we have to "refresh" the PR value to make the bundle trigger on turn one.
 local function fix_necropower()
-    cm:faction_add_pooled_resource("wh2_dlc11_vmp_the_barrow_legion", "necropower", "bribes", 1)
-    cm:faction_add_pooled_resource("wh2_dlc11_vmp_the_barrow_legion", "necropower", "bribes", -1)
+    cm:faction_add_pooled_resource("hobo_kemmy", "necropower", "bribes", 1)
+    cm:faction_add_pooled_resource("hobo_kemmy", "necropower", "bribes", -1)
 end
 
 local function setup_kemmler()
     local lm = get_lichemanager()
-    local faction = cm:get_faction("wh2_dlc11_vmp_the_barrow_legion")
+    local faction = cm:get_faction("hobo_kemmy")
 
     local kemmler = faction:faction_leader()
     local kemmlerCQI = kemmler:command_queue_index()
@@ -310,7 +310,7 @@ local function setup_kemmler()
         cm:force_add_trait("character_cqi:" .. kemmlerCQI, "AK_kemmler_wound_reduction", false)
     end
 
-    cm:transfer_region_to_faction("wh_main_northern_grey_mountains_blackstone_post", "wh2_dlc11_vmp_the_barrow_legion")
+    cm:transfer_region_to_faction("wh_main_northern_grey_mountains_blackstone_post", "hobo_kemmy")
 
     cm:kill_character_and_commanded_unit("character_cqi:"..kemmlerCQI, true, true)
     
@@ -320,7 +320,7 @@ local function setup_kemmler()
         cm:stop_character_convalescing(kemmy_cqi)
 
         local starting_army = {
-            faction_key = "wh2_dlc11_vmp_the_barrow_legion",
+            faction_key = "hobo_kemmy",
             army_list = "AK_hobo_skeleton_2h,AK_hobo_skeleton_spears,AK_hobo_skeleton_spears,AK_hobo_hexwr,AK_hobo_barrow_guardians,AK_hobo_glooms",
             region = "wh_main_forest_of_arden_gisoreux",
             x = 423,

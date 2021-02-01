@@ -5,6 +5,9 @@
 -- listeners and what not               --
 ------------------------------------------
 
+-- tell Mixu to pls not kill this Kemmy, pls pls pls
+mixer_kill_hobo_kemmy = false
+
 -- refernces some stuff that will be used ALL over
 
 local lm = get_lichemanager()
@@ -756,7 +759,7 @@ end
 -- Listeners! --
 ----------------
 
--- this is triggered ONCE, after the faction start script (wh2_dlc11_vmp_the_barrow_legion_start.lua) is over and the intro battle is completed
+-- this is triggered ONCE, after the faction start script (hobo_kemmy_start.lua) is over and the intro battle is completed
 function lichemaster_postbattle_setup()
 
     add_missions_and_unlock_requirements()
@@ -782,7 +785,7 @@ function lichemaster_postbattle_setup()
 end
 
 -- run every game creation or game load
-function liche_init_listeners()
+local function liche_init_listeners()
     local ok, err = pcall(function()
         -- read through the entirety of the current region list on script load
         -- done on every script load, the ruins are saved but doing this will catch any mistakes or changes
@@ -1809,6 +1812,16 @@ end
 cm:add_first_tick_callback(
     function()
         -- all the stuff that has to be done on Liche turnstart will also be done here, for loading games
+        local kemmy = cm:get_faction(legion)
+
+        -- don't do shit if Kemmy isn't human or if Kemmy doesn't exist
+        if not kemmy or not kemmy:is_human() then
+            return
+        end
+
+        if cm:is_new_game() then
+            -- TODO kill vanilla kemmy
+        end
 
         liche_init_listeners()
         check_np_effects()

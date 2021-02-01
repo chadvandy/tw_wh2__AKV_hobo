@@ -14,7 +14,7 @@
 			</deployment_area>
 
 
-			<faction>wh2_dlc11_vmp_the_barrow_legion</faction>
+			<faction>hobo_kemmy</faction>
 			<!--campaign_ai_battle_hints aggression="0.50"/ -->
 			
 			<!-- player's main -->
@@ -152,7 +152,7 @@
 			
 			<!-- player's reinforcements -->
 			<reinforcement_army approach_angle="270">
-				<faction>wh2_dlc11_vmp_the_barrow_legion</faction>
+				<faction>hobo_kemmy</faction>
 
 				<deployment_area>
 					<centre x="-50.88" y="-509.48"/>
