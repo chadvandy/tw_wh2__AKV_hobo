@@ -44,7 +44,7 @@ local function set(turns, is_locked, button_number)
     replen:SetTooltipText("{{tr:kemmler_ruins_replen_tt}}", false)
     replen:SetStateText("100%")
 
-    local do_nothing_uic = find_uicomponent(parent, "915")
+    local do_nothing_uic = find_uicomponent(parent, "9819845")
     local defile_barrow_uic = find_uicomponent(parent, "template_button_occupy")
 
     local mX, mY = do_nothing_uic:Position()

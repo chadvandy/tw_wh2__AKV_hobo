@@ -1165,12 +1165,12 @@ local function liche_init_listeners()
                         local panel = UIComponent(context.component)
 
                         if region:is_abandoned() then
-                            local search_ruins_button = find_uicomponent(panel, "1240")
+                            -- local search_ruins_button = find_uicomponent(panel, "1240")
                             local resettle_button = find_uicomponent(panel, "9819844")
                             local colonise_button = find_uicomponent(panel, "9819841")
-                            if not not search_ruins_button then 
-                                UTILITY.remove_component(search_ruins_button) 
-                            end
+                            -- if not not search_ruins_button then 
+                            --     UTILITY.remove_component(search_ruins_button) 
+                            -- end
                             if not lm:can_occupy_region(region_key) then
                                 -- remove occupation options
                                 if not not colonise_button then
@@ -1203,7 +1203,7 @@ local function liche_init_listeners()
                                 function(context)
                                     -- the Defile Barrow option has been pressed, do it. Otherwise, do nothing, just end the listener
                                     if UIComponent(UIComponent(context.component):Parent()):Id() == "template_button_occupy" then
-                                        local button = find_uicomponent(panel, "button_parent", "915", "option_button")
+                                        local button = find_uicomponent(panel, "button_parent", "9819845", "option_button")
                                         button:SimulateLClick() -- click the "Do Nothing" button
         
                                         lm:defile_ruin(region_key, character_cqi) -- set the ruin as defiled
