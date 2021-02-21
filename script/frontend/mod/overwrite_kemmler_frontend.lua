@@ -307,47 +307,221 @@ unit_card_manager:add_frontend_unit_for_starting_general(
 )
 
 -- TODO remove the vanilla Kemmy, or do something that differentiates between them
+ModLog("HELLO THIS IS WORKING.")
 
--- TODO, trigger a big big big big big big big big error message if the Mixer isn't enabled when initially loading up the game 
 
--- -- hide the effects from vanilla
--- core:add_listener(
---     "HideKemmlerEffects",
---     "ComponentLClickUp",
--- 	function(context) 
--- 		local uic = UIComponent(context.component)
---         return uic:GetProperty("lord_key") == "928012504"
---     end, 
---     function(context)
---         --local tm = get_tm()
--- 		--tm:callback(function()
--- 		local function do_it()
--- 			local root = core:get_ui_root()
--- 			local parent = find_uicomponent(root, "sp_grand_campaign", "dockers", "centre_docker", "lord_details_panel", "faction", "faction_traits", "effects", "listview", "list_clip", "list_box")
--- 			if is_uicomponent(parent) then
--- 				local kill1 = find_uicomponent(parent, "lord_effect6") kill1:SetVisible(false)
--- 				local kill2 = find_uicomponent(parent, "lord_effect10") kill2:SetVisible(false)
--- 				local kill3 = find_uicomponent(parent, "lord_effect7") kill3:SetVisible(false)
--- 				local kill4 = find_uicomponent(parent, "lord_effect9") kill4:SetVisible(false)
--- 				local kill5 = find_uicomponent(parent, "lord_effect8") kill5:SetVisible(false)
--- 				local kill6 = find_uicomponent(parent, "lord_effect11") kill6:SetVisible(false)
--- 			end
--- 		end
 
--- 		core:add_listener(
--- 			"trigger_timer",
--- 			"RealTimeTrigger",
--- 			function(context) 
--- 				return context.string == "do_it"
--- 			end,
--- 			function(context)
--- 				do_it()
--- 			end,
--- 			false
--- 		)
+-- TODO, trigger a big big big big big big big big error message if the Mixer isn't enabled when initially loading up the game
+local function delete_component(uic)
+	if not is_uicomponent(uic) then ModLog("You've given me a UIC that isn't a UIC to delete!") return end
+	-- local dummy = find_uicomponent("script_dummy")
+    -- if not is_uicomponent(dummy) then
+	local dummy = core:get_or_create_component("script_dummy", "ui/campaign ui/script_dummy")
+    -- end
 
--- 		real_timer.register_singleshot("do_it", 0)
---         --end, 50)
---     end,
---     true
--- )
+    if is_uicomponent(uic) then
+        dummy:Adopt(uic:Address())
+    elseif is_table(uic) then
+        for i = 1, #uic do
+            local test = uic[i]
+            if is_uicomponent(test) then
+                dummy:Adopt(test:Address())
+            else
+                -- ERROR WOOPS
+            end
+        end
+    end
+
+    dummy:DestroyChildren()
+end
+-- create the actual popup, yay
+local function trigger_popup(key, text, two_buttons, button_one_callback, button_two_callback)
+
+    -- verify shit is alright
+    if not is_string(key) then
+        -- mct:error("trigger_popup() called, but the key passed is not a string!")
+        return false
+    end
+
+    if is_function(text) then
+        text = text()
+    end
+
+    if not is_string(text) then
+        -- mct:error("trigger_popup() called, but the text passed is not a string!")
+        return false
+    end
+
+    if is_function(two_buttons) then
+        two_buttons = two_buttons()
+    end
+
+    if not is_boolean(two_buttons) then
+        -- mct:error("trigger_popup() called, but the two_buttons arg passed is not a boolean!")
+        return false
+    end
+
+    if not two_buttons then button_two_callback = function() end end
+
+    -- build the popup panel itself
+    local popup_parent = nil
+
+    -- local frame = self.panel
+    -- if is_uicomponent(frame) then
+    --     frame:UnLockPriority()
+    --     popup_parent = frame
+    -- end
+
+    local popup = core:get_or_create_component(key, "ui/kemmler/mct_dialogue")
+
+    local function do_stuff()
+
+        local both_group = UIComponent(popup:CreateComponent("both_group", "ui/campaign ui/script_dummy"))
+        local ok_group = UIComponent(popup:CreateComponent("ok_group", "ui/campaign ui/script_dummy"))
+        local DY_text = UIComponent(popup:CreateComponent("DY_text", "ui/vandy_lib/text/la_gioconda/center"))
+
+        both_group:SetDockingPoint(8)
+        both_group:SetDockOffset(0, 0)
+
+        ok_group:SetDockingPoint(8)
+        ok_group:SetDockOffset(0, 0)
+
+        DY_text:SetDockingPoint(5)
+        local ow, oh = popup:Width() * 0.9, popup:Height() * 0.8
+        DY_text:Resize(ow, oh)
+        DY_text:SetDockOffset(1, -35)
+        DY_text:SetVisible(true)
+
+        local cancel_img = effect.get_skinned_image_path("icon_cross.png")
+        local tick_img = effect.get_skinned_image_path("icon_check.png")
+
+        do
+            local button_tick = UIComponent(both_group:CreateComponent("button_tick", "ui/templates/round_medium_button"))
+            local button_cancel = UIComponent(both_group:CreateComponent("button_cancel", "ui/templates/round_medium_button"))
+
+            button_tick:SetImagePath(tick_img)
+            button_tick:SetDockingPoint(8)
+            button_tick:SetDockOffset(-30, -10)
+            button_tick:SetCanResizeWidth(false)
+            button_tick:SetCanResizeHeight(false)
+
+            button_cancel:SetImagePath(cancel_img)
+            button_cancel:SetDockingPoint(8)
+            button_cancel:SetDockOffset(30, -10)
+            button_cancel:SetCanResizeWidth(false)
+            button_cancel:SetCanResizeHeight(false)
+        end
+
+        do
+            local button_tick = UIComponent(ok_group:CreateComponent("button_tick", "ui/templates/round_medium_button"))
+
+            button_tick:SetImagePath(tick_img)
+            button_tick:SetDockingPoint(8)
+            button_tick:SetDockOffset(0, -10)
+            button_tick:SetCanResizeWidth(false)
+            button_tick:SetCanResizeHeight(false)
+        end
+
+        popup:PropagatePriority(1000)
+
+        popup:LockPriority()
+
+        -- grey out the rest of the world
+        --popup:RegisterTopMost()
+
+        local both_group = find_uicomponent(popup, "both_group")
+        local ok_group = find_uicomponent(popup, "ok_group")
+
+        if two_buttons then
+            both_group:SetVisible(true)
+            ok_group:SetVisible(false)
+        else
+            both_group:SetVisible(false)
+            ok_group:SetVisible(true)
+        end
+
+        -- grab and set the text
+        local tx = find_uicomponent(popup, "DY_text")
+
+        local w,h = tx:TextDimensionsForText(text)
+        tx:ResizeTextResizingComponentToInitialSize(w,h)
+
+        tx:SetStateText(text)
+
+        tx:Resize(ow,oh)
+        --w,h = tx:TextDimensionsForText(text)
+        tx:ResizeTextResizingComponentToInitialSize(ow,oh)
+
+        core:add_listener(
+            key.."_button_pressed",
+            "ComponentLClickUp",
+            function(context)
+                local button = UIComponent(context.component)
+                return (button:Id() == "button_tick" or button:Id() == "button_cancel") and UIComponent(UIComponent(button:Parent()):Parent()):Id() == key
+            end,
+            function(context)
+				ModLog("Button pressed")
+                local button = UIComponent(context.component)
+                
+                local id = context.string
+                
+
+                -- close the popup
+				ModLog("Pre delete")
+				local ok, err = pcall(function() delete_component(popup) end) if not ok then ModLog(err) end
+                delete_component(find_uicomponent(key))
+				ModLog("Post!")
+
+                -- mct:log("button pres'd 3")
+
+                -- local frame = self.panel
+                -- mct:log("button pres'd 4")
+                -- if is_uicomponent(frame) then
+                --     frame:LockPriority()
+                -- end
+
+                -- mct:log("button pres'd 5")
+
+                if id == "button_tick" then
+                    -- mct:log("button pres'd 6")
+                    button_one_callback()
+                    -- mct:log("button pres'd 7")
+                else
+                    -- mct:log("button pres'd 6")
+                    button_two_callback()
+                    -- mct:log("button pres'd 7")
+                end
+            end,
+            false
+        )
+    end
+
+    core:add_listener(
+        "do_stuff",
+        "RealTimeTrigger",
+        function(context)
+            return context.string == "do_stuff"
+        end,
+        function(context)
+            do_stuff()
+        end,
+        false
+    )
+
+    real_timer.register_singleshot("do_stuff", 5)
+end
+
+ModLog("ADDING UI CREATED")
+core:add_ui_created_callback(function(context)
+	ModLog("Overwrite kemmy frontend")
+	if not core:is_mod_loaded("mixu_asspos_frontend") then
+		ModLog("No Mixer - erroring!")
+		trigger_popup(
+			"no_mixu_found",
+			"[[col:red]]You HAVE TO USE Mixu's Unlocker to use the Return of the Lichemaster mod nowadays![[/col]]\nMixu's Unlocker is linked as a required item on Return of the Lichemaster's Steam page.\n\nEnjoy!",
+			false,
+			function() end
+		)
+	end
+end)
+ModLog("ADDED UI CREATED")
