@@ -3,10 +3,11 @@ if __game_mode ~= __lib_type_campaign then
     return
 end
 
-local LOG = require("script/lichemanager/helpers/log") --# assume LOG: LICHE_LOG
+local LOG = require("script/lichemanager/helpers/log")
 
 local names = require("script/lichemanager/tables/legion_names")
 
+---@class liche_manager
 liche_manager = {} --# assume liche_manager: LICHE_MANAGER
 
 -----------------------------------------
@@ -1870,10 +1871,10 @@ function liche_manager:get_wounded_kemmy_coords() --> (number, number, string)
     local valid = false
 
     while not valid do
-        local x = cm:random_number(region_coords[2], region_coords[1])
-        local y = cm:random_number(region_coords[4], region_coords[3])
-
-        if is_valid_spawn_point(x, y) then
+        local spawn_x = cm:random_number(region_coords[2], region_coords[1])
+        local spawn_y = cm:random_number(region_coords[4], region_coords[3])
+        local x, y = cm:find_valid_spawn_location_for_character_from_position(self.faction_key, spawn_x, spawn_y, true);
+        if x ~= -1 and y ~= -1 then
             valid = true
             return x, y, region
         end

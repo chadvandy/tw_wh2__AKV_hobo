@@ -1820,7 +1820,9 @@ cm:add_first_tick_callback(
         end
 
         if cm:is_new_game() then
-            -- TODO kill vanilla kemmy
+            -- kill vanilla kemmy
+            local vanilla = cm:get_faction("wh2_dlc11_vmp_the_barrow_legion")
+            cm:kill_all_armies_for_faction(vanilla)
         end
 
         liche_init_listeners()
