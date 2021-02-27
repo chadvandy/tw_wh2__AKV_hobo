@@ -8,7 +8,113 @@ local LOG = require("script/lichemanager/helpers/log")
 local names = require("script/lichemanager/tables/legion_names")
 
 ---@class liche_manager
-liche_manager = {} --# assume liche_manager: LICHE_MANAGER
+liche_manager = {
+    --[[ BASIC DEETS ]]
+    _faction_key = "hobo_kemmy",
+    _barrow_units = require("script/lichemanager/tables/barrow_units"),
+    _names = {names[1], names[2]},
+
+    --[[ REGIMENTS ]]
+    _regiments = {},
+    _selected_legion = "",
+
+    _character_in_battle = 0,
+    _character_selected = 0,
+
+    --[[ LORDS ]]
+    _lords = {},
+
+    --[[ RUINS ]]
+    _ruins = {},
+    _num_ruins_defiled = 0,
+    _num_razed_settlements = 0,
+    _defile_debug = "",
+
+    --[[ WOUNDED KEMMY DEETS ]]
+    _last_turn_lives_changed = 0,
+
+    ---@class liche_spawn_details
+    _respawn_details = {
+        respawn_post_battle_pending = false,
+        turn_to_spawn = 0,
+        unit_list = ""
+    },
+
+    --[[ RAISE DEAD SHIT ]]
+    _raise_dead_units = {
+        --- VCount Units
+        wh_main_vmp_inf_zombie = {
+            max_units = 5,      -- total in the pool
+            refresh = 3,        -- number added each refresh
+            tier = -1,          -- tier (used for refresh rates, num turns between refreshes!)
+        },
+        wh_main_vmp_mon_fell_bats = {
+            max_units = 5,
+            refresh = 3,
+            tier = -1,
+        },
+        wh_main_vmp_mon_dire_wolves = {
+            max_units = 5,
+            refresh = 3,
+            tier = -1,
+        },
+
+        ---- T0 Kemmy
+        AK_hobo_skeleton_swords = {
+            max_units = 5,
+            refresh = 2,
+            tier = 0,
+        },
+        AK_hobo_skeleton_spears = {
+            max_units = 5,
+            refresh = 2,
+            tier = 0,
+        },
+
+        ---- T1 Kemmy
+        AK_hobo_skeleton_2h = {
+            max_units = 3,
+            refresh = 1,
+            rate = 5,
+            tier = 1,
+        },
+        AK_hobo_skeleton_lobber = {
+            max_units = 3,
+            refresh = 1,
+            rate = 5,
+            tier = 1,
+        },
+
+        ---- T2 Kemmy
+        AK_hobo_horsemen = {
+            max_units = 3,
+            refresh = 1,
+            tier = 2,
+        },
+        AK_hobo_horsemen_lances = {
+            max_units = 3,
+            refresh = 1,
+            tier = 2,
+        },
+
+        ---- T3 Kemmy
+        AK_hobo_cairn = {
+            max_units = 3,
+            refresh = 1,
+            tier = 3,
+        },
+        AK_hobo_hexwr = {
+            max_units = 5,
+            refresh = 1,
+            tier = 3,
+        },
+    },
+    _raise_dead_last_turn = {
+        [1] = 0,
+        [2] = 0,
+        [3] = 0,
+    },
+}
 
 -----------------------------------------
 ----------------- LOGS! -----------------
@@ -28,40 +134,6 @@ end
 function liche_manager:log_init()
     LOG.init()
 end
-
------------------------------------------
-------------- BASIC DEETS ---------------
------------------------------------------
-
-liche_manager._faction_key = "hobo_kemmy"
-
-liche_manager._barrow_units = require("script/lichemanager/tables/barrow_units")
-
-liche_manager._names = {names[1], names[2]}
-
---[[ REGIMENTS ]]
-liche_manager._regiments = {}
-liche_manager._selected_legion = ""
-
-liche_manager._character_in_battle = 0
-liche_manager._character_selected = 0
-
--- [[ LORDS ]]
-liche_manager._lords = {}
-
---[[ RUINS ]]
-liche_manager._ruins = {}
-liche_manager._num_ruins_defiled = 0
-liche_manager._num_razed_settlements = 0
-liche_manager._defile_debug = ""
-
---[[ WOUNDED KEMMY DEETS ]]
-liche_manager._last_turn_lives_changed = 0
-liche_manager._respawn_details = {
-    respawn_post_battle_pending = false,
-    turn_to_spawn = 0,
-    unit_list = ""
-} --: LICHE_SPAWN_DETAILS
 
 ------------------------------------
 ------------- DEBUGGING ------------
@@ -177,6 +249,67 @@ end
 ----
 ---- Functions that make life easier later on
 ----
+
+function liche_manager:repeat_callback(callback, delay, str)
+    if not is_function(callback) then
+        return
+    end
+
+    if not is_number(delay) then
+        return
+    end
+
+    if not is_string(str) then
+        return
+    end
+
+    core:add_listener(
+        str,
+        "RealTimeTrigger",
+        function(context)
+            return context.string == str
+        end,
+        callback,
+        true
+    )
+
+    self:remove_callback(str)
+    real_timer.register_repeating(str, delay)
+end
+
+function liche_manager:callback(callback, delay, str)
+    if not is_function(callback) then
+        return
+    end
+
+    if not is_number(delay) then
+        return
+    end
+
+    if not is_string(str) then
+        return
+    end
+
+    core:add_listener(
+        str,
+        "RealTimeTrigger",
+        function(context)
+            return context.string == str
+        end,
+        callback,
+        false
+    )
+
+    real_timer.register_singleshot(str, delay)
+end
+
+function liche_manager:remove_callback(str)
+    if not is_string(str) then
+        return
+    end
+
+    real_timer.unregister(str)
+end
 
 --v method(unit_key: string) --> boolean
 function liche_manager:does_regiment_exist_in_faction(unit_key)
@@ -1151,17 +1284,19 @@ end
 -----------------------------------------
 
 ---- regiment object which saves basic data about the different legions of undeath
-local regiment = {} --# assume regiment: LICHE_REGIMENT
+---@class regiment
+local regiment_prototype = {}
 
 ---- instantiate a new regiment
---v function(key: string) --> LICHE_REGIMENT
-function regiment.new_regiment(key)
+---Create a new regiment!
+---@param key string
+---@return regiment
+function regiment_prototype.new_regiment(key)
     local self = {}
 
     -- give the object the same metatable as the regiment prototype
     -- __tostring allows me to type-check later on
-    setmetatable(self, {__index = regiment, __tostring = "LICHE_REGIMENT"})
-    --# assume self: LICHE_REGIMENT
+    setmetatable(self, {__index = regiment_prototype, __tostring = "LICHE_REGIMENT"})
 
     -- basic initiation data
     self._key = key
@@ -1173,29 +1308,26 @@ function regiment.new_regiment(key)
 end
 
 ---- Getter for the 'key'
---v method() --> string
-function regiment:key()
-    --# assume self: LICHE_REGIMENT
+---comment
+---@return string
+function regiment_prototype:key()
     return self._key
 end
 
---v method() --> string
-function regiment:get_status()
-    --# assume self: LICHE_REGIMENT
+---@return string
+function regiment_prototype:get_status()
     return self._status
 end
 
---v method(status: string) 
-function regiment:set_status(status)
-    --# assume self: LICHE_REGIMENT
+---@param status string
+function regiment_prototype:set_status(status)
     self._status = status
 end
 
 --- Grab a regiment by a key
---v method(key: string) --> ( LICHE_REGIMENT | nil )
+---@param key string
+---@return regiment
 function liche_manager:get_regiment_with_key(key)
-    --# assume self: LICHE_MANAGER
-
     local get = self._regiments[key]
     if not get then
         self:error("get_regiment_with_key() called but the supplied key ["..key.."] doesn't have an associated regiment entry! Returning nil.")
@@ -1205,10 +1337,9 @@ function liche_manager:get_regiment_with_key(key)
     return get
 end
 
----- Create a new regiment using the regiment.new_regiment() constructor, and then save the resulting regiment in the LM
---v method(key: string)
+--- Create a new regiment using the regiment.new_regiment() constructor, and then save the resulting regiment in the LM
+---@param key string
 function liche_manager:new_regiment(key)
-    --# assume self: LICHE_MANAGER
 
     -- prevent overriding
     local existing = self:get_regiment_with_key(key)
@@ -1216,26 +1347,22 @@ function liche_manager:new_regiment(key)
         self._regiments[key] = existing
     end
 
-    local new = regiment.new_regiment(key)
+    local new = regiment_prototype.new_regiment(key)
     self._regiments[key] = new
 end
 
----- On load-game, grab the existing regiments from the save file and turn them into the Lua object here
---v method(key: string, o: table)
+--- On load-game, grab the existing regiments from the save file and turn them into the Lua object here
+---@param key string
+---@param o regiment
 function liche_manager:instantiate_existing_regiment(key, o)
-    --# assume self: LICHE_MANAGER
+    setmetatable(o, {__index = regiment_prototype})
 
-    setmetatable(o, {__index = regiment})
-
-    --# assume o: LICHE_REGIMENT
     self._regiments[key] = o
 end
 
 ---- Wrapper to read the unlock status of a regiment
 --v method(key: string) --> string
 function liche_manager:get_regiment_status(key)
-    --# assume self: LICHE_MANAGER
-
     local regiment_obj = self:get_regiment_with_key(key)
     if is_nil(regiment_obj) then
         self:error("get_regiment_status() called but there's no saved regiment with the key ["..key.."], returning 'NULL'")
@@ -1397,25 +1524,27 @@ function liche_manager:ror_UI(cqi)
         button:SetImagePath("ui/skins/default/icon_renown.png")
 
         -- swap positions of raise dead and the new button
-        local raise_dead = find_uicomponent(parent, "button_mercenaries")
-        local x1, y1 = raise_dead:Position()
-        local x2, y2 = button:Position()
+        -- local ror = find_uicomponent(parent, "button_renown")
+        -- local x1, y1 = ror:Position()
+        -- local x2, y2 = button:Position()
 
-        raise_dead:MoveTo(x2, y2)
-        button:MoveTo(x1, y1)
+        -- ror:MoveTo(x2, y2)
+        -- button:MoveTo(x1, y1)
+
+        parent:Layout()
     end
 
     -- repeat callback to make sure the ror button stays invisible, and to continually check if the LoU button is valid
-    cm:repeat_callback(function()
-        local ror_button = find_uicomponent(core:get_ui_root(), "layout", "hud_center_docker", "hud_center", "small_bar", "button_group_army", "button_renown")
+    self:repeat_callback(function()
+        local ror_button = find_uicomponent(core:get_ui_root(), "layout", "hud_center_docker", "hud_center", "small_bar", "button_group_army", "button_mercenaries")
 
         if is_uicomponent(ror_button) and is_uicomponent(button) and button:Visible() then
             ror_button:SetVisible(false)
             check_validity(button)
         else
-            cm:remove_callback("kill_that_ror_button")
+            self:remove_callback("kill_that_ror_button")
         end
-    end, 0.1, "kill_that_ror_button")
+    end, 50, "kill_that_ror_button")
 
     -- once the panel is closed, stop forcing the ror button invisible every 0.1s
     core:add_listener(
@@ -1425,7 +1554,7 @@ function liche_manager:ror_UI(cqi)
             return context.string == "units_panel"
         end,
         function(context)
-            cm:remove_callback("kill_that_ror_button")
+            self:remove_callback("kill_that_ror_button")
         end,
         false
     )
@@ -1443,6 +1572,71 @@ function liche_manager:setup_regiments()
     self:new_regiment("AK_hobo_ror_skulls")
     self:new_regiment("AK_hobo_ror_spider")
 end
+
+--- This function initializes the raise dead functionality, on turn 1. Puts units in the RoR panel, basically.
+function liche_manager:setup_raise_dead()
+    local faction = cm:get_faction(self:get_faction_key())
+    for unit_key, data in pairs(self._raise_dead_units) do
+        cm:add_unit_to_faction_mercenary_pool(
+            faction,
+            unit_key,
+            0,
+            0,
+            data.max_units,
+            0,
+            0,
+            "",
+            "",
+            "",
+            false
+        )
+    end
+end
+
+function liche_manager:add_unit_to_raise_dead(unit_key, num)
+    local faction = cm:get_faction(self:get_faction_key())
+    local faction_cqi = faction:command_queue_index()
+
+    cm:add_units_to_faction_mercenary_pool(faction_cqi, unit_key, num)
+end
+
+function liche_manager:refresh_raise_dead_at_tier(num)
+    local raise_dead_units = self._raise_dead_units
+
+    for unit_key,data in pairs(raise_dead_units) do
+        -- if tier is 1, check -1 and 0 as well
+        if data.tier == num or num == 1 and data.tier <= num then
+            self:add_unit_to_raise_dead(unit_key, data.refresh)
+        end
+    end
+end
+
+function liche_manager:refresh_raise_dead()
+    local turn_number = cm:model():turn_number()
+    local last_turns = self._raise_dead_last_turn
+    local t1 = last_turns[1]
+    local t2 = last_turns[2]
+    local t3 = last_turns[3]
+
+    -- refresh every 5 turns
+    -- if 15 - 10 divided by five has 0 left over, then
+    if (turn_number - t1) % 5 == 0 then
+        -- refresh all t-1/t0/t1 units
+        self:refresh_raise_dead_at_tier(1)
+
+        if (turn_number - t2) % 10 == 0 then
+            -- refresh all t2 units
+            self:refresh_raise_dead_at_tier(2)
+
+            if (turn_number - t3) % 15 == 0 then
+                -- refresh all t3 units!
+                self:refresh_raise_dead_at_tier(3)
+            end
+        end
+    end
+end
+
+
 
 -----------------------------------------
 -------------- LORD LOCKS ---------------
@@ -2080,8 +2274,8 @@ liche_manager:load_module("utility", "helpers")
 liche_manager:load_module("ror", "modules")
 liche_manager:load_module("ruins", "modules")
 
---v function() --> LICHE_MANAGER
 -- TODO use core:get_static_object, lil safer that way
+---@return liche_manager
 function get_lichemanager()
     return liche_manager
 end
@@ -2100,6 +2294,8 @@ cm:add_saving_game_callback(
         cm:save_named_value("lichemaster_ruins", liche_manager._ruins, context)
         cm:save_named_value("lichemaster_regiments", liche_manager._regiments, context)
         cm:save_named_value("lichemaster_lords", liche_manager._lords, context)
+
+        cm:save_named_value("lichemaster_raise_dead_last_turn", liche_manager._raise_dead_last_turn, context)
     end
 )
 
@@ -2116,6 +2312,8 @@ cm:add_loading_game_callback(
             liche_manager._ruins = cm:load_named_value("lichemaster_ruins", {}, context)
             liche_manager._regiments = cm:load_named_value("lichemaster_regiments", {}, context)
             liche_manager._lords = cm:load_named_value("lichemaster_lords", {}, context)
+
+            liche_manager._raise_dead_last_turn = cm:load_named_value("lichemaster_raise_dead_last_turn", liche_manager._raise_dead_last_turn, context)
 
             for key, regiment in pairs(liche_manager._regiments) do
                 --# assume regiment: table

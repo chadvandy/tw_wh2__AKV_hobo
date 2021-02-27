@@ -9,7 +9,6 @@
 mixer_kill_hobo_kemmy = false
 
 -- refernces some stuff that will be used ALL over
-
 local lm = get_lichemanager()
 local legion = lm:get_faction_key()
 
@@ -274,23 +273,28 @@ local function add_pr_uic()
 
         dummy:Adopt(uic:Address())
 
+        local orphans = {}
+
         -- remove all other children of the parent bar, except for the treasury, so the new PR will be to the right of the treasury holder
         for i = 0, parent:ChildCount() - 1 do
             local child = UIComponent(parent:Find(i))
             if child:Id() ~= "treasury_holder" then
-                dummy:Adopt(child:Address())
+                -- dummy:Adopt(child:Address())
+                orphans[#orphans+1] = child:Address()
             end
+        end
+
+        for i = 1, #orphans do
+            dummy:Adopt(orphans[i])
         end
         
         -- add the PR component!
         parent:Adopt(uic:Address())
-    
-        -- give the topbar the babies back
-        for i = 0, dummy:ChildCount() - 1 do
-            local child = UIComponent(dummy:Find(i))
-            parent:Adopt(child:Address())
+
+        for i = 1, #orphans do
+            parent:Adopt(orphans[i])
         end
-    
+        
         uic:SetInteractive(true)
         uic:SetVisible(true)
     
@@ -805,6 +809,7 @@ local function liche_init_listeners()
             lm:setup_regiments()
             lm:setup_lords()
             lm:setup_hero_spawn_rank()
+            lm:setup_raise_dead()
         
             -- disable confederation betwixt Kemmy and Vampies
             cm:force_diplomacy(legion, "culture:wh_main_vmp_vampire_counts", "form confederation", false, false, true)
@@ -829,6 +834,8 @@ local function liche_init_listeners()
             end,
             function(context)
                 check_np_effects()
+
+                lm:refresh_raise_dead()
             end,
             true
         )
