@@ -29,6 +29,7 @@ liche_manager = {
     _num_ruins_defiled = 0,
     _num_razed_settlements = 0,
     _defile_debug = "",
+    _defile_data = {},
 
     --[[ WOUNDED KEMMY DEETS ]]
     _last_turn_lives_changed = 0,
@@ -120,17 +121,19 @@ liche_manager = {
 ----------------- LOGS! -----------------
 -----------------------------------------
 
---v method(text: any)
+--- Output to the log.
+---@param text string
 function liche_manager:log(text)
     LOG.out(tostring(text))
 end
 
---v method(text: any)
+--- Output an error to the log.
+---@param text string
 function liche_manager:error(text)
     LOG.error(tostring(text))
 end
 
---v method()
+--- Initialize the log.
 function liche_manager:log_init()
     LOG.init()
 end
@@ -1075,6 +1078,9 @@ function liche_manager:ruins_spawn_enemy()
     if is_nil(invasion) then
         invasion = invasion_manager:new_invasion(force_key .. "_invasion", faction, force, loc)
     end
+
+    self._defile_data.invasion_key = force_key .. "_invasion"
+    self._defile_data.cqi = char:command_queue_index()
     
     -- neither of these are actually needed since the faction doesn't have any AI and won't survive the turn
     invasion:set_target("CHARACTER", char:command_queue_index(), char:faction():name())
@@ -1120,22 +1126,6 @@ function liche_manager:ruins_spawn_enemy()
                     false
                 )
 
-                -- trigger a listener that will be completed upon the next battle (can only be the invasion battle)
-                -- destroy the invasion, regardless of status, and give the player their units!
-                core:add_listener(
-                    "BarrowKillThing",
-                    "BattleCompleted",
-                    true,
-                    function(context)
-                        core:remove_listener("BarrowPrebattleScreen")
-                        local invasion = invasion_manager:get_invasion(force_key .. "_invasion")
-                        if not is_nil(invasion) then
-                            invasion:kill()
-                        end
-                        liche_manager:revive_barrow_units(char:command_queue_index())
-                    end,
-                    false
-                )
 
                 cm:force_declare_war(faction, liche_manager._faction_key, false, false, false)
             else
@@ -1591,6 +1581,9 @@ function liche_manager:setup_raise_dead()
             false
         )
     end
+
+    -- start the pool off!
+    self:refresh_raise_dead(true)
 end
 
 function liche_manager:add_unit_to_raise_dead(unit_key, num)
@@ -1600,19 +1593,22 @@ function liche_manager:add_unit_to_raise_dead(unit_key, num)
     cm:add_units_to_faction_mercenary_pool(faction_cqi, unit_key, num)
 end
 
-function liche_manager:refresh_raise_dead_at_tier(num)
+function liche_manager:refresh_raise_dead_at_tier(num, turn_num)
     local raise_dead_units = self._raise_dead_units
 
     for unit_key,data in pairs(raise_dead_units) do
         -- if tier is 1, check -1 and 0 as well
-        if data.tier == num or num == 1 and data.tier <= num then
+        if data.tier == num or (num == 1 and data.tier <= num) then
             self:add_unit_to_raise_dead(unit_key, data.refresh)
         end
     end
+
+    self._raise_dead_last_turn[num] = turn_num
 end
 
-function liche_manager:refresh_raise_dead()
+function liche_manager:refresh_raise_dead(override)
     local turn_number = cm:model():turn_number()
+    if turn_number == 1 and not override then return end
     local last_turns = self._raise_dead_last_turn
     local t1 = last_turns[1]
     local t2 = last_turns[2]
@@ -1620,17 +1616,17 @@ function liche_manager:refresh_raise_dead()
 
     -- refresh every 5 turns
     -- if 15 - 10 divided by five has 0 left over, then
-    if (turn_number - t1) % 5 == 0 then
+    if (turn_number - t1) % 5 == 0 or override then
         -- refresh all t-1/t0/t1 units
-        self:refresh_raise_dead_at_tier(1)
+        self:refresh_raise_dead_at_tier(1, turn_number)
 
         if (turn_number - t2) % 10 == 0 then
             -- refresh all t2 units
-            self:refresh_raise_dead_at_tier(2)
+            self:refresh_raise_dead_at_tier(2, turn_number)
 
             if (turn_number - t3) % 15 == 0 then
                 -- refresh all t3 units!
-                self:refresh_raise_dead_at_tier(3)
+                self:refresh_raise_dead_at_tier(3, turn_number)
             end
         end
     end
@@ -2294,6 +2290,7 @@ cm:add_saving_game_callback(
         cm:save_named_value("lichemaster_ruins", liche_manager._ruins, context)
         cm:save_named_value("lichemaster_regiments", liche_manager._regiments, context)
         cm:save_named_value("lichemaster_lords", liche_manager._lords, context)
+        cm:save_named_value("lichemaster_defile_data", liche_manager._defile_data, context)
 
         cm:save_named_value("lichemaster_raise_dead_last_turn", liche_manager._raise_dead_last_turn, context)
     end
@@ -2312,6 +2309,7 @@ cm:add_loading_game_callback(
             liche_manager._ruins = cm:load_named_value("lichemaster_ruins", {}, context)
             liche_manager._regiments = cm:load_named_value("lichemaster_regiments", {}, context)
             liche_manager._lords = cm:load_named_value("lichemaster_lords", {}, context)
+            liche_manager._defile_data = cm:load_named_value("lichemaster_defile_data", liche_manager._defile_data, context)
 
             liche_manager._raise_dead_last_turn = cm:load_named_value("lichemaster_raise_dead_last_turn", liche_manager._raise_dead_last_turn, context)
 

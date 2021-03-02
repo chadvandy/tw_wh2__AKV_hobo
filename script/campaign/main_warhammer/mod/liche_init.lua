@@ -1724,6 +1724,17 @@ local function liche_init_listeners()
             end,
             function(context)
                 lm:post_battle_regiment_status_check()
+
+                -- if this is a Barrow Invasion, kill the invasion and revive the barrow units!
+                local invasion_key = lm._defile_data.invasion_key
+
+                if is_string(invasion_key) then
+                    local invasion = invasion_manager:get_invasion(invasion_key)
+
+                    if invasion then invasion:kill() end
+                    
+                    lm:revive_barrow_units(lm._defile_data.cqi)
+                end
             end,
             true
         )
