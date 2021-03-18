@@ -1526,9 +1526,11 @@ function liche_manager:ror_UI(cqi)
 
     -- repeat callback to make sure the ror button stays invisible, and to continually check if the LoU button is valid
     self:repeat_callback(function()
-        local ror_button = find_uicomponent(core:get_ui_root(), "layout", "hud_center_docker", "hud_center", "small_bar", "button_group_army", "button_mercenaries")
+        local raise_dead = find_uicomponent(core:get_ui_root(), "layout", "hud_center_docker", "hud_center", "small_bar", "button_group_army", "button_mercenaries")
+        local ror_button = find_uicomponent(core:get_ui_root(), "layout", "hud_center_docker", "hud_center", "small_bar", "button_group_army", "button_renown")
 
         if is_uicomponent(ror_button) and is_uicomponent(button) and button:Visible() then
+            raise_dead:SetVisible(false)
             ror_button:SetVisible(false)
             check_validity(button)
         else

@@ -809,7 +809,7 @@ local function liche_init_listeners()
             lm:setup_regiments()
             lm:setup_lords()
             lm:setup_hero_spawn_rank()
-            lm:setup_raise_dead()
+            -- lm:setup_raise_dead()
         
             -- disable confederation betwixt Kemmy and Vampies
             cm:force_diplomacy(legion, "culture:wh_main_vmp_vampire_counts", "form confederation", false, false, true)
@@ -835,7 +835,8 @@ local function liche_init_listeners()
             function(context)
                 check_np_effects()
 
-                lm:refresh_raise_dead()
+                -- TODO temp disbabled
+                -- lm:refresh_raise_dead()
             end,
             true
         )
