@@ -1730,10 +1730,11 @@ local function liche_init_listeners()
                 local invasion_key = lm._defile_data.invasion_key
 
                 if is_string(invasion_key) then
+                    lm._defile_data.invasion_key = nil
                     local invasion = invasion_manager:get_invasion(invasion_key)
 
                     if invasion then invasion:kill() end
-                    
+
                     lm:revive_barrow_units(lm._defile_data.cqi)
                 end
             end,
