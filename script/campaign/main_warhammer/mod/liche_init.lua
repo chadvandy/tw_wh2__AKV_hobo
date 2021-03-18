@@ -1835,7 +1835,15 @@ cm:add_first_tick_callback(
         local kemmy = cm:get_faction(legion)
 
         -- don't do shit if Kemmy isn't human or if Kemmy doesn't exist
-        if not kemmy or not kemmy:is_human() then
+        if not kemmy then
+            return
+        end
+
+        if not kemmy:is_human() then
+            if cm:is_new_game() then
+                cm:kill_all_armies_for_faction(kemmy)
+            end
+
             return
         end
 
