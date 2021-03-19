@@ -152,6 +152,7 @@ local function kill_blood_kisses_and_tech()
     cm:apply_effect_bundle("kill_blood_kisses", legion, 1)
 end
 
+---- TODO remove dis
 -- prevents recruitment of specific VCount units that Kemmler shouldn't have. Prevents regular recruitment and Raise Dead recruitment
 local function kill_extra_recruitment()
     local kill_units = {
@@ -819,6 +820,12 @@ local function liche_init_listeners()
 
             -- remove unwanted tech
             kill_technologies()
+
+            -- start the victory objectives!
+            local vic_con = require("script/lichemanager/tables/victory_condition")
+            for i = 1, #vic_con do
+                cm:trigger_custom_mission_from_string(legion, vic_con[i])
+            end
 
             cm:set_saved_value("liche_init", true)
         end

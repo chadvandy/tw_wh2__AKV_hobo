@@ -308,38 +308,30 @@ local function setup_kemmler()
 
         cm:stop_character_convalescing(kemmy_cqi)
 
-        local starting_army = {
-            faction_key = "hobo_kemmy",
-            army_list = "AK_hobo_skeleton_2h,AK_hobo_skeleton_spears,AK_hobo_skeleton_spears,AK_hobo_hexwr,AK_hobo_barrow_guardians,AK_hobo_glooms",
-            region = "wh_main_forest_of_arden_gisoreux",
-            x = 423,
-            y = 429,
-            starting_buildings = {"AK_hobo_ruination_1", "AK_hobo_recr1_1"}
-        }
+        ---@type kemmy_starting_units
+        local starting_army = require("script/lichemanager/tables/starting_army")
 
-        local first_turn_army = starting_army.army_list
+        local units = table.concat(starting_army.units, ",")
 
-        if cm:get_saved_value("Faction_Unlocker") then
-            first_turn_army = "AK_hobo_skeleton_2h,AK_hobo_skeleton_spears,AK_hobo_skeleton_spears,AK_hobo_hexwr,AK_hobo_barrow_guardians,AK_hobo_glooms,AK_hobo_skeleton_spears,AK_hobo_skeleton_spears,AK_hobo_cairn"
-        end
-
-        --# assume kemmy_cqi: number
         cm:create_force_with_existing_general(
             "character_cqi:"..kemmy_cqi,
-            starting_army.faction_key,
-            first_turn_army,
+            lm:get_faction_key(),
+            units,
             starting_army.region,
-            starting_army.x,
-            starting_army.y,
+            starting_army.loc[1],
+            starting_army.loc[2],
             function(cqi)
+                local char = cm:get_character_by_cqi(cqi)
+                local force = char:military_force()
+                local force_cqi = force:command_queue_index()
 
+                cm:add_building_to_force(force_cqi, starting_army.buildings)
+
+                cm:force_remove_trait("character_cqi:"..cqi, "AK_kemmler_wound_reduction")
+                cm:force_remove_ancillary("character_cqi:"..cqi, "wh2_dlc11_anc_follower_vmp_the_ravenous_dead", false)
+                cm:apply_effect_bundle_to_characters_force("lichemaster_turn_one_growth", cqi, 1, false)
             end
         )
-
-        cm:force_remove_trait("character_cqi:"..kemmy_cqi, "AK_kemmler_wound_reduction")
-        cm:force_remove_ancillary("character_cqi:"..kemmy_cqi, "wh2_dlc11_anc_follower_vmp_the_ravenous_dead", false)
-        --# assume kemmy_cqi: CA_CQI
-        cm:apply_effect_bundle_to_characters_force("lichemaster_turn_one_growth", kemmy_cqi, 1, false)
 
         cm:callback(function()
             cm:disable_event_feed_events(false, "wh_event_category_character", "", "")

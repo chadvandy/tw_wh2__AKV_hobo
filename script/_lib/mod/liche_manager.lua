@@ -506,9 +506,9 @@ function liche_manager:get_selected_legion()
     return self._selected_legion
 end
 
---v method() --> string
+--- Get Kemmy's faction key.
+---@return string
 function liche_manager:get_faction_key()
-    --# assume self: LICHE_MANAGER
     return self._faction_key
 end
 
