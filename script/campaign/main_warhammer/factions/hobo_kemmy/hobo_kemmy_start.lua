@@ -313,6 +313,8 @@ local function setup_kemmler()
 
         local units = table.concat(starting_army.units, ",")
 
+        -- TODO use a find valid spawn loc instead of hardcoding a single position
+
         cm:create_force_with_existing_general(
             "character_cqi:"..kemmy_cqi,
             lm:get_faction_key(),

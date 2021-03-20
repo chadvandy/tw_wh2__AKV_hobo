@@ -2,7 +2,7 @@
 
 ---@class kemmy_starting_units
 return {
-    -- List of units Kemmy starts off with. No agents!
+    -- List of units Kemmy starts off with. No agents! main_units
     units = {
         "AK_hobo_skeleton_2h",
         "AK_hobo_skeleton_spears",
@@ -12,7 +12,7 @@ return {
         "AK_hobo_glooms",
         "AK_hobo_simulacra",
     },
-    -- TODO This isn't actually hooked in yet :)
+    -- Buildings that Kemmy starts with, building_levels
     buildings = {
         "AK_hobo_ruination_1",
         "AK_hobo_recr1_1",

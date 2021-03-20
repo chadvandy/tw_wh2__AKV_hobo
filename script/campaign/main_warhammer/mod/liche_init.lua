@@ -302,7 +302,7 @@ local function add_pr_uic()
         local uic_icon = find_uicomponent(uic, "icon")
         uic_icon:SetImagePath("ui/kemmler/AK_hobo_necropowa_summarybutt.png")
         
-        uic:SetTooltipText('{{tt:ui/campaign ui/tooltip_pooled_resource_breakdown}}', true)
+        -- uic:SetTooltipText('{{tt:ui/campaign ui/tooltip_pooled_resource_breakdown}}', true)
     end
 
     local function check_value()
@@ -319,7 +319,8 @@ local function add_pr_uic()
     end
 
     local function adjust_tooltip()
-        local tooltip = find_uicomponent(core:get_ui_root(), "tooltip_pooled_resource_breakdown")
+        local tooltip = core:get_or_create_component("tooltip_necropower_breakdown", "ui/campaign ui/tooltip_pooled_resource_breakdown", core:get_ui_root())
+        -- local tooltip = find_uicomponent(core:get_ui_root(), "tooltip_pooled_resource_breakdown")
         tooltip:SetVisible(true)
 
         print_all_uicomponent_children(tooltip)
@@ -438,9 +439,8 @@ local function add_pr_uic()
             return uic == UIComponent(context.component)
         end,
         function(context)
-            cm:callback(function()
-                adjust_tooltip()
-            end, 0.1)
+            -- TODO reenable this, for now no tooltip :)
+            -- lm:callback(adjust_tooltip, 10, "adjust_tooltip")
         end,
         true
     )
