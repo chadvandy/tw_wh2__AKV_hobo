@@ -2,6 +2,7 @@
 
 --this added to prevent xp bug in absentia of the actual cap mod
 
+
 rm = _G.rm; cm = get_cm();
 
 if not rm then 
@@ -99,5 +100,5 @@ else
     for i = 1, #ships_AK_hobo do
         rm:register_subtype_as_char_bound_horde(ships_AK_hobo[i])
     end
-end
---reminder last end to enwrap the if not rm
+end --reminder last end to enwrap the if not rm
+
