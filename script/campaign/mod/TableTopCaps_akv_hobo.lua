@@ -5,25 +5,33 @@ local rm = _G.rm;
 
 
     local hobo_units = {
-        {"AK_hobo_skeleton_swords", "kem_core"},
-        {"AK_hobo_skeleton_spears", "kem_core"},
-        {"AK_hobo_skeleton_2h", "kem_core"},
-        {"AK_hobo_skeleton_lobber", "kem_core"},
-        {"AK_hobo_barrow_guardians", "kem_special", 1},
-        {"AK_hobo_barrow_guardians_dual", "kem_special", 1},
-        {"AK_hobo_barrow_guardians_halb", "kem_special", 1},
-        {"AK_hobo_simulacra", "kem_core"},
-        {"AK_hobo_embalmed", "kem_special", 1},
-        {"AK_hobo_glooms", "kem_rare", 1},
-        {"AK_hobo_ghost", "kem_core"},
-        {"AK_hobo_horsemen", "kem_special", 1},
-        {"AK_hobo_horsemen_lances", "kem_special", 1},
-        {"AK_hobo_stalker", "kem_rare", 2},
-        {"AK_hobo_dragon", "kem_rare", 3},
-        {"AK_hobo_cairn", "kem_rare", 1},
-        {"AK_hobo_hexwr", "kem_special", 2},
-        {"AK_hobo_mortis_engine", "kem_rare", 3},
-        {"AK_hobo_terrorgheist", "kem_rare", 3}
+        {"AK_hobo_skeleton_swords", "vmp_core"},
+        {"AK_hobo_skeleton_spears", "vmp_core"},
+        {"AK_hobo_skeleton_2h", "vmp_core"},
+        {"AK_hobo_skeleton_lobber", "vmp_core"},
+        {"AK_hobo_barrow_guardians", "vmp_special", 1},
+        {"AK_hobo_barrow_guardians_dual", "vmp_special", 1},
+        {"AK_hobo_barrow_guardians_halb", "vmp_special", 1},
+        {"AK_hobo_simulacra", "vmp_core"},
+        {"AK_hobo_embalmed", "vmp_special", 1},
+        {"AK_hobo_glooms", "vmp_rare", 1},
+        {"AK_hobo_ghost", "vmp_core"},
+        {"AK_hobo_horsemen", "vmp_special", 1},
+        {"AK_hobo_horsemen_lances", "vmp_special", 1},
+        {"AK_hobo_stalker", "vmp_rare", 2},
+        {"AK_hobo_dragon", "vmp_rare", 3},
+        {"AK_hobo_cairn", "vmp_rare", 1},
+        {"AK_hobo_hexwr", "vmp_special", 2},
+        {"AK_hobo_mortis_engine", "vmp_rare", 3},
+        {"AK_hobo_terrorgheist", "vmp_rare", 3},
+        {"AK_hobo_ror_doomed_legion", "vmp_special", 2},
+        {"AK_hobo_ror_caged", "vmp_rare", 1},
+        {"AK_hobo_ror_storm", "vmp_core"},
+        {"AK_hobo_ror_wight_knights", "vmp_special", 2},
+        {"AK_hobo_ror_beast", "vmp_rare", 2},
+        {"AK_hobo_ror_skulls", "vmp_special", 1},
+        {"AK_hobo_ror_spider", "vmp_rare", 3}
+                                        --WATCH THE BLOODY COMMA
     }
     
 
