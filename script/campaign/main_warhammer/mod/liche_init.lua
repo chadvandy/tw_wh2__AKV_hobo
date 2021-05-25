@@ -1053,49 +1053,49 @@ local function liche_init_listeners()
             true
         )
 
-        -- -- prevent AI from settling ruins post-Kemmy-raze
-        -- core:add_listener(
-        --     "LicheRazedSettlement",
-        --     "CharacterRazedSettlement",
-        --     function(context)
-        --         return context:character():faction():name() == legion
-        --     end,
-        --     function(context)
-        --         local garr = context:garrison_residence()
-        --         local region = garr:region()
-        --         local region_key = region:name()
+        -- prevent AI from settling ruins post-Kemmy-raze
+        core:add_listener(
+            "LicheRazedSettlement",
+            "CharacterRazedSettlement",
+            function(context)
+                return context:character():faction():name() == legion
+            end,
+            function(context)
+                local garr = context:garrison_residence()
+                local region = garr:region()
+                local region_key = region:name()
 
-        --         local num_turns = cm:random_number(8, 4)
+                local num_turns = cm:random_number(8, 4)
 
-        --         cm:set_saved_value("lm_ruin_cooldown|"..region_key, num_turns)
-        --         cm:cai_disable_targeting_against_settlement("settlement:"..region_key)
-        --     end,
-        --     true
-        -- )
+                cm:set_saved_value("lm_ruin_cooldown|"..region_key, num_turns)
+                cm:cai_disable_targeting_against_settlement("settlement:"..region_key)
+            end,
+            true
+        )
 
-        -- -- unlock AI settlement after x turn_to_spawn
-        -- core:add_listener(
-        --     "LicheUnrazedSettlement",
-        --     "RegionTurnStart",
-        --     function(context)
-        --         local region_key = context:region():name()
-        --         local test = cm:get_saved_value("lm_ruin_cooldown|"..region_key)
-        --         return test and test > 0
-        --     end,
-        --     function(context)
-        --         local region = context:region()
-        --         local region_key = region:name()
-        --         local cd = cm:get_saved_value("lm_ruin_cooldown|"..region_key) -1
+        -- unlock AI settlement after x turn_to_spawn
+        core:add_listener(
+            "LicheUnrazedSettlement",
+            "RegionTurnStart",
+            function(context)
+                local region_key = context:region():name()
+                local test = cm:get_saved_value("lm_ruin_cooldown|"..region_key)
+                return test and test > 0
+            end,
+            function(context)
+                local region = context:region()
+                local region_key = region:name()
+                local cd = cm:get_saved_value("lm_ruin_cooldown|"..region_key) -1
 
-        --         if cd <= 0 then
-        --             cm:cai_enable_targeting_against_settlement("settlement:"..region_key)
-        --             cm:set_saved_value("lm_ruin_cooldown|"..region_key, nil)
-        --         else
-        --             cm:set_saved_value("lm_ruin_cooldown|"..region_key, cd)
-        --         end
-        --     end,
-        --     true
-        -- )
+                if cd <= 0 then
+                    cm:cai_enable_targeting_against_settlement("settlement:"..region_key)
+                    cm:set_saved_value("lm_ruin_cooldown|"..region_key, nil)
+                else
+                    cm:set_saved_value("lm_ruin_cooldown|"..region_key, cd)
+                end
+            end,
+            true
+        )
         
         core:add_listener(
             "LicheBattleCompletedOccupyUI",
@@ -1636,7 +1636,7 @@ local function liche_init_listeners()
                     return
                 end
 
-                cm:callback(function() 
+                cm:callback(function()
                     local tt = find_uicomponent(core:get_ui_root(), "tooltip_captive_options")
                     local pr_uic = find_uicomponent(tt, "effects_list", "pooled_resources")
 
